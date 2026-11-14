@@ -83,7 +83,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       // 1. Add Local Geology GeoJSON Source
       map.addSource("gale_geology", {
         type: "geojson",
-        data: mountSharpGeology as GeoJSON.FeatureCollection,
+        data: mountSharpGeology as unknown as maplibregl.GeoJSONSourceSpecification["data"],
       });
 
       // Layer 1: Optical & Geologic Units (Flat Solid Polygons)
@@ -244,18 +244,18 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     if (!source) return;
 
     if (activeRoute && activeRoute.pathCoordinates.length > 1) {
-      const lineFeature: GeoJSON.Feature<GeoJSON.LineString> = {
-        type: "Feature",
+      const lineFeature = {
+        type: "Feature" as const,
         properties: {},
         geometry: {
-          type: "LineString",
+          type: "LineString" as const,
           coordinates: activeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
         },
       };
       source.setData({
         type: "FeatureCollection",
         features: [lineFeature],
-      });
+      } as any);
     } else {
       source.setData({
         type: "FeatureCollection",

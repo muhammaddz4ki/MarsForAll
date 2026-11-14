@@ -1,13 +1,8 @@
 import type { MetadataRoute } from "next";
 
-/**
- * Robots policy, Mine For All is a fully public observatory, so everything is
- * crawlable. The sitemap reference is what crawlers read first to discover
- * pages fastest.
- */
 export default function robots(): MetadataRoute.Robots {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://mineforall.org";
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   return {
     rules: [{ userAgent: "*", allow: "/" }],

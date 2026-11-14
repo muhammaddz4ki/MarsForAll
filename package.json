@@ -1,9 +1,9 @@
 {
-  "name": "mineforall",
+  "name": "ares-path",
   "private": true,
   "version": "0.1.0",
-  "description": "Mine For All, Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
-  "license": "AGPL-3.0-or-later",
+  "description": "ARES-PATH // GALE-01: Interplanetary Survival Guide - Martian Map (NASA Space Apps Challenge 2026)",
+  "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"
@@ -12,8 +12,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "seed:regions": "pnpm --filter @mineforall/api seed:regions"
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

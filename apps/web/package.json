@@ -1,5 +1,5 @@
 {
-  "name": "@mineforall/web",
+  "name": "@ares-path/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@mineforall/shared": "workspace:*",
+    "@ares-path/shared": "workspace:*",
     "@next/third-parties": "^16.2.9",
     "@tmcw/togeojson": "^7.1.2",
     "@vercel/analytics": "^2.0.1",
