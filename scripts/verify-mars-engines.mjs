@@ -14,6 +14,9 @@ import {
   evaluateSandTrapRisk,
   CURIOSITY_HISTORICAL_TRAVERSE,
   BRADBURY_LANDING_ELLIPSE,
+  getFull35Parameters,
+  MARTIAN_35_PARAM_METADATA,
+  computeRadioLineOfSight,
 } from "../packages/shared/dist/index.js";
 
 console.log("===============================================================================");
@@ -107,4 +110,20 @@ CURIOSITY_HISTORICAL_TRAVERSE.forEach((pt) => {
 console.log(`\n    5 NASA Operational Layers Configured (${MARTIAN_SCIENTIFIC_LAYERS.length} total):`);
 MARTIAN_SCIENTIFIC_LAYERS.forEach((l) => console.log(`      [${l.category.toUpperCase()}] ${l.name}`));
 
+// 8. Complete 35-Parameter Martian Dataset & SHARAD Profile Validation
+console.log(`\n[8] Complete 35-Parameter Martian Science Dataset & SHARAD Radargram:`);
+const boxwork35 = getFull35Parameters(boxworkWp);
+console.log(`    Metadata Registry: ${MARTIAN_35_PARAM_METADATA.length} parameters across 7 scientific domains.`);
+console.log(`    [D1 Topography] Elev: ${boxwork35.elevationM} m | Slope: ${boxwork35.slopeDeg}° | Aspect: ${boxwork35.aspectDeg}° (${boxwork35.aspectCardinal})`);
+console.log(`    [D2 Thermal] Day Temp: ${boxwork35.daySurfaceTempC}°C (${boxwork35.daySurfaceTempK} K) | Night: ${boxwork35.nightSurfaceTempC}°C | TI: ${boxwork35.thermalInertiaTiu} tiu`);
+console.log(`    [D3 Weather] Ambient Air: ${boxwork35.ambientAirTempC}°C | Pressure: ${boxwork35.atmosphericPressurePa} Pa | Tau: ${boxwork35.dustOpacityTau}`);
+console.log(`    [D4 Radiation] Surface GCR: ${boxwork35.gcrDoseRateUGyDay} µGy/day (${boxwork35.doseRateMSvHr} mSv/hr) | SPE: [${boxwork35.speAlertLevel}] | UV: [${boxwork35.uvIndexLevel}]`);
+console.log(`    [D5 Mineralogy] CRISM Sulfates: ${boxwork35.crismSpectralIndices.sulfatesGypsumJarosite} | WEH: ${boxwork35.waterEquivalentHydrogenWtPct} wt% | Si: ${boxwork35.elementalChemistry.siPct}%, Fe: ${boxwork35.elementalChemistry.fePct}%`);
+console.log(`    [D6 Subsurface] SHARAD Profile: ${boxwork35.sharadSubsurfaceProfile.length} stratigraphy layers (0-500m depth):`);
+boxwork35.sharadSubsurfaceProfile.forEach((l) => {
+  console.log(`        - [${l.depthStartM}m - ${l.depthEndM}m] ${l.layerName} (ε' = ${l.dielectricPermittivity}, ${l.densityGPerCm3} g/cm³)`);
+});
+console.log(`    [D7 Nav & Comms] Coordinates: [${boxwork35.coordinates[1]}°, ${boxwork35.coordinates[0]}°] | Sol: ${boxwork35.sol} | Radio LOS: [${boxwork35.radioLineOfSight}]`);
+
 console.log("\n>>> ALL MARSFORALL FOUNDATIONAL CALCULATION ENGINES VERIFIED SUCCESSFULLY!");
+

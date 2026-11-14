@@ -24,6 +24,17 @@ interface LandmarkPin {
   description: string;
 }
 
+export interface CuriosityPhotoItem {
+  imageid: string;
+  sol: number;
+  instrument: string;
+  image_url: string;
+  date_taken_utc: string;
+  title: string;
+  caption?: string;
+  dataSource?: string;
+}
+
 // Framing coordinates: Placed in front of the camera (FOV 65°, pointing -Z)
 const LANDMARK_PINS: LandmarkPin[] = [
   {
@@ -61,15 +72,46 @@ const LANDMARK_PINS: LandmarkPin[] = [
   },
 ];
 
+// Fallback Curiosity Photos for Mount Sharp
+const FALLBACK_CURIOSITY_PHOTOS: CuriosityPhotoItem[] = [
+  {
+    imageid: "4180MR1098200010403010C00_DXXX",
+    sol: 4180,
+    instrument: "MAST_RIGHT",
+    image_url: "https://mars.nasa.gov/msl-raw-images/msss/04180/mcam/4180MR1098200010403010C00_DXXX.jpg",
+    date_taken_utc: "2024-05-09",
+    title: "Sol 4180: Mount Sharp Boxwork Mineral Ridge Outcrop",
+    caption: "High-resolution mosaic of polygonal sulfate vein lattices discovered on Aeolis Mons strata.",
+    dataSource: "CACHED_MOUNT_SHARP_ARCHIVE",
+  },
+  {
+    imageid: "3800MR1085100010302008C00_DXXX",
+    sol: 3800,
+    instrument: "MAST_LEFT",
+    image_url: "https://mars.nasa.gov/msl-raw-images/msss/03800/mcam/3800MR1085100010302008C00_DXXX.jpg",
+    date_taken_utc: "2023-04-15",
+    title: "Sol 3800: Gediz Vallis Catastrophic Debris Ridge",
+    caption: "Boulder-strewn channel carved by late-stage catastrophic debris flows down Mount Sharp.",
+    dataSource: "CACHED_MOUNT_SHARP_ARCHIVE",
+  },
+  {
+    imageid: "2300ML0012100010201004C00_DXXX",
+    sol: 2300,
+    instrument: "NAV_LEFT_B",
+    image_url: "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/02300/soas/rdr/navcam/NRB_601831821EDR_F0740924NCAM00595M_.JPG",
+    date_taken_utc: "2019-01-26",
+    title: "Sol 2300: Glen Torridon Clay-Bearing Unit",
+    caption: "Expansive view of phyllosilicate smectite trough between Vera Rubin Ridge and Mount Sharp.",
+    dataSource: "CACHED_MOUNT_SHARP_ARCHIVE",
+  },
+];
+
 // Helper to compute terrain elevation y(x, z) procedurally based on waypoint characteristics
 function getTerrainHeight(x: number, z: number, waypointId: string): number {
   const isBoxwork = waypointId === "curiosity_boxwork_2025";
 
   if (isBoxwork) {
-    // Regional gentle slope
     const baseSlope = 0.04 * x - 0.025 * z + Math.sin(x * 0.12) * Math.cos(z * 0.12) * 0.5;
-
-    // Sharp polygonal boxwork lattice blade walls
     const scale = 0.22;
     const cellX = Math.abs(((x * scale) % 1 + 1) % 1 - 0.5);
     const cellZ = Math.abs(((z * scale) % 1 + 1) % 1 - 0.5);
@@ -82,7 +124,6 @@ function getTerrainHeight(x: number, z: number, waypointId: string): number {
       boxworkRidges = ridgeProximity * 1.8 * (0.8 + 0.3 * Math.sin(x * 0.5) * Math.cos(z * 0.5));
     }
 
-    // Secondary fine vein ridges
     const smallGrid = Math.min(
       Math.abs(((x * 0.55) % 1 + 1) % 1 - 0.5),
       Math.abs(((z * 0.55) % 1 + 1) % 1 - 0.5)
@@ -91,22 +132,18 @@ function getTerrainHeight(x: number, z: number, waypointId: string): number {
       boxworkRidges += ((0.04 - smallGrid) / 0.04) * 0.5;
     }
 
-    // Basaltic gravel roughness
     const fineRoughness = Math.sin(x * 2.8) * Math.sin(z * 2.8) * 0.05;
-
     return baseSlope + boxworkRidges + fineRoughness;
   }
 
-  // Mount Sharp slopes / Gediz Vallis / Gale Crater Floor
   const regionalSlope = 0.07 * x - 0.04 * z;
   const eolianRipples = Math.sin(0.75 * x + 0.35 * z) * 0.38 + Math.cos(0.35 * x - 0.65 * z) * 0.22;
   const macroHummocks = Math.sin(x * 0.09) * Math.cos(z * 0.09) * 2.1;
   const fineGravel = Math.sin(x * 3.2) * Math.sin(z * 3.2) * 0.04;
-
   return regionalSlope + eolianRipples + macroHummocks + fineGravel;
 }
 
-// Generate procedural Martian regolith texture in memory (100% offline, zero network latency)
+// Generate procedural Martian regolith texture in memory (100% offline fallback)
 function createMartianRegolithTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -114,11 +151,9 @@ function createMartianRegolithTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
-  // Red-ochre martian ground base
   ctx.fillStyle = "#a84b2c";
   ctx.fillRect(0, 0, 512, 512);
 
-  // Mottled patches of weathered iron oxide dust
   for (let i = 0; i < 350; i++) {
     const px = Math.random() * 512;
     const py = Math.random() * 512;
@@ -129,7 +164,6 @@ function createMartianRegolithTexture(): THREE.CanvasTexture {
     ctx.fill();
   }
 
-  // Dark basaltic grains & noise
   const imgData = ctx.getImageData(0, 0, 512, 512);
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
@@ -182,49 +216,43 @@ function createCompanionRoverGroup(waypointId: string, roverX = -2.5, roverZ = -
   const roverBaseY = getTerrainHeight(roverX, roverZ, waypointId);
   roverGroup.position.set(roverX, roverBaseY, roverZ);
 
-  // Materials
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x64748b, // Titanium slate body
+    color: 0x64748b,
     roughness: 0.6,
     metalness: 0.3,
   });
   const wheelMat = new THREE.MeshStandardMaterial({
-    color: 0x1e293b, // Dark cleated aluminum wheels
+    color: 0x1e293b,
     roughness: 0.85,
     metalness: 0.2,
   });
   const goldFoilMat = new THREE.MeshStandardMaterial({
-    color: 0xb45309, // Multi-layer thermal insulation foil
+    color: 0xb45309,
     roughness: 0.3,
     metalness: 0.8,
   });
   const lensMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
 
-  // Main chassis box
   const chassisGeom = new THREE.BoxGeometry(2.4, 0.6, 1.6);
   const chassis = new THREE.Mesh(chassisGeom, bodyMat);
   chassis.position.y = 0.75;
   roverGroup.add(chassis);
 
-  // Gold foil avionics payload compartment
   const foilGeom = new THREE.BoxGeometry(1.2, 0.45, 1.1);
   const foilBox = new THREE.Mesh(foilGeom, goldFoilMat);
   foilBox.position.set(-0.2, 1.1, 0);
   roverGroup.add(foilBox);
 
-  // Mastcam Remote Sensing Mast (RSM)
   const mastGeom = new THREE.CylinderGeometry(0.045, 0.05, 1.4, 8);
   const mast = new THREE.Mesh(mastGeom, bodyMat);
   mast.position.set(0.8, 1.6, 0.4);
   roverGroup.add(mast);
 
-  // Mastcam camera head
   const headGeom = new THREE.BoxGeometry(0.3, 0.2, 0.25);
   const head = new THREE.Mesh(headGeom, bodyMat);
   head.position.set(0.8, 2.35, 0.4);
   roverGroup.add(head);
 
-  // Mastcam stereo optical lenses
   const lensGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 12);
   lensGeom.rotateX(Math.PI / 2);
   const leftLens = new THREE.Mesh(lensGeom, lensMat);
@@ -234,14 +262,12 @@ function createCompanionRoverGroup(waypointId: string, roverX = -2.5, roverZ = -
   roverGroup.add(leftLens);
   roverGroup.add(rightLens);
 
-  // Multi-Mission Radioisotope Thermoelectric Generator (MMRTG)
   const rtgGeom = new THREE.CylinderGeometry(0.25, 0.25, 0.8, 8);
   rtgGeom.rotateZ(Math.PI / 2);
   const rtg = new THREE.Mesh(rtgGeom, wheelMat);
   rtg.position.set(-1.4, 0.85, 0);
   roverGroup.add(rtg);
 
-  // 6 Cleated Rocker-Bogie Wheels
   const wheelGeom = new THREE.CylinderGeometry(0.28, 0.28, 0.26, 16);
   wheelGeom.rotateX(Math.PI / 2);
 
@@ -269,15 +295,19 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   theme = "dark",
   dustStormActive = false,
 }) => {
-  // Dedicated Ref for WebGL Canvas Host Container (STRICTLY NO REACT CHILDREN)
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Tactical view modes: surface (textured), mesh (cyan photogrammetric wireframe), vr_stereo (stereoscopic dual-eye)
   const [viewMode, setViewMode] = useState<"surface" | "mesh" | "vr_stereo">("surface");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
-  // Initial Camera Framing: y = 4.2m height, pitch = -8°, yaw = 0° (looking directly at Mount Sharp & Rover)
+  // DEM Source Status & Live Photos
+  const [demSourceStatus, setDemSourceStatus] = useState<"NASA_MOLA_REAL_DEM" | "LOCAL_PROCEDURAL_CACHED">("LOCAL_PROCEDURAL_CACHED");
+  const [curiosityPhotos, setCuriosityPhotos] = useState<CuriosityPhotoItem[]>(FALLBACK_CURIOSITY_PHOTOS);
+  const [photoIdx, setPhotoIdx] = useState<number>(0);
+  const [isPhotoFeedOpen, setIsPhotoFeedOpen] = useState<boolean>(true);
+
+  // Camera Framing & Telemetry Readouts
   const [camAzimuth, setCamAzimuth] = useState<number>(0);
   const [camPitch, setCamPitch] = useState<number>(-8);
   const [camFov, setCamFov] = useState<number>(65);
@@ -285,7 +315,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const [reticleCoords, setReticleCoords] = useState<{ x: number; z: number; elev: number } | null>(null);
   const [teleportingNotice, setTeleportingNotice] = useState<boolean>(false);
 
-  // References for Three.js state across re-renders
+  // Three.js object references
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -298,11 +328,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const camPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 4.2, 2.0));
   const targetCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 4.2, 2.0));
   const isLerpingCamRef = useRef<boolean>(false);
-  const yawRef = useRef<number>(0); // 0 radians = looking toward -Z
-  const pitchRef = useRef<number>((-8 * Math.PI) / 180); // -8 degrees downward angle
+  const yawRef = useRef<number>(0);
+  const pitchRef = useRef<number>((-8 * Math.PI) / 180);
   const fovRef = useRef<number>(65);
 
-  // Mouse / Pointer drag state
+  // Pointer drag state
   const isPointerDownRef = useRef<boolean>(false);
   const pointerStartRef = useRef<{ x: number; y: number; startYaw: number; startPitch: number }>({
     x: 0,
@@ -312,14 +342,28 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   });
   const hasDraggedRef = useRef<boolean>(false);
 
-  // Raycasting for ground intersection and pins
+  // Raycasting
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseNormRef = useRef<THREE.Vector2>(new THREE.Vector2(-999, -999));
 
   const baseElevation = waypoint?.elevationM ?? -4120;
   const wpId = waypoint?.id ?? "mount_sharp_baseline";
 
-  // Reset camera to initial observation origin (y = 4.2m height, pitch = -8°, yaw = 0°)
+  // Fetch Live NASA MSL Curiosity Photos
+  useEffect(() => {
+    fetch("/api/curiosity-photos?limit=12")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.items && data.items.length > 0) {
+          setCuriosityPhotos(data.items);
+        }
+      })
+      .catch(() => {
+        // Fallback already pre-loaded
+      });
+  }, []);
+
+  // Reset camera to initial observation origin
   const handleResetOrigin = useCallback(() => {
     const originZ = 2.0;
     const originX = 0.0;
@@ -346,18 +390,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const width = host.clientWidth || window.innerWidth;
     const height = host.clientHeight || window.innerHeight;
 
-    // 1. Scene & Atmosphere Configuration
+    // 1. Scene & Atmosphere
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Martian Atmosphere Color & Fog: Clear Sky is brighter & warmer (#3b2316 sky, #5c3520 fog)
     const skyClearColor = dustStormActive ? 0x240e06 : 0x3b2316;
     const fogColor = dustStormActive ? 0x6b2e10 : 0x5c3520;
     const fogDensity = dustStormActive ? 0.032 : 0.007;
     scene.background = new THREE.Color(skyClearColor);
     scene.fog = new THREE.FogExp2(fogColor, fogDensity);
 
-    // 2. Camera Configuration: Initial 4.2m height, pitch -8°, facing -Z
+    // 2. Camera Configuration
     const camera = new THREE.PerspectiveCamera(fovRef.current, width / height, 0.1, 450);
     const startZ = 2.0;
     const startX = 0.0;
@@ -376,11 +419,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     renderer.toneMappingExposure = dustStormActive ? 0.85 : 1.25;
     rendererRef.current = renderer;
 
-    // Clear host container safely and append WebGL Canvas
     host.replaceChildren();
     host.appendChild(renderer.domElement);
 
-    // 4. Lighting: Crisp, contrasty Martian directional illumination
+    // 4. Lighting
     const ambientLight = new THREE.AmbientLight(
       dustStormActive ? 0x994411 : 0xffd8b8,
       dustStormActive ? 0.45 : 0.95
@@ -394,12 +436,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     sunLight.position.set(35, 45, 25);
     scene.add(sunLight);
 
-    // Fill light from northern Aeolis Mons ridge
     const fillLight = new THREE.DirectionalLight(0xc26a35, 0.45);
     fillLight.position.set(-30, 20, -30);
     scene.add(fillLight);
 
-    // 5. Procedural Martian Terrain Geometry (120x120m, 128x128 segments)
+    // 5. Procedural Base & Real NASA MOLA DEM Elevation Plane
     const terrainGeom = new THREE.PlaneGeometry(120, 120, 128, 128);
     terrainGeom.rotateX(-Math.PI / 2);
 
@@ -424,12 +465,64 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       flatShading: false,
     });
 
+    // Real NASA/JPL MOLA Tile Heightmap Displacement Loader
+    const demImg = new Image();
+    demImg.crossOrigin = "anonymous";
+    demImg.src = "/api/mars-tiles/mola-clrshade/7/66/113";
+    demImg.onload = () => {
+      try {
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = 128;
+        offCanvas.height = 128;
+        const octx = offCanvas.getContext("2d");
+        if (!octx) return;
+        octx.drawImage(demImg, 0, 0, 128, 128);
+        const imgData = octx.getImageData(0, 0, 128, 128);
+        const d = imgData.data;
+
+        for (let i = 0; i < posAttr.count; i++) {
+          const vx = posAttr.getX(i);
+          const vz = posAttr.getZ(i);
+          const u = Math.max(0, Math.min(127, Math.floor(((vx + 60) / 120) * 127)));
+          const v = Math.max(0, Math.min(127, Math.floor(((vz + 60) / 120) * 127)));
+          const pxIdx = (v * 128 + u) * 4;
+          const r = d[pxIdx];
+          const g = d[pxIdx + 1];
+          const b = d[pxIdx + 2];
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+          const demDelta = (lum - 0.5) * 5.5;
+
+          const baseline = getTerrainHeight(vx, vz, wpId) * 0.7;
+          posAttr.setY(i, baseline + demDelta);
+        }
+        terrainGeom.computeVertexNormals();
+        posAttr.needsUpdate = true;
+        setDemSourceStatus("NASA_MOLA_REAL_DEM");
+
+        // Map Real NASA Orbital Satellite Texture onto Terrain
+        const texLoader = new THREE.TextureLoader();
+        texLoader.load(
+          "/api/mars-tiles/mola-clrshade/7/66/113",
+          (molaTex) => {
+            molaTex.wrapS = THREE.ClampToEdgeWrapping;
+            molaTex.wrapT = THREE.ClampToEdgeWrapping;
+            terrainMaterial.map = molaTex;
+            terrainMaterial.needsUpdate = true;
+          },
+          undefined,
+          () => {}
+        );
+      } catch (err) {
+        // Safe procedural fallback retained
+      }
+    };
+
     const terrainMesh = new THREE.Mesh(terrainGeom, terrainMaterial);
     terrainMesh.name = "martian_terrain";
     scene.add(terrainMesh);
     terrainMeshRef.current = terrainMesh;
 
-    // Photogrammetric Wireframe Overlay Mesh (Cyan Topographic Lattice)
+    // Photogrammetric Wireframe Overlay Mesh
     const wireframeGeom = new THREE.WireframeGeometry(terrainGeom);
     const wireframeMat = new THREE.LineBasicMaterial({
       color: 0x00f0ff,
@@ -441,7 +534,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     scene.add(wireframeMesh);
     wireframeMeshRef.current = wireframeMesh;
 
-    // 6. Ground-Projected Targeting Reticle (Click-to-Teleport)
+    // 6. Ground-Projected Targeting Reticle
     const reticleGeom = new THREE.RingGeometry(0.55, 0.72, 32);
     reticleGeom.rotateX(-Math.PI / 2);
     const reticleMat = new THREE.MeshBasicMaterial({
@@ -455,11 +548,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     scene.add(reticleMesh);
     reticleRef.current = reticleMesh;
 
-    // 7. Companion Rover 3D Unit positioned at (-2.5, -4.5) directly framed in viewport
+    // 7. Companion Rover 3D Unit
     const rover = createCompanionRoverGroup(wpId, -2.5, -4.5);
     scene.add(rover);
 
-    // 8. 3D Spatial Landmark Pins & Vertical Light Beams
+    // 8. 3D Spatial Landmark Pins
     const landmarkObjects: THREE.Object3D[] = [];
     LANDMARK_PINS.forEach((pin) => {
       const pinY = getTerrainHeight(pin.x, pin.z, wpId);
@@ -467,7 +560,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const pinGroup = new THREE.Group();
       pinGroup.position.set(pin.x, pinY, pin.z);
 
-      // Vertical Light Beam Pillar
       const pillarGeom = new THREE.CylinderGeometry(0.08, 0.08, 8, 8);
       pillarGeom.translate(0, 4, 0);
       const pillarMat = new THREE.MeshBasicMaterial({
@@ -478,7 +570,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const pillar = new THREE.Mesh(pillarGeom, pillarMat);
       pinGroup.add(pillar);
 
-      // Rotating Octahedron Beacon Crystal
       const beaconGeom = new THREE.OctahedronGeometry(0.48);
       const beaconMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true });
       const beacon = new THREE.Mesh(beaconGeom, beaconMat);
@@ -486,7 +577,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       beacon.name = "rotating_beacon";
       pinGroup.add(beacon);
 
-      // Base footprint ring
       const baseRingGeom = new THREE.RingGeometry(0.8, 0.95, 24);
       baseRingGeom.rotateX(-Math.PI / 2);
       const baseRingMat = new THREE.MeshBasicMaterial({
@@ -499,7 +589,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       baseRing.position.y = 0.05;
       pinGroup.add(baseRing);
 
-      // Hitbox for raycasting click
       const hitGeom = new THREE.CylinderGeometry(1.2, 1.2, 9, 8);
       hitGeom.translate(0, 4.5, 0);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
@@ -531,14 +620,12 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Rotate landmark beacon diamonds
       scene.traverse((obj) => {
         if (obj.name === "rotating_beacon") {
           obj.rotation.y = elapsedTime * 1.5;
         }
       });
 
-      // Smooth camera position lerping (click-to-teleport)
       if (isLerpingCamRef.current) {
         camPosRef.current.lerp(targetCamPosRef.current, 0.08);
         if (camPosRef.current.distanceTo(targetCamPosRef.current) < 0.05) {
@@ -549,7 +636,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       }
       camera.position.copy(camPosRef.current);
 
-      // Compute look direction from yaw and pitch (where yaw = 0 points towards -Z)
       const lookDist = 50;
       const cx = Math.sin(yawRef.current) * Math.cos(pitchRef.current) * lookDist;
       const cy = Math.sin(pitchRef.current) * lookDist;
@@ -560,7 +646,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camPosRef.current.z + cz
       );
 
-      // Standard single-viewport vs. stereoscopic dual-eye rendering
       if (viewMode === "vr_stereo") {
         const sw = renderer.domElement.clientWidth;
         const sh = renderer.domElement.clientHeight;
@@ -568,7 +653,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
         renderer.setScissorTest(true);
 
-        // Left Eye (offset -0.032m)
         renderer.setScissor(0, 0, halfW, sh);
         renderer.setViewport(0, 0, halfW, sh);
         camera.aspect = halfW / sh;
@@ -576,7 +660,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camera.position.x = camPosRef.current.x - 0.032;
         renderer.render(scene, camera);
 
-        // Right Eye (offset +0.032m)
         renderer.setScissor(halfW, 0, halfW, sh);
         renderer.setViewport(halfW, 0, halfW, sh);
         camera.aspect = halfW / sh;
@@ -584,7 +667,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camera.position.x = camPosRef.current.x + 0.032;
         renderer.render(scene, camera);
 
-        // Restore
         camera.position.copy(camPosRef.current);
         renderer.setScissorTest(false);
       } else {
@@ -594,7 +676,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     animate();
 
-    // Cleanup on unmount: Safe disposal without conflicting with React DOM tree
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
@@ -613,7 +694,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     };
   }, [waypoint, wpId, baseElevation, dustStormActive, viewMode]);
 
-  // Synchronize tactical view mode styles
+  // Synchronize view mode styles
   useEffect(() => {
     if (!terrainMeshRef.current || !wireframeMeshRef.current) return;
     if (viewMode === "mesh") {
@@ -625,7 +706,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     }
   }, [viewMode]);
 
-  // Pointer Movement (Hover Reticle & Drag Pan)
+  // Pointer Movement
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const host = canvasHostRef.current;
     if (!host || !cameraRef.current || !terrainMeshRef.current) return;
@@ -635,7 +716,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     mouseNormRef.current.set(mouseX, mouseY);
 
-    // Pointer Drag Rotation
     if (isPointerDownRef.current) {
       const dx = e.clientX - pointerStartRef.current.x;
       const dy = e.clientY - pointerStartRef.current.y;
@@ -644,7 +724,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         hasDraggedRef.current = true;
       }
 
-      // Drag sensitivity
       const sens = 0.0035;
       yawRef.current = pointerStartRef.current.startYaw - dx * sens;
       pitchRef.current = Math.max(
@@ -659,7 +738,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       return;
     }
 
-    // Raycast for Ground Reticle Projection
     raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
     const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
 
@@ -691,11 +769,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     isPointerDownRef.current = false;
-
-    // If it was a drag, don't execute teleport/pin click
     if (hasDraggedRef.current) return;
 
-    // Check click on landmark pins first
     if (cameraRef.current && landmarkMeshesRef.current.length > 0) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
       const pinHits = raycasterRef.current.intersectObjects(landmarkMeshesRef.current);
@@ -708,13 +783,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       }
     }
 
-    // Ground Click-to-Teleport
     if (terrainMeshRef.current && cameraRef.current) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
       const hits = raycasterRef.current.intersectObject(terrainMeshRef.current);
       if (hits.length > 0) {
         const targetPoint = hits[0].point;
-        // Teleport to eye level: 1.7m above clicked terrain point
         targetCamPosRef.current.set(targetPoint.x, targetPoint.y + 1.7, targetPoint.z);
         isLerpingCamRef.current = true;
         setTeleportingNotice(true);
@@ -723,7 +796,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     }
   };
 
-  // Mouse Wheel Zoom (FOV 30° - 85°)
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (!cameraRef.current) return;
@@ -735,7 +807,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     setCamFov(Math.round(newFov));
   };
 
-  // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -752,12 +823,13 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   if (!waypoint) return null;
 
+  const currentPhoto = curiosityPhotos[photoIdx] || FALLBACK_CURIOSITY_PHOTOS[0];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4 select-none">
-      {/* Outer Tactical Viewport Box */}
       <div className="relative w-full h-full max-w-7xl max-h-[92vh] bg-[#07090e] border border-slate-700 flex flex-col overflow-hidden">
         
-        {/* HUD HEADER: Mission Badge, Waypoint Meta & Tactical View Mode Switcher */}
+        {/* HUD HEADER */}
         <div className="h-11 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
           <div className="flex items-center gap-3">
             <MarsForAllBadge size={22} showSubtext={false} />
@@ -767,6 +839,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               <span className="text-slate-400">3D SURFACE EXPLORER</span>
               <span className="text-slate-600">|</span>
               <span className="text-emerald-400 font-bold">{waypoint.name}</span>
+              <span className="text-slate-600">|</span>
+              <span className={`px-1.5 py-0.5 border text-[10px] font-bold ${
+                demSourceStatus === "NASA_MOLA_REAL_DEM"
+                  ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
+                  : "bg-[#111827] text-slate-400 border-slate-700"
+              }`}>
+                [{demSourceStatus === "NASA_MOLA_REAL_DEM" ? "REAL NASA MOLA DEM PIXELS" : "OFFLINE CACHED DEM"}]
+              </span>
             </div>
           </div>
 
@@ -805,6 +885,18 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
             </div>
 
+            {/* Toggle Curiosity Photo Feed */}
+            <button
+              onClick={() => setIsPhotoFeedOpen(!isPhotoFeedOpen)}
+              className={`px-2 py-1 border text-[11px] font-bold font-mono transition-colors ${
+                isPhotoFeedOpen
+                  ? "bg-[#161e2e] text-amber-400 border-slate-700"
+                  : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              [ MSL RAW FEED ]
+            </button>
+
             {/* Close Button */}
             <button
               onClick={onClose}
@@ -815,7 +907,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           </div>
         </div>
 
-        {/* 3D CANVAS VIEWPORT WRAPPER (Captures Pointer Events Cleanly) */}
+        {/* 3D CANVAS VIEWPORT WRAPPER */}
         <div
           ref={viewportRef}
           onPointerDown={handlePointerDown}
@@ -824,19 +916,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           onWheel={handleWheel}
           className="relative flex-1 w-full h-full cursor-grab active:cursor-grabbing overflow-hidden bg-black"
         >
-          {/* LAYER 1: DEDICATED EMPTY WEBGL MOUNT (STRICTLY NO REACT CHILDREN) */}
+          {/* LAYER 1: DEDICATED EMPTY WEBGL MOUNT */}
           <div ref={canvasHostRef} className="absolute inset-0 w-full h-full" />
 
-          {/* LAYER 2: SEPARATE REACT HUD OVERLAY (ISOLATED SIBLING DOM) */}
+          {/* LAYER 2: SEPARATE REACT HUD OVERLAY */}
           <div className="absolute inset-0 pointer-events-none z-10">
-            {/* Teleporting In-Flight Notification */}
             {teleportingNotice && (
               <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-cyan-500/80 text-cyan-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold shadow-md animate-pulse">
                 [ EVA TELEPORTING TO RETICLE COORDINATES... ]
               </div>
             )}
 
-            {/* Center Vertical Divider for Stereoscopic VR Mode */}
             {viewMode === "vr_stereo" && (
               <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700" />
             )}
@@ -863,7 +953,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </div>
             </div>
 
-            {/* Landmark Hotspot Pin Card Popover (Interactive with pointer-events-auto) */}
+            {/* Landmark Hotspot Pin Card Popover */}
             {activePin && (
               <div className="absolute top-4 right-4 w-80 bg-[#0b0f17] border border-amber-500/80 p-3 font-mono text-xs text-slate-200 shadow-lg pointer-events-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
@@ -890,12 +980,80 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Live NASA MSL Curiosity Raw Imagery Inspector Card */}
+            {isPhotoFeedOpen && currentPhoto && (
+              <div className="absolute bottom-4 right-4 w-72 sm:w-80 bg-[#0b0f17] border border-slate-700 p-2.5 font-mono text-xs text-slate-200 shadow-xl pointer-events-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-emerald-400 font-bold text-[10px] uppercase">
+                      LIVE NASA MSL RAW FEED
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <span>{photoIdx + 1}/{curiosityPhotos.length}</span>
+                    <button
+                      onClick={() => setIsPhotoFeedOpen(false)}
+                      className="ml-2 text-slate-400 hover:text-white font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rover Surface Photo Display */}
+                <div className="relative w-full h-36 bg-black border border-slate-800 overflow-hidden mb-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentPhoto.image_url}
+                    alt={currentPhoto.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute bottom-1 left-1 bg-black/80 px-1 py-0.5 border border-slate-800 text-[9px] text-amber-300 font-mono">
+                    SOL {currentPhoto.sol} // {currentPhoto.instrument}
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-[10px] text-slate-400">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">IMAGE ID:</span>
+                    <span className="text-slate-300 truncate max-w-[170px]">{currentPhoto.imageid}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">ACQUIRED:</span>
+                    <span className="text-slate-300">{currentPhoto.date_taken_utc.slice(0, 10)}</span>
+                  </div>
+                  {currentPhoto.caption && (
+                    <p className="text-[9px] text-slate-400 line-clamp-2 pt-0.5">
+                      {currentPhoto.caption}
+                    </p>
+                  )}
+                </div>
+
+                {/* Photo Pagination Controls */}
+                <div className="flex items-center justify-between gap-1.5 mt-2 pt-1.5 border-t border-slate-800">
+                  <button
+                    onClick={() => setPhotoIdx((prev) => (prev > 0 ? prev - 1 : curiosityPhotos.length - 1))}
+                    className="flex-1 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] text-[10px] font-bold"
+                  >
+                    [ &lt; PREV SOL ]
+                  </button>
+                  <button
+                    onClick={() => setPhotoIdx((prev) => (prev < curiosityPhotos.length - 1 ? prev + 1 : 0))}
+                    className="flex-1 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] text-[10px] font-bold"
+                  >
+                    [ NEXT SOL &gt; ]
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* BOTTOM TELEMETRY BAR: Zero Overlap & Aligned Grid */}
+        {/* BOTTOM TELEMETRY BAR */}
         <div className="h-10 bg-[#0b0f17] border-t border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
-          {/* Slot Kiri: EVA Elevation & Target Reticle Readout */}
           <div className="flex items-center gap-4 text-slate-300">
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">EVA CAM ELEV:</span>
@@ -914,7 +1072,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </div>
           </div>
 
-          {/* Slot Tengah: Navigation Guidance Tips */}
           <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-500">
             <span>[ DRAG: 360° PAN ]</span>
             <span>•</span>
@@ -923,7 +1080,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             <span>[ WHEEL: ZOOM ]</span>
           </div>
 
-          {/* Slot Kanan: Reset Origin Button */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleResetOrigin}

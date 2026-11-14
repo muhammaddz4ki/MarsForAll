@@ -15,6 +15,7 @@ import {
   MOUNT_SHARP_WAYPOINTS,
   MountSharpWaypoint,
 } from "@/lib/martian/mountSharpWaypoints";
+import { computeRadioLineOfSight } from "@/lib/martian/scientificParams";
 import {
   planMarswalkRoute,
   MarswalkRouteResult,
@@ -60,6 +61,14 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
     onRouteCalculated(res);
     return res;
   }, [startId, targetId, supportMode, avoidRadiation, availableWaypoints]);
+
+  const radioLos = useMemo(() => {
+    return computeRadioLineOfSight(
+      routeResult.targetWaypoint.coordinates[0],
+      routeResult.targetWaypoint.coordinates[1],
+      routeResult.targetWaypoint.elevationM
+    );
+  }, [routeResult.targetWaypoint]);
 
   const chartData = useMemo(() => {
     let runningDist = 0;
@@ -248,6 +257,20 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
           </span>
           <span className={`text-[8px] ${isDark ? "text-slate-500" : "text-slate-400"} block tabular-nums`}>{routeResult.totalBatteryWh}Wh</span>
         </div>
+      </div>
+
+      {/* Radio Line-of-Sight Banner */}
+      <div className={`p-2 border flex items-center justify-between font-mono text-[10px] ${
+        isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"
+      }`}>
+        <span className="text-slate-400 uppercase">RADIO COMMS LINE-OF-SIGHT:</span>
+        <span className={`px-1.5 py-0.5 border font-bold text-[9px] ${
+          radioLos === "CONNECTED"
+            ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
+            : "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
+        }`}>
+          [{radioLos === "CONNECTED" ? "COMM: LINE-OF-SIGHT CONNECTED" : "COMM: TERRAIN BLOCKED - MRO RELAY"}]
+        </span>
       </div>
 
       {/* Lambertian Photometric Scattering Telemetry (NASA AMMOS & Paper 2132) */}

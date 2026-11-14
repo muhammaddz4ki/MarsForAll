@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
+import { computeRadioLineOfSight } from "@/lib/martian/scientificParams";
 
 interface VisorHudOverlayProps {
   selectedWaypoint: MountSharpWaypoint | null;
@@ -36,6 +37,10 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   }, []);
 
   const target = selectedWaypoint ?? activeRoute?.targetWaypoint;
+
+  const radioLos = target
+    ? computeRadioLineOfSight(target.coordinates[0], target.coordinates[1], target.elevationM)
+    : "CONNECTED";
 
   // React to dust storm in telemetry
   const windSpeed = dustStormActive ? "24.8 m/s GUSTS" : "6.4 m/s ESE";
@@ -160,6 +165,14 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
               {dustStormActive ? "[LOW VISIBILITY]" : "[NOMINAL SKY]"}
             </span>
           </div>
+        </div>
+
+        {/* Radio Line-of-Sight Telemetry */}
+        <div className={`flex items-center justify-between text-[9px] pt-1 border-t ${isDark ? "border-amber-900/60" : "border-amber-200"}`}>
+          <span className={isDark ? "text-slate-400" : "text-slate-600"}>RADIO COMMS:</span>
+          <span className={`font-bold ${radioLos === "CONNECTED" ? "text-emerald-400" : "text-rose-400"}`}>
+            [{radioLos === "CONNECTED" ? "LOS CONNECTED" : "BLOCKED - MRO RELAY"}]
+          </span>
         </div>
       </div>
 

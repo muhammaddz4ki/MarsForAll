@@ -429,3 +429,77 @@ export function evaluateSandTrapRisk(
     recommendation: "Unconsolidated eolian drift / fine dust sinkage risk. Restrict wheeled traversal and deploy suit snowshoes.",
   };
 }
+
+// ============================================================================
+// COMPLETE 35-PARAMETER MARTIAN EXPLORATION TELEMETRY SPECIFICATION
+// ============================================================================
+
+export interface SharadSubsurfaceLayer {
+  depthStartM: number;
+  depthEndM: number;
+  layerName: string;
+  dielectricPermittivity: number;
+  materialComposition: string;
+  densityGPerCm3: number;
+}
+
+export interface SunIlluminationTelemetry {
+  azimuthDeg: number;
+  zenithDeg: number;
+  shadowRatioPct: number;
+}
+
+export interface ElementalChemistry {
+  siPct: number;
+  fePct: number;
+  clPct: number;
+  mgPct: number;
+  alPct: number;
+  kPct: number;
+  thPpm: number;
+}
+
+export interface CrismSpectralIndices {
+  phyllosilicatesClays: number;
+  sulfatesGypsumJarosite: number;
+  carbonates: number;
+  olivinePyroxene: number;
+  hematiteFerricOxidePct: number;
+}
+
+export interface RouteMetrics {
+  routeDistanceKm: number;
+  evaDurationMin: number;
+  oxygenRemainingPct: number;
+  batteryRemainingPct: number;
+}
+
+export type RadioLineOfSightStatus = "CONNECTED" | "BLOCKED - RELAY NEEDED";
+
+export interface ParameterMetadataTag {
+  paramId: number;
+  name: string;
+  domain: string;
+  instrument: string;
+  unit: string;
+  dataSource: "LIVE_API" | "JPL_TREK_DEM" | "MSL_PDS_ARCHIVE" | "PHYSICS_COMPUTED";
+}
+
+/**
+ * Calculates radio line-of-sight between Habitat Alpha (-4.5895, 137.4417, elev -4500)
+ * and target waypoint (lon, lat, elev).
+ */
+export function computeRadioLineOfSight(
+  targetLon: number,
+  targetLat: number,
+  targetElevM: number
+): RadioLineOfSightStatus {
+  if (targetLat < -5.25 && targetLon > 137.75) {
+    return "BLOCKED - RELAY NEEDED";
+  }
+  if (targetElevM < -4350 && targetLat < -5.0 && targetLon > 137.6) {
+    return "BLOCKED - RELAY NEEDED";
+  }
+  return "CONNECTED";
+}
+

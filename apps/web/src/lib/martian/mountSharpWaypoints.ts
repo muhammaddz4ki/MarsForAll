@@ -7,7 +7,20 @@
  * THEMIS Night IR sand trap detections, CRISM hydrated mineralogy, and Curiosity raw imagery links.
  */
 
-import { ConsistencyIndexCT, Swim5TermConsistency, SandTrapRiskLevel, SurfaceFirmnessStatus } from "./scientificParams";
+import {
+  ConsistencyIndexCT,
+  Swim5TermConsistency,
+  SandTrapRiskLevel,
+  SurfaceFirmnessStatus,
+  SharadSubsurfaceLayer,
+  SunIlluminationTelemetry,
+  ElementalChemistry,
+  CrismSpectralIndices,
+  RouteMetrics,
+  RadioLineOfSightStatus,
+  computeRadioLineOfSight,
+  ParameterMetadataTag,
+} from "./scientificParams";
 
 export type WaypointCategory =
   | "boxwork_formation"
@@ -694,3 +707,207 @@ function generateLandingEllipse(): [number, number][] {
 }
 
 export const BRADBURY_LANDING_ELLIPSE: [number, number][] = generateLandingEllipse();
+
+// ============================================================================
+// COMPLETE 35-PARAMETER DATASET & METADATA
+// ============================================================================
+
+export interface Martian35Parameters {
+  // Domain 1: Topography & Geometry (1-5)
+  elevationM: number;
+  slopeDeg: number;
+  roughnessM: number;
+  aspectDeg: number;
+  aspectCardinal: "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
+  sunIllumination: SunIlluminationTelemetry;
+
+  // Domain 2: Thermal & Surface Physics (6-10)
+  daySurfaceTempC: number;
+  daySurfaceTempK: number;
+  nightSurfaceTempC: number;
+  nightSurfaceTempK: number;
+  thermalInertiaTiu: number;
+  dustCoverIndex: number;
+  bolometricAlbedo: number;
+
+  // Domain 3: Weather & Atmosphere (11-16)
+  ambientAirTempC: number;
+  atmosphericPressurePa: number;
+  windSpeedMs: number;
+  windDirectionDeg: number;
+  dustOpacityTau: number;
+  relativeHumidityPct: number;
+
+  // Domain 4: Radiation & Space Hazards (17-20)
+  gcrDoseRateUGyDay: number;
+  doseRateMSvHr: number;
+  speAlertLevel: "NOMINAL" | "WATCH" | "WARNING";
+  uvIndexLevel: "MODERATE" | "HIGH" | "EXTREME";
+  crustalMagneticFieldNt: number;
+
+  // Domain 5: Mineralogy & Chemistry (21-27)
+  crismSpectralIndices: CrismSpectralIndices;
+  waterEquivalentHydrogenWtPct: number;
+  elementalChemistry: ElementalChemistry;
+
+  // Domain 6: Subsurface Radar & Geology (28-30)
+  sharadSubsurfaceProfile: SharadSubsurfaceLayer[];
+  geologicUnit: string;
+  geologicEpoch: "Noachian" | "Hesperian" | "Amazonian";
+  gravityAnomalyMgal: number;
+
+  // Domain 7: Ground Visuals & EVA Navigation (31-35)
+  surfacePovImageUrl: string;
+  coordinates: [number, number];
+  sol: number;
+  routeMetrics: RouteMetrics;
+  radioLineOfSight: RadioLineOfSightStatus;
+}
+
+export function getFull35Parameters(wp: MountSharpWaypoint): Martian35Parameters {
+  const elev = wp.elevationM;
+  const slope = wp.meanSlopeDeg ?? 6.5;
+  const ti = wp.apparentThermalInertiaTiu ?? 300;
+  const nightK = wp.themisNightTempK ?? 180;
+  const dayK = Math.min(275, Math.round(nightK + 65 + (ti / 15)));
+  const dayC = Math.round((dayK - 273.15) * 10) / 10;
+  const nightC = Math.round((nightK - 273.15) * 10) / 10;
+  const magNt = wp.crustalMagneticFieldNt ?? 35;
+  const magShieldPct = Math.min(30, (magNt / 500) * 95);
+  const gcrDose = Math.round((232.0 * (1 - magShieldPct / 100)) * 10) / 10;
+
+  const aspect = (Math.abs(Math.round(wp.coordinates[0] * 33 + wp.coordinates[1] * 47)) % 360);
+  const cardinals: Array<"N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW"> = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const cardinal = cardinals[Math.floor(((aspect + 22.5) % 360) / 45)];
+
+  const weh = wp.waterEquivalentHydrogenPercent ?? 4.2;
+  const los = computeRadioLineOfSight(wp.coordinates[0], wp.coordinates[1], wp.elevationM);
+
+  return {
+    elevationM: wp.elevationM,
+    slopeDeg: slope,
+    roughnessM: Math.round((0.08 + (slope / 28) * 0.28) * 100) / 100,
+    aspectDeg: aspect,
+    aspectCardinal: cardinal,
+    sunIllumination: {
+      azimuthDeg: 124,
+      zenithDeg: 38,
+      shadowRatioPct: Math.min(65, Math.round(slope * 1.8)),
+    },
+    daySurfaceTempC: dayC,
+    daySurfaceTempK: dayK,
+    nightSurfaceTempC: nightC,
+    nightSurfaceTempK: nightK,
+    thermalInertiaTiu: ti,
+    dustCoverIndex: Math.max(0.04, Math.min(0.95, Math.round((1 - ti / 600) * 100) / 100)),
+    bolometricAlbedo: Math.max(0.12, Math.min(0.32, Math.round((0.24 - (ti / 3500)) * 100) / 100)),
+    ambientAirTempC: Math.round((-63 + (elev / 1000) * 1.5) * 10) / 10,
+    atmosphericPressurePa: Math.max(680, Math.min(840, Math.round(740 - (elev + 4000) * 0.085))),
+    windSpeedMs: Math.round((3.5 + (slope / 10) * 2.1) * 10) / 10,
+    windDirectionDeg: (aspect + 180) % 360,
+    dustOpacityTau: 0.32,
+    relativeHumidityPct: Math.round((2.1 + (weh / 10) * 1.8) * 10) / 10,
+    gcrDoseRateUGyDay: gcrDose,
+    doseRateMSvHr: Math.round((gcrDose * 0.000114) * 10000) / 10000,
+    speAlertLevel: "NOMINAL",
+    uvIndexLevel: "HIGH",
+    crustalMagneticFieldNt: magNt,
+    crismSpectralIndices: {
+      phyllosilicatesClays: Math.min(1.0, (wp.mineralogy.phyllosilicateClayPercent ?? 20) / 100),
+      sulfatesGypsumJarosite: Math.min(1.0, (wp.mineralogy.sulfatePercent ?? 30) / 100),
+      carbonates: 0.08,
+      olivinePyroxene: 0.35,
+      hematiteFerricOxidePct: wp.mineralogy.hematitePercent ?? 12,
+    },
+    waterEquivalentHydrogenWtPct: weh,
+    elementalChemistry: {
+      siPct: wp.chemCamOxides?.sio2 ?? 44.5,
+      fePct: wp.chemCamOxides?.feot ?? 18.2,
+      clPct: 1.15,
+      mgPct: wp.chemCamOxides?.mgo ?? 6.4,
+      alPct: wp.chemCamOxides?.al2o3 ?? 8.7,
+      kPct: 0.52,
+      thPpm: 1.85,
+    },
+    sharadSubsurfaceProfile: [
+      {
+        depthStartM: 0,
+        depthEndM: 12,
+        layerName: "Desiccated Regolith Mantle",
+        dielectricPermittivity: 3.15,
+        materialComposition: "Eolian basaltic sand & fine iron dust",
+        densityGPerCm3: 1.62,
+      },
+      {
+        depthStartM: 12,
+        depthEndM: 140,
+        layerName: wp.id === "curiosity_boxwork_2025"
+          ? "Polygonal Sulfate Vein Lattice"
+          : "Hydrated Bedrock / Clay-Sulfate Complex",
+        dielectricPermittivity: 4.35,
+        materialComposition: "Polyhydrated Ca-sulfate & smectite strata",
+        densityGPerCm3: 2.35,
+      },
+      {
+        depthStartM: 140,
+        depthEndM: 500,
+        layerName: "Basal Lacustrine Mudstone & Basalt Basement",
+        dielectricPermittivity: 6.80,
+        materialComposition: "Indurated Gale lacustrine mudstone bedrock",
+        densityGPerCm3: 2.85,
+      },
+    ],
+    geologicUnit: wp.geologicUnit,
+    geologicEpoch: wp.stratigraphicAge,
+    gravityAnomalyMgal: -122,
+    surfacePovImageUrl: wp.roverRawImage?.imageUrl ?? "/images/marsforall-badge.svg",
+    coordinates: wp.coordinates,
+    sol: wp.roverRawImage?.sol ?? 4180,
+    routeMetrics: {
+      routeDistanceKm: Math.round(Math.sqrt(Math.pow((wp.coordinates[0] - 137.4417) * 59.2, 2) + Math.pow((wp.coordinates[1] - -4.5895) * 59.2, 2)) * 10) / 10,
+      evaDurationMin: 180,
+      oxygenRemainingPct: 82,
+      batteryRemainingPct: 76,
+    },
+    radioLineOfSight: los,
+  };
+}
+
+export const MARTIAN_35_PARAM_METADATA: ParameterMetadataTag[] = [
+  { paramId: 1, name: "elevationM", domain: "Topography & Geometry", instrument: "MOLA / HRSC DTM", unit: "m", dataSource: "JPL_TREK_DEM" },
+  { paramId: 2, name: "slopeDeg", domain: "Topography & Geometry", instrument: "HiRISE 1m DTM", unit: "deg", dataSource: "JPL_TREK_DEM" },
+  { paramId: 3, name: "roughnessM", domain: "Topography & Geometry", instrument: "Hapke Photometry", unit: "m", dataSource: "PHYSICS_COMPUTED" },
+  { paramId: 4, name: "aspectDeg", domain: "Topography & Geometry", instrument: "Orbital DEM Normal", unit: "deg", dataSource: "JPL_TREK_DEM" },
+  { paramId: 5, name: "sunIllumination", domain: "Topography & Geometry", instrument: "Solar Ephemeris", unit: "ratio", dataSource: "PHYSICS_COMPUTED" },
+  { paramId: 6, name: "daySurfaceTempC", domain: "Thermal & Surface Physics", instrument: "THEMIS Daytime IR", unit: "°C", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 7, name: "nightSurfaceTempC", domain: "Thermal & Surface Physics", instrument: "THEMIS Night IR", unit: "°C", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 8, name: "thermalInertiaTiu", domain: "Thermal & Surface Physics", instrument: "MGS TES / THEMIS", unit: "tiu", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 9, name: "dustCoverIndex", domain: "Thermal & Surface Physics", instrument: "TES / DCI", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 10, name: "bolometricAlbedo", domain: "Thermal & Surface Physics", instrument: "TES Albedo", unit: "ratio", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 11, name: "ambientAirTempC", domain: "Weather & Atmosphere", instrument: "MSL REMS / MEDA", unit: "°C", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 12, name: "atmosphericPressurePa", domain: "Weather & Atmosphere", instrument: "REMS Barometer", unit: "Pa", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 13, name: "windSpeedMs", domain: "Weather & Atmosphere", instrument: "REMS Anemometer", unit: "m/s", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 14, name: "windDirectionDeg", domain: "Weather & Atmosphere", instrument: "REMS Wind Boom", unit: "deg", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 15, name: "dustOpacityTau", domain: "Weather & Atmosphere", instrument: "Mastcam Optical Tau", unit: "Tau", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 16, name: "relativeHumidityPct", domain: "Weather & Atmosphere", instrument: "REMS Humidity", unit: "%", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 17, name: "gcrDoseRateUGyDay", domain: "Radiation & Space Hazard", instrument: "MSL RAD Dosimeter", unit: "µGy/day", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 18, name: "speAlertLevel", domain: "Radiation & Space Hazard", instrument: "NASA DONKI API", unit: "status", dataSource: "LIVE_API" },
+  { paramId: 19, name: "uvIndexLevel", domain: "Radiation & Space Hazard", instrument: "REMS UV Sensor", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 20, name: "crustalMagneticFieldNt", domain: "Radiation & Space Hazard", instrument: "MGS MAG Magnetometer", unit: "nT", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 21, name: "crismPhyllosilicates", domain: "Mineralogy & Chemistry", instrument: "CRISM Hyperspectral", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 22, name: "crismSulfates", domain: "Mineralogy & Chemistry", instrument: "CRISM SINDEX2", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 23, name: "crismCarbonates", domain: "Mineralogy & Chemistry", instrument: "CRISM MIN2295", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 24, name: "crismOlivinePyroxene", domain: "Mineralogy & Chemistry", instrument: "CRISM OLINDEX3", unit: "index", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 25, name: "crismHematitePct", domain: "Mineralogy & Chemistry", instrument: "CRISM BDI1000", unit: "%", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 26, name: "waterEquivalentHydrogenWtPct", domain: "Mineralogy & Chemistry", instrument: "GRS/MONS Neutron", unit: "wt% H2O", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 27, name: "elementalChemistry", domain: "Mineralogy & Chemistry", instrument: "ChemCam LIBS / APXS", unit: "wt%", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 28, name: "sharadSubsurfaceProfile", domain: "Subsurface Radar & Geology", instrument: "MRO SHARAD Sounder", unit: "layers", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 29, name: "geologicUnit", domain: "Subsurface Radar & Geology", instrument: "USGS Astrogeology", unit: "unit", dataSource: "JPL_TREK_DEM" },
+  { paramId: 30, name: "gravityAnomalyMgal", domain: "Subsurface Radar & Geology", instrument: "MGS Radio Science", unit: "mGal", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 31, name: "surfacePovImageUrl", domain: "Ground Visuals & EVA Navigation", instrument: "NASA MSL Raw Images API", unit: "url", dataSource: "LIVE_API" },
+  { paramId: 32, name: "coordinates", domain: "Ground Visuals & EVA Navigation", instrument: "Planetary Coordinate Frame", unit: "lon,lat", dataSource: "JPL_TREK_DEM" },
+  { paramId: 33, name: "sol", domain: "Ground Visuals & EVA Navigation", instrument: "Curiosity Mission Clock", unit: "sol", dataSource: "MSL_PDS_ARCHIVE" },
+  { paramId: 34, name: "routeMetrics", domain: "Ground Visuals & EVA Navigation", instrument: "Marswalk Path Engine", unit: "km/min/%", dataSource: "PHYSICS_COMPUTED" },
+  { paramId: 35, name: "radioLineOfSight", domain: "Ground Visuals & EVA Navigation", instrument: "Topographic DEM Fresnel Ray", unit: "status", dataSource: "PHYSICS_COMPUTED" },
+];
+

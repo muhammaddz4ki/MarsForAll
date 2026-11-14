@@ -505,14 +505,42 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const isLive = tileMode === "live_trek" && orbitalSource !== "local_vector";
+    const isLocalVector = orbitalSource === "local_vector" || tileMode !== "live_trek";
+
+    // When LOCAL PROCEDURAL VECTOR is active, force ALL raster satellite tiles to visibility: "none"
+    if (isLocalVector) {
+      ["mars-raster-opm", "mars-raster-mola", "mars-raster-hirise"].forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, "visibility", "none");
+        }
+      });
+      // Boost procedural vector terrain contrast
+      if (map.getLayer("mars_terrain_basin_fills")) {
+        map.setPaintProperty("mars_terrain_basin_fills", "fill-opacity", 0.90);
+      }
+      if (map.getLayer("mars_terrain_lines")) {
+        map.setPaintProperty("mars_terrain_lines", "line-opacity", 0.95);
+        map.setPaintProperty("mars_terrain_lines", "line-width", 2.0);
+      }
+      if (onWmtsStatusChange) onWmtsStatusChange("fallback");
+      return;
+    }
+
+    // Reset procedural vector layers to standard opacity when satellite tiles are streaming
+    if (map.getLayer("mars_terrain_basin_fills")) {
+      map.setPaintProperty("mars_terrain_basin_fills", "fill-opacity", 0.35);
+    }
+    if (map.getLayer("mars_terrain_lines")) {
+      map.setPaintProperty("mars_terrain_lines", "line-opacity", 0.70);
+      map.setPaintProperty("mars_terrain_lines", "line-width", 1.5);
+    }
 
     // OPM Basemap: Visible on all live modes (opm, mola, hirise) to ensure no black voids
     if (map.getLayer("mars-raster-opm")) {
       map.setLayoutProperty(
         "mars-raster-opm",
         "visibility",
-        isLive ? "visible" : "none"
+        "visible"
       );
       map.setPaintProperty(
         "mars-raster-opm",
@@ -525,7 +553,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setLayoutProperty(
         "mars-raster-mola",
         "visibility",
-        isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
+        orbitalSource === "mola_hrsc" ? "visible" : "none"
       );
       map.setPaintProperty("mars-raster-mola", "raster-opacity", 0.90);
     }
@@ -534,18 +562,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setLayoutProperty(
         "mars-raster-hirise",
         "visibility",
-        isLive && orbitalSource === "jpl_hirise" ? "visible" : "none"
+        orbitalSource === "jpl_hirise" ? "visible" : "none"
       );
       map.setPaintProperty("mars-raster-hirise", "raster-opacity", 0.90);
       map.setPaintProperty("mars-raster-hirise", "raster-saturation", -1);
       map.setPaintProperty("mars-raster-hirise", "raster-contrast", 0.25);
     }
 
-    if (orbitalSource === "local_vector" || tileMode !== "live_trek") {
-      if (onWmtsStatusChange) onWmtsStatusChange("fallback");
-    } else {
-      if (onWmtsStatusChange) onWmtsStatusChange("streaming");
-    }
+    if (onWmtsStatusChange) onWmtsStatusChange("streaming");
   }, [orbitalSource, tileMode, onWmtsStatusChange]);
 
   // Update pitch when pitch3D prop changes
