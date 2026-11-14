@@ -24,8 +24,9 @@ export async function GET(
   const { layer, z, y, x } = params;
 
   let remoteUrl = "";
-  if (layer === "gale-hirise") {
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_HiRISE_Mosaic/1.0.0/default/default028mm/${z}/${y}/${x}.png`;
+  if (layer === "gale-hirise" || layer === "gale-ctx") {
+    // Official NASA JPL Mars Trek Gale Crater CTX Mosaic endpoint
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/${z}/${y}/${x}.png`;
   } else if (layer === "mola-clrshade") {
     remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
   } else {

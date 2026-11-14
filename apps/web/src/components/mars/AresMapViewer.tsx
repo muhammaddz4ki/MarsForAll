@@ -150,16 +150,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "background",
             paint: { "background-color": isDark ? "#07090e" : "#e2e8f0" },
           },
-          // 1. Permanent Global Mars Basemap (Ensures NO BLACK AREAS outside Gale)
+          // 1. Regional Shaded Relief Basemap (OpenPlanetary)
           {
             id: "mars-raster-opm",
             type: "raster",
             source: "mars_opm_basemap",
             layout: {
-              visibility: "visible",
+              visibility: orbitalSource !== "local_vector" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.65,
+              "raster-opacity": 0.85,
               "raster-contrast": 0.25,
               "raster-hue-rotate": 10,
             },
@@ -173,11 +173,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "mola_hrsc" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.65,
-              "raster-contrast": 0.30,
+              "raster-opacity": 0.90,
+              "raster-contrast": 0.35,
             },
           },
-          // 3. HiRISE Gale Crater High-Resolution Orthomosaic (Overlaid via Next.js Proxy)
+          // 3. HiRISE / CTX Gale Crater High-Resolution Orthomosaic (Overlaid via Next.js Proxy)
           {
             id: "mars-raster-hirise",
             type: "raster",
@@ -186,8 +186,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "jpl_hirise" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.75,
-              "raster-contrast": 0.35,
+              "raster-opacity": 0.90,
+              "raster-contrast": 0.25,
+              "raster-saturation": -1,
             },
           },
         ],
@@ -414,32 +415,43 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const isLive = tileMode === "live_trek";
+    const isLive = tileMode === "live_trek" && orbitalSource !== "local_vector";
 
-    // Global permanent basemap: always visible to prevent black voids outside Gale
+    // OPM Basemap: Visible on all live modes (opm, mola, hirise) to ensure no black voids
     if (map.getLayer("mars-raster-opm")) {
       map.setLayoutProperty(
         "mars-raster-opm",
         "visibility",
         isLive ? "visible" : "none"
       );
-    }
-    if (map.getLayer("mars-raster-hirise")) {
-      map.setLayoutProperty(
-        "mars-raster-hirise",
-        "visibility",
-        isLive && orbitalSource === "jpl_hirise" ? "visible" : "none"
+      map.setPaintProperty(
+        "mars-raster-opm",
+        "raster-opacity",
+        orbitalSource === "opm_basemap" ? 0.85 : 0.50
       );
     }
+    // MOLA/HRSC Colorized: Rich colored elevation contours
     if (map.getLayer("mars-raster-mola")) {
       map.setLayoutProperty(
         "mars-raster-mola",
         "visibility",
         isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
       );
+      map.setPaintProperty("mars-raster-mola", "raster-opacity", 0.90);
+    }
+    // Gale CTX: Monochromatic crisp contrast active only when selected
+    if (map.getLayer("mars-raster-hirise")) {
+      map.setLayoutProperty(
+        "mars-raster-hirise",
+        "visibility",
+        isLive && orbitalSource === "jpl_hirise" ? "visible" : "none"
+      );
+      map.setPaintProperty("mars-raster-hirise", "raster-opacity", 0.90);
+      map.setPaintProperty("mars-raster-hirise", "raster-saturation", -1);
+      map.setPaintProperty("mars-raster-hirise", "raster-contrast", 0.25);
     }
 
-    if (orbitalSource === "local_vector" || !isLive) {
+    if (orbitalSource === "local_vector" || tileMode !== "live_trek") {
       if (onWmtsStatusChange) onWmtsStatusChange("fallback");
     } else {
       if (onWmtsStatusChange) onWmtsStatusChange("streaming");

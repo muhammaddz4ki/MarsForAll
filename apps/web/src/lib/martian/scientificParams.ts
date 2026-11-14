@@ -260,13 +260,13 @@ export interface OrbitalWmtsPreset {
 export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPreset> = {
   jpl_hirise: {
     id: "jpl_hirise",
-    label: "JPL GALE HIRISE WMTS",
-    sublabel: "Mount Sharp High-Resolution Orthomosaic (0.25m/px)",
-    resolution: "0.25 m/px",
+    label: "JPL GALE CTX ORBITAL",
+    sublabel: "Gale Crater Block-Adjusted CTX Mosaic (6m/px)",
+    resolution: "6.0 m/px",
     tiles: [
       "/api/mars-tiles/gale-hirise/{z}/{y}/{x}",
     ],
-    attribution: "NASA/JPL/University of Arizona / Mars Trek WMTS (Server Proxy)",
+    attribution: "NASA/JPL/MSSS / Mars Trek WMTS (Server Proxy)",
   },
   mola_hrsc: {
     id: "mola_hrsc",
