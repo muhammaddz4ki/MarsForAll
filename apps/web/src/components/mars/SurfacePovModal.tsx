@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import * as THREE from "three";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
+import { PANORAMA_STATIONS, PanoramaStation } from "@/lib/martian/panoramaStations";
 import MarsForAllBadge from "../MarsForAllBadge";
 
 interface SurfacePovModalProps {
@@ -360,6 +361,57 @@ function createProcessedMolaReliefTexture(sourceImg: HTMLImageElement): THREE.Ca
   return texture;
 }
 
+// Blend spherical 360° rover panorama photo with seamless Martian zenith sky dome and nadir regolith
+function blendMartianZenithAndNadir(
+  sourceImg: HTMLImageElement,
+  dustStormActive: boolean
+): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = sourceImg.naturalWidth || 1536;
+  canvas.height = sourceImg.naturalHeight || 768;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Draw source panorama photograph
+  ctx.drawImage(sourceImg, 0, 0, canvas.width, canvas.height);
+
+  // Colors: Zenith sky (+15° elevation blending) & Nadir regolith ground
+  // Clear Sky: #b87d56 (Zenith), #c78b64 (Horizon)
+  // Dust Storm: #6b2e10 (Zenith), #8c3b17 (Horizon)
+  const zenithSkyColor = dustStormActive ? "#6b2e10" : "#b87d56";
+  const horizonSkyColor = dustStormActive ? "#8c3b17" : "#c78b64";
+  const nadirColor = dustStormActive ? "#260e06" : "#1a0f0a";
+
+  // 1. Zenith blending: smoothly blend the upper 22% of the spherical texture to eliminate pinching
+  const zenithHeight = Math.round(canvas.height * 0.22);
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, zenithHeight);
+  skyGrad.addColorStop(0, zenithSkyColor);
+  skyGrad.addColorStop(0.4, horizonSkyColor);
+  skyGrad.addColorStop(1, "rgba(184, 125, 86, 0)");
+
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, canvas.width, zenithHeight);
+
+  // 2. Nadir blending: smoothly blend bottom 12% to cover rover chassis shadow / equipment cutouts
+  const nadirStartY = Math.round(canvas.height * 0.88);
+  const nadirGrad = ctx.createLinearGradient(0, nadirStartY, 0, canvas.height);
+  nadirGrad.addColorStop(0, "rgba(26, 15, 10, 0)");
+  nadirGrad.addColorStop(0.5, nadirColor);
+  nadirGrad.addColorStop(1, nadirColor);
+
+  ctx.fillStyle = nadirGrad;
+  ctx.fillRect(0, nadirStartY, canvas.width, canvas.height - nadirStartY);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 // Build 3D Curiosity / Companion Mule Rover Unit positioned at (roverX, roverZ)
 function createCompanionRoverGroup(waypointId: string, roverX = -2.5, roverZ = -4.5): THREE.Group {
   const roverGroup = new THREE.Group();
@@ -457,6 +509,20 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const [viewMode, setViewMode] = useState<ViewMode>("panorama_360");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
+  // 360° Multi-Station Tour State & Stations Archive (ASU Mastcam-Z & Curiosity)
+  const stationList = PANORAMA_STATIONS[isJezero ? "jezero" : "gale"];
+  const [activeStationIdx, setActiveStationIdx] = useState<number>(0);
+  const [stationJumpingNotice, setStationJumpingNotice] = useState<boolean>(false);
+  const activeStationIdxRef = useRef<number>(0);
+  useEffect(() => {
+    activeStationIdxRef.current = activeStationIdx;
+  }, [activeStationIdx]);
+  const stationWaypointsRef = useRef<THREE.Object3D[]>([]);
+
+  useEffect(() => {
+    setActiveStationIdx(0);
+  }, [isJezero]);
+
   // DEM Source Status & Live Photos
   const [demSourceStatus, setDemSourceStatus] = useState<"NASA_MOLA_REAL_DEM" | "LOCAL_PROCEDURAL_CACHED">("LOCAL_PROCEDURAL_CACHED");
   const [curiosityPhotos, setCuriosityPhotos] = useState<CuriosityPhotoItem[]>(
@@ -492,6 +558,42 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const yawRef = useRef<number>(0);
   const pitchRef = useRef<number>((-8 * Math.PI) / 180);
   const fovRef = useRef<number>(65);
+
+  // Load and blend spherical station panorama texture with smooth zenith dome
+  const loadStationPanorama = useCallback((stationIdx: number) => {
+    if (!panoMeshRef.current) return;
+    const siteKey = isJezero ? "jezero" : "gale";
+    const proxyUrl = `/api/panorama-proxy?site=${siteKey}&station=${stationIdx}`;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = proxyUrl;
+    img.onload = () => {
+      try {
+        const blendedTex = blendMartianZenithAndNadir(img, dustStormActive);
+        if (panoMeshRef.current) {
+          const mat = panoMeshRef.current.material as THREE.MeshBasicMaterial;
+          if (mat.map) {
+            mat.map.dispose();
+          }
+          mat.map = blendedTex;
+          mat.needsUpdate = true;
+        }
+      } catch (err) {
+        console.warn("Zenith blend error, using standard fallback", err);
+      }
+    };
+  }, [isJezero, dustStormActive]);
+
+  // Handle station jump
+  const handleSelectStation = useCallback((idx: number) => {
+    const list = PANORAMA_STATIONS[isJezero ? "jezero" : "gale"];
+    const clamped = Math.max(0, Math.min(list.length - 1, idx));
+    setActiveStationIdx(clamped);
+    setStationJumpingNotice(true);
+    setTimeout(() => setStationJumpingNotice(false), 1100);
+    loadStationPanorama(clamped);
+  }, [isJezero, loadStationPanorama]);
 
   // Pointer drag state
   const isPointerDownRef = useRef<boolean>(false);
@@ -692,24 +794,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     scene.add(panoMesh);
     panoMeshRef.current = panoMesh;
 
-    let panoTexture: THREE.Texture | null = null;
-    const panoLoader = new THREE.TextureLoader();
-    const panoProxyUrl = `/api/panorama-proxy?site=${isJezero ? "jezero" : "gale"}`;
-    panoLoader.load(
-      panoProxyUrl,
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        panoMat.map = tex;
-        panoMat.needsUpdate = true;
-        panoTexture = tex;
-      },
-      undefined,
-      () => {
-        // Fallback handled by proxy
-      }
-    );
+    // Load initial station panorama with zenith and nadir blending
+    loadStationPanorama(activeStationIdxRef.current);
 
     const terrainMesh = new THREE.Mesh(terrainGeom, terrainMaterial);
     terrainMesh.name = "martian_terrain";
@@ -799,6 +885,59 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     });
     landmarkMeshesRef.current = landmarkObjects;
 
+    // 8b. Interactive Station Jump Waypoint Markers (FU Berlin 360 Tour Planetarium style)
+    const stationJumpObjects: THREE.Object3D[] = [];
+    const stationJumpGroup = new THREE.Group();
+    stationJumpGroup.name = "station_jump_markers";
+    stationJumpGroup.visible = viewModeRef.current === "panorama_360";
+
+    stationList.forEach((stn, idx) => {
+      const rad = (stn.headingOffsetDeg * Math.PI) / 180;
+      const dist = 42;
+      const sx = Math.sin(rad) * dist;
+      const sz = -Math.cos(rad) * dist;
+      const sy = 0.5;
+
+      const markerGroup = new THREE.Group();
+      markerGroup.position.set(sx, sy, sz);
+      markerGroup.name = `station_marker_${idx}`;
+      markerGroup.visible = idx !== activeStationIdxRef.current;
+
+      const ringGeom = new THREE.RingGeometry(1.2, 1.6, 24);
+      ringGeom.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x22d3ee,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.8,
+      });
+      const ring = new THREE.Mesh(ringGeom, ringMat);
+      markerGroup.add(ring);
+
+      const beaconGeom = new THREE.OctahedronGeometry(0.8);
+      const beaconMat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        wireframe: true,
+      });
+      const beacon = new THREE.Mesh(beaconGeom, beaconMat);
+      beacon.position.y = 2.0;
+      beacon.name = "rotating_station_oct";
+      markerGroup.add(beacon);
+
+      const hitGeom = new THREE.CylinderGeometry(2.5, 2.5, 6, 8);
+      hitGeom.translate(0, 3, 0);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitMesh = new THREE.Mesh(hitGeom, hitMat);
+      hitMesh.userData = { isStationJump: true, targetStationIdx: idx, stationData: stn };
+      markerGroup.add(hitMesh);
+
+      stationJumpGroup.add(markerGroup);
+      stationJumpObjects.push(hitMesh);
+    });
+
+    scene.add(stationJumpGroup);
+    stationWaypointsRef.current = stationJumpObjects;
+
     // 9. Resize Handler
     const handleResize = () => {
       if (!host || !rendererRef.current || !cameraRef.current) return;
@@ -819,7 +958,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const elapsedTime = clock.getElapsedTime();
 
       scene.traverse((obj) => {
-        if (obj.name === "rotating_beacon") {
+        if (obj.name === "rotating_beacon" || obj.name === "rotating_station_oct") {
           obj.rotation.y = elapsedTime * 1.5;
         }
       });
@@ -884,8 +1023,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       window.removeEventListener("resize", handleResize);
       renderer.dispose();
       panoGeom.dispose();
+      if (panoMat.map) panoMat.map.dispose();
       panoMat.dispose();
-      if (panoTexture) (panoTexture as THREE.Texture).dispose();
       terrainGeom.dispose();
       terrainMaterial.dispose();
       regolithTex.dispose();
@@ -903,18 +1042,22 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   // Synchronize view mode styles & visibilities
   useEffect(() => {
     if (!terrainMeshRef.current || !wireframeMeshRef.current || !panoMeshRef.current) return;
+    const stationJumpGroup = sceneRef.current?.getObjectByName("station_jump_markers");
+
     if (viewMode === "panorama_360") {
       panoMeshRef.current.visible = true;
       terrainMeshRef.current.visible = false;
       wireframeMeshRef.current.visible = false;
       if (roverGroupRef.current) roverGroupRef.current.visible = false;
       if (reticleRef.current) reticleRef.current.visible = false;
+      if (stationJumpGroup) stationJumpGroup.visible = true;
     } else if (viewMode === "mesh") {
       panoMeshRef.current.visible = false;
       (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = false;
       terrainMeshRef.current.visible = true;
       wireframeMeshRef.current.visible = true;
       if (roverGroupRef.current) roverGroupRef.current.visible = true;
+      if (stationJumpGroup) stationJumpGroup.visible = false;
     } else {
       // "surface" or "vr_stereo"
       panoMeshRef.current.visible = false;
@@ -922,8 +1065,18 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       terrainMeshRef.current.visible = true;
       wireframeMeshRef.current.visible = false;
       if (roverGroupRef.current) roverGroupRef.current.visible = true;
+      if (stationJumpGroup) stationJumpGroup.visible = false;
     }
   }, [viewMode]);
+
+  // Synchronize 360 Tour Waypoint Marker visibility per active station
+  useEffect(() => {
+    const stationJumpGroup = sceneRef.current?.getObjectByName("station_jump_markers");
+    if (!stationJumpGroup) return;
+    stationJumpGroup.children.forEach((child) => {
+      child.visible = child.name !== `station_marker_${activeStationIdx}`;
+    });
+  }, [activeStationIdx]);
 
   // Pointer Movement (Throttled ~30Hz raycasting & camera state sync to maintain 60 FPS)
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -1011,14 +1164,29 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       return;
     }
 
-    if (cameraRef.current && landmarkMeshesRef.current.length > 0) {
+    if (cameraRef.current) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
-      const pinHits = raycasterRef.current.intersectObjects(landmarkMeshesRef.current);
-      if (pinHits.length > 0) {
-        const pinData = pinHits[0].object.userData.pinData as LandmarkPin;
-        if (pinData) {
-          setActivePin(pinData);
-          return;
+
+      // Check Station Waypoint Hops in 360 Tour (FU Berlin style)
+      if (viewModeRef.current === "panorama_360" && stationWaypointsRef.current.length > 0) {
+        const stnHits = raycasterRef.current.intersectObjects(stationWaypointsRef.current);
+        if (stnHits.length > 0) {
+          const hitData = stnHits[0].object.userData;
+          if (hitData.isStationJump && typeof hitData.targetStationIdx === "number") {
+            handleSelectStation(hitData.targetStationIdx);
+            return;
+          }
+        }
+      }
+
+      if (landmarkMeshesRef.current.length > 0) {
+        const pinHits = raycasterRef.current.intersectObjects(landmarkMeshesRef.current);
+        if (pinHits.length > 0) {
+          const pinData = pinHits[0].object.userData.pinData as LandmarkPin;
+          if (pinData) {
+            setActivePin(pinData);
+            return;
+          }
         }
       }
     }
@@ -1071,16 +1239,16 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         
         {/* HUD HEADER */}
         <div className="h-11 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 overflow-hidden">
             <MarsForAllBadge size={22} showSubtext={false} />
-            <div className="flex items-center gap-2 text-slate-300">
-              <span className="font-bold text-amber-400">MARSFORALL // GALE-01</span>
+            <div className="flex items-center gap-2 text-slate-300 truncate">
+              <span className="font-bold text-amber-400 whitespace-nowrap">{isJezero ? "MARSFORALL // JEZERO-02" : "MARSFORALL // GALE-01"}</span>
               <span className="text-slate-600">|</span>
-              <span className="text-slate-400">{t("title")}</span>
+              <span className="text-slate-400 whitespace-nowrap">{t("title")}</span>
               <span className="text-slate-600">|</span>
-              <span className="text-emerald-400 font-bold">{waypoint.name}</span>
+              <span className="text-emerald-400 font-bold whitespace-nowrap">{waypoint.name}</span>
               <span className="text-slate-600">|</span>
-              <span className={`px-1.5 py-0.5 border text-[10px] font-bold ${
+              <span className={`px-1.5 py-0.5 border text-[9px] font-bold whitespace-nowrap ${
                 demSourceStatus === "NASA_MOLA_REAL_DEM"
                   ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
                   : "bg-[#111827] text-slate-400 border-slate-700"
@@ -1090,12 +1258,12 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </div>
           </div>
 
-          {/* Mode Switcher Buttons */}
-          <div className="flex items-center gap-2">
+          {/* Mode Switcher Buttons - Strict Single Row & whitespace-nowrap text-[10px] px-2 py-1 */}
+          <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
             <div className="flex items-center border border-slate-800 bg-[#07090e] p-0.5">
               <button
                 onClick={() => setViewMode("panorama_360")}
-                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                className={`whitespace-nowrap text-[10px] px-2 py-1 font-bold transition-colors ${
                   viewMode === "panorama_360"
                     ? "bg-[#161e2e] text-emerald-400 border border-slate-700"
                     : "text-slate-400 hover:text-slate-200"
@@ -1105,7 +1273,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
               <button
                 onClick={() => setViewMode("surface")}
-                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                className={`whitespace-nowrap text-[10px] px-2 py-1 font-bold transition-colors ${
                   viewMode === "surface"
                     ? "bg-[#161e2e] text-amber-400 border border-slate-700"
                     : "text-slate-400 hover:text-slate-200"
@@ -1115,7 +1283,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
               <button
                 onClick={() => setViewMode("mesh")}
-                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                className={`whitespace-nowrap text-[10px] px-2 py-1 font-bold transition-colors ${
                   viewMode === "mesh"
                     ? "bg-[#161e2e] text-cyan-400 border border-slate-700"
                     : "text-slate-400 hover:text-slate-200"
@@ -1125,7 +1293,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
               <button
                 onClick={() => setViewMode("vr_stereo")}
-                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                className={`whitespace-nowrap text-[10px] px-2 py-1 font-bold transition-colors ${
                   viewMode === "vr_stereo"
                     ? "bg-[#161e2e] text-rose-400 border border-slate-700"
                     : "text-slate-400 hover:text-slate-200"
@@ -1138,7 +1306,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             {/* Toggle Raw Photo Feed */}
             <button
               onClick={() => setIsPhotoFeedOpen(!isPhotoFeedOpen)}
-              className={`px-2 py-1 border text-[11px] font-bold font-mono transition-colors ${
+              className={`whitespace-nowrap text-[10px] px-2 py-1 border font-bold font-mono transition-colors ${
                 isPhotoFeedOpen
                   ? "bg-[#161e2e] text-amber-400 border-slate-700"
                   : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
@@ -1150,7 +1318,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             {/* Toggle Mastcam-Z 360° Panorama Archive */}
             <button
               onClick={() => setIs360ArchiveOpen(!is360ArchiveOpen)}
-              className={`px-2 py-1 border text-[11px] font-bold font-mono transition-colors ${
+              className={`whitespace-nowrap text-[10px] px-2 py-1 border font-bold font-mono transition-colors ${
                 is360ArchiveOpen
                   ? "bg-[#161e2e] text-cyan-400 border-slate-700"
                   : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
@@ -1162,7 +1330,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-xs font-bold transition-colors"
+              className="whitespace-nowrap text-[10px] px-2 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono font-bold transition-colors"
             >
               {t("close")}
             </button>
@@ -1194,7 +1362,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             )}
 
             {/* Compass Rose & Atmospheric Telemetry (Top Left) */}
-            <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 space-y-1">
+            <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 space-y-1 z-20">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-slate-500">{t("bearing")}</span>
                 <span className="text-amber-400 font-bold tabular-nums">{camAzimuth}°</span>
@@ -1214,6 +1382,108 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                 </span>
               </div>
             </div>
+
+            {/* Tactical Radar Mini-Map & FOV View-Cone (Under Bearing/Pitch HUD) */}
+            <div className="absolute top-28 left-4 w-28 h-28 bg-[#07090e] border border-slate-700 p-1 font-mono text-[9px] pointer-events-auto select-none shadow-xl flex flex-col items-center justify-between z-20">
+              <div className="w-full flex items-center justify-between px-1 text-slate-500 text-[8px] border-b border-slate-800/80 pb-0.5">
+                <span className="text-amber-400 font-bold">{t("radarTitle")}</span>
+                <span className="tabular-nums text-cyan-400">{camAzimuth}°</span>
+              </div>
+
+              {/* Radar Screen Canvas / SVG */}
+              <div className="relative w-20 h-20 flex items-center justify-center my-0.5">
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  {/* Outer & Inner Range Rings */}
+                  <circle cx="50" cy="50" r="46" fill="#0b0f17" stroke="#334155" strokeWidth="1" />
+                  <circle cx="50" cy="50" r="30" fill="none" stroke="#1e293b" strokeWidth="0.8" strokeDasharray="2 2" />
+                  <circle cx="50" cy="50" r="15" fill="none" stroke="#1e293b" strokeWidth="0.8" strokeDasharray="2 2" />
+
+                  {/* Crosshairs & Cardinal Labels */}
+                  <line x1="50" y1="4" x2="50" y2="96" stroke="#1e293b" strokeWidth="0.8" />
+                  <line x1="4" y1="50" x2="96" y2="50" stroke="#1e293b" strokeWidth="0.8" />
+                  <text x="50" y="11" textAnchor="middle" fill="#f59e0b" fontSize="7" fontWeight="bold">N</text>
+                  <text x="92" y="52" textAnchor="middle" fill="#64748b" fontSize="6">E</text>
+                  <text x="50" y="94" textAnchor="middle" fill="#64748b" fontSize="6">S</text>
+                  <text x="8" y="52" textAnchor="middle" fill="#64748b" fontSize="6">W</text>
+
+                  {/* FOV View-Cone Sector (Rotates real-time with camAzimuth) */}
+                  {(() => {
+                    const halfFov = camFov / 2;
+                    const rad1 = ((camAzimuth - halfFov - 90) * Math.PI) / 180;
+                    const rad2 = ((camAzimuth + halfFov - 90) * Math.PI) / 180;
+                    const r = 45;
+                    const x1 = 50 + r * Math.cos(rad1);
+                    const y1 = 50 + r * Math.sin(rad1);
+                    const x2 = 50 + r * Math.cos(rad2);
+                    const y2 = 50 + r * Math.sin(rad2);
+                    return (
+                      <path
+                        d={`M 50 50 L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`}
+                        fill="#06b6d4"
+                        fillOpacity="0.25"
+                        stroke="#22d3ee"
+                        strokeWidth="0.8"
+                      />
+                    );
+                  })()}
+
+                  {/* Other Stations Relative Positions on Radar */}
+                  {stationList.map((stn, idx) => {
+                    if (idx === activeStationIdx) return null;
+                    const angleRad = ((stn.headingOffsetDeg - 90) * Math.PI) / 180;
+                    const dist = 32;
+                    const sx = 50 + dist * Math.cos(angleRad);
+                    const sy = 50 + dist * Math.sin(angleRad);
+                    return (
+                      <g key={stn.id} className="cursor-pointer" onClick={() => handleSelectStation(idx)}>
+                        <rect x={sx - 2.5} y={sy - 2.5} width="5" height="5" fill="#f59e0b" stroke="#000" strokeWidth="0.5" transform={`rotate(45 ${sx} ${sy})`} />
+                        <text x={sx} y={sy - 4} textAnchor="middle" fill="#94a3b8" fontSize="6" fontWeight="bold">
+                          S{idx + 1}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Active Rover Station Origin Center Dot */}
+                  <circle cx="50" cy="50" r="3" fill="#34d399" />
+                  <circle cx="50" cy="50" r="5" fill="none" stroke="#34d399" strokeWidth="0.6" className="animate-ping" />
+                </svg>
+              </div>
+
+              <div className="w-full flex items-center justify-between px-1 text-[8px] text-slate-400 border-t border-slate-800/80 pt-0.5">
+                <span className="text-emerald-400 font-bold">STN-0{activeStationIdx + 1}</span>
+                <span className="text-slate-500">SOL {stationList[activeStationIdx]?.sol ?? 0}</span>
+              </div>
+            </div>
+
+            {/* Quick Station Jump Side Navigation Arrows (FU Berlin 360 Tour style) */}
+            {viewMode === "panorama_360" && (
+              <>
+                <button
+                  onClick={() => handleSelectStation((activeStationIdx - 1 + stationList.length) % stationList.length)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 px-2 py-3 bg-[#0b0f17]/90 hover:bg-[#161e2e] border border-slate-700 hover:border-amber-400 text-slate-300 hover:text-amber-300 font-mono text-[10px] font-bold tracking-wider pointer-events-auto transition-colors flex items-center gap-1.5 shadow-xl select-none"
+                  title={t("prevStation")}
+                >
+                  <span className="text-amber-400 font-bold">&laquo;</span>
+                  <span className="hidden sm:inline">{t("prevStation")}</span>
+                </button>
+                <button
+                  onClick={() => handleSelectStation((activeStationIdx + 1) % stationList.length)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 px-2 py-3 bg-[#0b0f17]/90 hover:bg-[#161e2e] border border-slate-700 hover:border-amber-400 text-slate-300 hover:text-amber-300 font-mono text-[10px] font-bold tracking-wider pointer-events-auto transition-colors flex items-center gap-1.5 shadow-xl select-none"
+                  title={t("nextStation")}
+                >
+                  <span className="hidden sm:inline">{t("nextStation")}</span>
+                  <span className="text-amber-400 font-bold">&raquo;</span>
+                </button>
+              </>
+            )}
+
+            {/* Station Jump Toast Notification */}
+            {stationJumpingNotice && (
+              <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-amber-500 text-amber-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold shadow-2xl animate-pulse z-30 pointer-events-none">
+                {t("stationJumping")} 0{activeStationIdx + 1}: SOL {stationList[activeStationIdx]?.sol} — {stationList[activeStationIdx]?.title}
+              </div>
+            )}
 
             {/* Landmark Hotspot Pin Card Popover */}
             {activePin && (
@@ -1364,11 +1634,16 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               <div className="flex items-center gap-2 pb-1.5 border-b border-slate-800 mb-1.5">
                 <span className={`w-2 h-2 rounded-full ${viewMode === "panorama_360" ? "bg-emerald-400 animate-pulse" : "bg-cyan-500"}`} />
                 <span className="text-amber-400 font-bold text-[10px] tracking-wide uppercase">
-                  {viewMode === "panorama_360" ? t("panorama360Active") : (isJezero ? "JEZERO CRATER // PERSEVERANCE M2020" : "GALE CRATER // CURIOSITY MSL")}
+                  {viewMode === "panorama_360"
+                    ? `STN-0${activeStationIdx + 1} (SOL ${stationList[activeStationIdx]?.sol ?? 0}) // 360° TOUR`
+                    : (isJezero ? "JEZERO CRATER // PERSEVERANCE M2020" : "GALE CRATER // CURIOSITY MSL")}
                 </span>
               </div>
-              <div className="text-slate-400 text-[10px] leading-relaxed">
-                {t("panoramaCredit")}
+              <div className="text-slate-300 font-bold text-[10px] mb-0.5">
+                {stationList[activeStationIdx]?.title}
+              </div>
+              <div className="text-slate-400 text-[9px] leading-relaxed">
+                {stationList[activeStationIdx]?.sources[0]?.credit || t("panoramaCredit")}
               </div>
             </div>
           </div>
@@ -1376,7 +1651,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
         {/* BOTTOM TELEMETRY BAR */}
         <div className="h-10 bg-[#0b0f17] border-t border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
-          <div className="flex items-center gap-4 text-slate-300">
+          <div className="flex items-center gap-3 text-slate-300">
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">{t("evaCamElev")}</span>
               <span className="text-amber-400 font-bold tabular-nums">{camElevation} m</span>
@@ -1386,7 +1661,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               <span className="text-slate-500">{t("reticleTgt")}</span>
               {viewMode === "panorama_360" ? (
                 <span className="text-emerald-400 font-bold tabular-nums">
-                  [ 360° SPHERICAL POV // MASTCAM ]
+                  [ 360° POV // STN-0{activeStationIdx + 1}: SOL {stationList[activeStationIdx]?.sol} ]
                 </span>
               ) : reticleCoords ? (
                 <span className="text-cyan-400 font-bold tabular-nums">
@@ -1398,7 +1673,28 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-500">
+          {/* 360 Tour Station Selector Pills (FU Berlin Planetarium Style) */}
+          {viewMode === "panorama_360" && (
+            <div className="hidden md:flex items-center gap-1 border border-slate-800 bg-[#07090e] p-0.5">
+              <span className="text-slate-500 text-[9px] px-1 font-bold">{t("tourStations")}:</span>
+              {stationList.map((stn, idx) => (
+                <button
+                  key={stn.id}
+                  onClick={() => handleSelectStation(idx)}
+                  className={`px-2 py-0.5 text-[10px] font-mono font-bold transition-colors whitespace-nowrap ${
+                    activeStationIdx === idx
+                      ? "bg-[#161e2e] text-emerald-400 border border-slate-700"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                  title={`${stn.title} (${stn.location})`}
+                >
+                  STN-0{idx + 1}: SOL {stn.sol}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="hidden xl:flex items-center gap-3 text-[11px] text-slate-500">
             <span>{t("hintPan")}</span>
             <span>•</span>
             <span>{t("hintTeleport")}</span>
@@ -1409,7 +1705,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleResetOrigin}
-              className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-[11px] font-bold transition-colors"
+              className="whitespace-nowrap px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-[11px] font-bold transition-colors"
             >
               {t("resetOrigin")}
             </button>

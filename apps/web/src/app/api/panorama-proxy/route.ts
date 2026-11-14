@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { PANORAMA_STATIONS, PanoramaStation } from "@/lib/martian/panoramaStations";
 
 export const dynamic = "force-dynamic";
 
@@ -6,58 +7,23 @@ interface CachedPanoramaEntry {
   buffer: Buffer;
   contentType: string;
   source: string;
+  credit: string;
+  stationTitle: string;
+  stationSol: number;
   cachedAt: number;
 }
 
-// In-Memory LRU Cache (max 10 panoramas)
+// In-Memory LRU Cache (max 20 panoramas)
 const PANORAMA_CACHE = new Map<string, CachedPanoramaEntry>();
-const MAX_CACHE_ENTRIES = 10;
+const MAX_CACHE_ENTRIES = 20;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Verified official 360-degree panorama endpoints (ASU Mastcam-Z & NASA Images Archive)
-const PANORAMA_SOURCES = {
-  jezero: [
-    {
-      name: "ASU_MASTCAM_Z_BUTLER_360",
-      url: "https://mastcamz.asu.edu/wp-content/uploads/2026/01/Mastcam-Z_360_Butler_Landing_1_Sols03-11_R0_natural_10x-1536x426.jpg",
-      credit: "NASA/JPL-Caltech/ASU/MSSS (Mastcam-Z 360° Gigapixel Collection)",
-    },
-    {
-      name: "NASA_IMAGES_VAN_ZYL_360",
-      url: "https://images-assets.nasa.gov/image/PIA24663/PIA24663~medium.jpg",
-      credit: "NASA/JPL-Caltech/ASU/MSSS (Van Zyl Overlook 360° Panorama)",
-    },
-    {
-      name: "NASA_IMAGES_BUTLER_LANDING_360",
-      url: "https://images-assets.nasa.gov/image/PIA24424/PIA24424~medium.jpg",
-      credit: "NASA/JPL-Caltech/ASU/MSSS (Octavia E. Butler Landing Site)",
-    },
-  ],
-  gale: [
-    {
-      name: "NASA_IMAGES_MOUNT_SHARP_360",
-      url: "https://images-assets.nasa.gov/image/PIA16101/PIA16101~medium.jpg",
-      credit: "NASA/JPL-Caltech/MSSS (Bradbury Landing & Mount Sharp Panorama)",
-    },
-    {
-      name: "NASA_IMAGES_GALE_VISTA_360",
-      url: "https://images-assets.nasa.gov/image/PIA16074/PIA16074~medium.jpg",
-      credit: "NASA/JPL-Caltech/MSSS (All Around Curiosity 360° Vista)",
-    },
-    {
-      name: "NASA_MSL_BOXWORK_RAW_MOSAIC",
-      url: "https://mars.nasa.gov/msl-raw-images/msss/04180/mcam/4180ML1058160061701162C00_DXXX.jpg",
-      credit: "NASA/JPL-Caltech/MSSS (Curiosity Sol 4180 Boxwork Ridge Outcrop)",
-    },
-  ],
-};
-
 // Generates an offline fallback SVG image converted to a valid image buffer
-function createOfflineMartianPanoramaSvg(site: "gale" | "jezero"): string {
+function createOfflineMartianPanoramaSvg(site: "gale" | "jezero", station: PanoramaStation): string {
   const isJezero = site === "jezero";
   const siteTitle = isJezero
-    ? "JEZERO CRATER // PERSEVERANCE MASTCAM-Z 360° PANORAMA"
-    : "GALE CRATER // CURIOSITY MASTCAM 360° MOUNT SHARP PANORAMA";
+    ? `JEZERO CRATER // STN-${station.station + 1} (SOL ${station.sol}) — ${station.title.toUpperCase()}`
+    : `GALE CRATER // STN-${station.station + 1} (SOL ${station.sol}) — ${station.title.toUpperCase()}`;
   const horizonColor = isJezero ? "#b45309" : "#991b1b";
   const skyTop = isJezero ? "#451a03" : "#3b170c";
   const skyBottom = isJezero ? "#78350f" : "#682512";
@@ -104,15 +70,23 @@ function createOfflineMartianPanoramaSvg(site: "gale" | "jezero"): string {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const siteParam = (searchParams.get("site") || "gale").toLowerCase();
-  const siteKey = siteParam === "jezero" || siteParam === "m2020" ? "jezero" : "gale";
+  const siteKey: "jezero" | "gale" = siteParam === "jezero" || siteParam === "m2020" ? "jezero" : "gale";
+
+  const stationParam = parseInt(searchParams.get("station") || "0", 10);
+  const stationIdx = isNaN(stationParam) ? 0 : Math.max(0, Math.min(3, stationParam));
+
+  const stationList = PANORAMA_STATIONS[siteKey];
+  const station = stationList[stationIdx] || stationList[0];
+
+  const cacheKey = `${siteKey}_stn_${stationIdx}`;
 
   // Check In-Memory LRU Cache
-  const cached = PANORAMA_CACHE.get(siteKey);
+  const cached = PANORAMA_CACHE.get(cacheKey);
   const now = Date.now();
   if (cached && now - cached.cachedAt < CACHE_TTL_MS) {
     // Refresh LRU ordering
-    PANORAMA_CACHE.delete(siteKey);
-    PANORAMA_CACHE.set(siteKey, cached);
+    PANORAMA_CACHE.delete(cacheKey);
+    PANORAMA_CACHE.set(cacheKey, cached);
 
     return new NextResponse(new Uint8Array(cached.buffer), {
       status: 200,
@@ -121,15 +95,17 @@ export async function GET(request: NextRequest) {
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
         "X-Panorama-Cache": "HIT",
+        "X-Station-Title": cached.stationTitle,
+        "X-Station-Sol": cached.stationSol.toString(),
+        "X-Station-Index": stationIdx.toString(),
         "X-Panorama-Source": cached.source,
+        "X-Panorama-Credit": cached.credit,
       },
     });
   }
 
-  const sources = PANORAMA_SOURCES[siteKey];
-
   // Try each upstream mirror in succession with strict timeout
-  for (const src of sources) {
+  for (const src of station.sources) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 4500);
@@ -158,10 +134,13 @@ export async function GET(request: NextRequest) {
             if (oldestKey) PANORAMA_CACHE.delete(oldestKey);
           }
 
-          PANORAMA_CACHE.set(siteKey, {
+          PANORAMA_CACHE.set(cacheKey, {
             buffer,
             contentType,
             source: src.name,
+            credit: src.credit,
+            stationTitle: station.title,
+            stationSol: station.sol,
             cachedAt: now,
           });
 
@@ -172,6 +151,9 @@ export async function GET(request: NextRequest) {
               "Access-Control-Allow-Origin": "*",
               "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
               "X-Panorama-Cache": "MISS",
+              "X-Station-Title": station.title,
+              "X-Station-Sol": station.sol.toString(),
+              "X-Station-Index": stationIdx.toString(),
               "X-Panorama-Source": src.name,
               "X-Panorama-Credit": src.credit,
             },
@@ -184,7 +166,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Fallback: Return locally generated calibrated Martian panorama SVG (100% offline resilience)
-  const fallbackSvg = createOfflineMartianPanoramaSvg(siteKey);
+  const fallbackSvg = createOfflineMartianPanoramaSvg(siteKey, station);
   const fallbackBuffer = Buffer.from(fallbackSvg, "utf8");
 
   return new NextResponse(new Uint8Array(fallbackBuffer), {
@@ -194,7 +176,11 @@ export async function GET(request: NextRequest) {
       "Access-Control-Allow-Origin": "*",
       "Cache-Control": "public, max-age=1800, stale-while-revalidate=86400",
       "X-Panorama-Cache": "FALLBACK",
+      "X-Station-Title": station.title,
+      "X-Station-Sol": station.sol.toString(),
+      "X-Station-Index": stationIdx.toString(),
       "X-Panorama-Source": "LOCAL_PROCEDURAL_CALIBRATED_FALLBACK",
+      "X-Panorama-Credit": station.sources[0]?.credit || "NASA/JPL-Caltech/ASU/MSSS",
       "X-Panorama-Fallback": "OFFLINE_CACHED_PANORAMA",
     },
   });
