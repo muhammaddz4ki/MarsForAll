@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   AreaChart,
   Area,
@@ -35,6 +36,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   availableWaypoints,
   theme = "dark",
 }) => {
+  const t = useTranslations("marswalk");
   const isDark = theme === "dark";
   const waypointList = availableWaypoints && availableWaypoints.length > 0
     ? availableWaypoints
@@ -102,7 +104,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       <div className={`border-b ${isDark ? "border-slate-800" : "border-slate-300"} pb-2`}>
         <div className="flex items-center justify-between">
           <span className="font-mono text-[10px] tracking-widest uppercase text-cyan-500 font-bold">
-            MARSWALK A* ROUTE PLANNER
+            {t("title")}
           </span>
           <span
             className={`px-1.5 py-0.5 font-mono text-[9px] font-bold border ${
@@ -113,11 +115,11 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 : "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
             }`}
           >
-            SAFETY: <span className="tabular-nums">{routeResult.overallSafetyIndex}</span> / 100
+            {t("safety")} <span className="tabular-nums">{routeResult.overallSafetyIndex}</span> / 100
           </span>
         </div>
         <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} mt-0.5 font-mono`}>
-          Terrain-aware least cost trajectory avoiding &gt;25° cliff hazards and ionizing radiation ridges.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -127,7 +129,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       } p-2.5 border`}>
         <div>
           <label className={`font-mono text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"} block mb-1 uppercase tracking-wider`}>
-            START BASE
+            {t("startBase")}
           </label>
           <select
             value={startId}
@@ -146,7 +148,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
 
         <div>
           <label className={`font-mono text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"} block mb-1 uppercase tracking-wider`}>
-            SCIENCE TARGET
+            {t("scienceTarget")}
           </label>
           <select
             value={targetId}
@@ -167,7 +169,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       {/* Mission Support Mode Toggle (Flat Solid Buttons, Sharp 1px Border) */}
       <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border`}>
         <span className={`font-mono text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"} uppercase tracking-wider block mb-1.5`}>
-          MISSION SUPPORT CONFIGURATION
+          {t("missionSupportConfig")}
         </span>
         <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
           <button
@@ -187,10 +189,10 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 <circle cx="12" cy="7" r="4" />
                 <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
               </svg>
-              <span>SOLO ASTRONAUT</span>
+              <span>{t("soloAstronaut")}</span>
             </div>
             <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"} mt-1`}>
-              25 kg Max Pack • 15° Slope Limit
+              {t("soloAstronautDesc")}
             </span>
           </button>
 
@@ -212,10 +214,10 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 <circle cx="6" cy="18" r="2" />
                 <circle cx="18" cy="18" r="2" />
               </svg>
-              <span>PAIRED + MULE</span>
+              <span>{t("pairedMule")}</span>
             </div>
             <span className={`text-[9px] ${isDark ? "text-slate-400" : "text-slate-500"} mt-1`}>
-              250 kg Payload • Umbilical Life Support
+              {t("pairedMuleDesc")}
             </span>
           </button>
         </div>
@@ -224,18 +226,18 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       {/* Trajectory Key Metrics Grid (Flat Solid, Tabular Nums) */}
       <div className="grid grid-cols-4 gap-1.5 text-center font-mono">
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2 border`}>
-          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>DISTANCE</span>
+          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("distance")}</span>
           <span className="text-xs font-bold text-amber-500 tabular-nums">{routeResult.totalDistanceKm} km</span>
         </div>
 
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2 border`}>
-          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>DURATION</span>
+          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("duration")}</span>
           <span className="text-xs font-bold text-cyan-500 tabular-nums">{routeResult.estimatedDurationHours} h</span>
-          <span className={`text-[8px] ${isDark ? "text-slate-500" : "text-slate-400"} block tabular-nums`}>({routeResult.solFraction} sol)</span>
+          <span className={`text-[8px] ${isDark ? "text-slate-500" : "text-slate-400"} block tabular-nums`}>{t("solUnit", { sol: routeResult.solFraction })}</span>
         </div>
 
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2 border`}>
-          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>O2 RESERVE</span>
+          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("o2Reserve")}</span>
           <span
             className={`text-xs font-bold tabular-nums ${
               routeResult.remainingO2Percent > 35 ? "text-emerald-500" : "text-red-500"
@@ -247,7 +249,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
         </div>
 
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2 border`}>
-          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>BATTERY</span>
+          <span className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("battery")}</span>
           <span
             className={`text-xs font-bold tabular-nums ${
               routeResult.remainingBatteryPercent > 30 ? "text-emerald-500" : "text-red-500"
@@ -263,13 +265,13 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       <div className={`p-2 border flex items-center justify-between font-mono text-[10px] ${
         isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"
       }`}>
-        <span className="text-slate-400 uppercase">RADIO COMMS LINE-OF-SIGHT:</span>
+        <span className="text-slate-400 uppercase">{t("radioCommsLos")}</span>
         <span className={`px-1.5 py-0.5 border font-bold text-[9px] ${
           radioLos === "CONNECTED"
             ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
             : "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
         }`}>
-          [{radioLos === "CONNECTED" ? "COMM: LINE-OF-SIGHT CONNECTED" : "COMM: TERRAIN BLOCKED - MRO RELAY"}]
+          [{radioLos === "CONNECTED" ? t("radioConnected") : t("radioBlocked")}]
         </span>
       </div>
 
@@ -278,28 +280,28 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border font-mono`}>
           <div className="flex items-center justify-between border-b pb-1.5 mb-2 border-slate-800 text-[10px]">
             <span className="font-bold text-cyan-400 uppercase">
-              LAMBERTIAN PHOTOMETRY &amp; SUN ANGLE (PAPER 2132)
+              {t("lambertianTitle")}
             </span>
             <span className="text-amber-400 font-bold tabular-nums">
-              ZENITH {routeResult.photometry.solarIncidenceDeg}°
+              {t("zenith")} {routeResult.photometry.solarIncidenceDeg}°
             </span>
           </div>
 
           <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] mb-2">
             <div className={`p-1.5 border ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-              <span className="text-slate-400 block uppercase">CONTRAST (C)</span>
+              <span className="text-slate-400 block uppercase">{t("contrast")}</span>
               <span className="font-bold text-amber-400 tabular-nums">
                 {routeResult.photometry.terrainContrastIndex}
               </span>
             </div>
             <div className={`p-1.5 border ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-              <span className="text-slate-400 block uppercase">GLARE HAZARD</span>
+              <span className="text-slate-400 block uppercase">{t("glareHazard")}</span>
               <span className="font-bold text-cyan-400 tabular-nums">
                 {routeResult.photometry.glareObstacleIndex}
               </span>
             </div>
             <div className={`p-1.5 border ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-              <span className="text-slate-400 block uppercase">SHADOW MULTIPLIER</span>
+              <span className="text-slate-400 block uppercase">{t("shadowMultiplier")}</span>
               <span className="font-bold text-emerald-400 tabular-nums">
                 {routeResult.photometry.shadowLengthMultiplier}x
               </span>
@@ -313,11 +315,11 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
               ? "bg-[#0b0f17] border-slate-800 text-slate-300"
               : "bg-slate-50 border-slate-200 text-slate-700"
           } text-[9px] flex items-center justify-between`}>
-            <span>VISIBILITY ADVISORY:</span>
+            <span>{t("visibilityAdvisory")}</span>
             <span className="font-bold">
               {routeResult.photometry.glareObstacleIndex > 0.4
-                ? "[MODERATE FORWARD SCATTERING - USE SUN VISOR]"
-                : "[NOMINAL LAMBERTIAN CONTRAST]"}
+                ? t("glareWarning")
+                : t("glareNominal")}
             </span>
           </div>
         </div>
@@ -327,7 +329,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border font-mono`}>
         <div className="flex items-center justify-between mb-1.5 text-[10px]">
           <span className={`${isDark ? "text-slate-300" : "text-slate-700"} uppercase font-bold`}>
-            ELEVATION &amp; SLOPE PROFILE
+            {t("elevationProfile")}
           </span>
           <span className="text-cyan-500 tabular-nums font-bold">
             +{routeResult.cumulativeAscentM}m / -{routeResult.cumulativeDescentM}m
@@ -353,7 +355,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 }}
                 formatter={(value: any, name: string) => [
                   name === "elevationM" ? `${value} m` : `${value}°`,
-                  name === "elevationM" ? "Elevation" : "Slope",
+                  name === "elevationM" ? t("elevationLabel") : t("slopeLabel"),
                 ]}
               />
               {/* Solid fill, zero gradients */}
@@ -384,7 +386,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       {routeResult.hazardAlerts.length > 0 && (
         <div className="p-2.5 bg-[#170a08] border border-red-700 text-[10px] space-y-1 font-mono">
           <span className="text-red-400 font-bold block uppercase">
-            [HAZARD DETECTED: EXCEEDING NOMINAL SLOPE ENVELOPE]
+            {t("hazardTitle")}
           </span>
           {routeResult.hazardAlerts.map((alert, i) => (
             <p key={i} className="text-red-200">
@@ -397,7 +399,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       {/* Operational Checklist */}
       <div className={`${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border space-y-1 font-mono text-[10px]`}>
         <span className={`${isDark ? "text-slate-400" : "text-slate-500"} uppercase tracking-wider block mb-1 font-bold`}>
-          EVA PROTOCOL CHECKLIST
+          {t("checklistTitle")}
         </span>
         {routeResult.operationalChecklist.map((c, idx) => (
           <p key={idx} className={isDark ? "text-slate-300" : "text-slate-700"}>

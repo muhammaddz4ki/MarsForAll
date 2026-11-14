@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import maplibregl, { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -106,6 +107,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const curiosityMarkersRef = useRef<Marker[]>([]);
   const customMarkerRef = useRef<Marker | null>(null);
   const [showCuriosityTraverse, setShowCuriosityTraverse] = useState<boolean>(true);
+  const t = useTranslations("mapViewer");
 
   const isDark = theme === "dark";
 
@@ -785,12 +787,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
           <div class="flex items-center justify-center w-7 h-7 bg-[#b45309] border border-[#fbbf24] text-white text-[10px] font-mono font-black shadow-none animate-pulse">
-            PIN
+            ${t("pin")}
           </div>
           <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 ${
             isDark ? "bg-[#111827] text-amber-300 border-amber-400" : "bg-white text-amber-700 border-amber-500"
           } border text-[8px] font-mono font-bold tracking-wider">
-            CUSTOM-TARGET
+            ${t("customTarget")}
           </div>
         </div>
       `;
@@ -799,7 +801,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         .addTo(map);
       customMarkerRef.current = marker;
     }
-  }, [customPinCoords, isDark]);
+  }, [customPinCoords, isDark, t]);
 
   // Render Curiosity Historical Sol Checkpoint Markers
   useEffect(() => {
@@ -852,7 +854,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           }`}
         >
           <span className={`w-2 h-2 ${showCuriosityTraverse ? "bg-[#06b6d4]" : "bg-slate-500"}`} />
-          <span>CURIOSITY TRAVERSE: {showCuriosityTraverse ? "[ON]" : "[OFF]"}</span>
+          <span>{t("curiosityTraverse")} {showCuriosityTraverse ? t("on") : t("off")}</span>
         </button>
 
         <button
@@ -867,14 +869,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               duration: 1200,
             });
           }}
-          title="Zoom out to Planetary Mars Horizon (Globe Perspective)"
+          title={t("planetGlobeTitle")}
           className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
             isDark
               ? "bg-[#111827] text-amber-400 border-slate-700 hover:text-amber-300 hover:border-amber-500"
               : "bg-white text-amber-700 border-slate-300 hover:text-amber-900"
           }`}
         >
-          <span>PLANET GLOBE</span>
+          <span>{t("planetGlobe")}</span>
         </button>
 
         <button
@@ -889,14 +891,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               duration: 1200,
             });
           }}
-          title="Dive into Gale Crater / Mount Sharp Focus"
+          title={t("galeFocusTitle")}
           className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
             isDark
               ? "bg-[#111827] text-cyan-400 border-slate-700 hover:text-cyan-300 hover:border-cyan-500"
               : "bg-white text-cyan-700 border-slate-300 hover:text-cyan-900"
           }`}
         >
-          <span>GALE FOCUS</span>
+          <span>{t("galeFocus")}</span>
         </button>
       </div>
 

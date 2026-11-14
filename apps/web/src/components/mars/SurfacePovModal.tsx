@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import * as THREE from "three";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 import MarsForAllBadge from "../MarsForAllBadge";
@@ -348,6 +349,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   theme = "dark",
   dustStormActive = false,
 }) => {
+  const t = useTranslations("surfacePov");
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -904,7 +906,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             <div className="flex items-center gap-2 text-slate-300">
               <span className="font-bold text-amber-400">MARSFORALL // GALE-01</span>
               <span className="text-slate-600">|</span>
-              <span className="text-slate-400">3D SURFACE EXPLORER</span>
+              <span className="text-slate-400">{t("title")}</span>
               <span className="text-slate-600">|</span>
               <span className="text-emerald-400 font-bold">{waypoint.name}</span>
               <span className="text-slate-600">|</span>
@@ -913,7 +915,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                   ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
                   : "bg-[#111827] text-slate-400 border-slate-700"
               }`}>
-                [{demSourceStatus === "NASA_MOLA_REAL_DEM" ? "REAL NASA MOLA DEM PIXELS" : "OFFLINE CACHED DEM"}]
+                [{demSourceStatus === "NASA_MOLA_REAL_DEM" ? t("molaDemReal") : t("molaDemOffline")}]
               </span>
             </div>
           </div>
@@ -929,7 +931,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                [ 3D SURFACE ]
+                {t("modeSurface")}
               </button>
               <button
                 onClick={() => setViewMode("mesh")}
@@ -939,7 +941,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                [ 3D PHOTOGRAMMETRY MESH ]
+                {t("modeMesh")}
               </button>
               <button
                 onClick={() => setViewMode("vr_stereo")}
@@ -949,7 +951,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                [ VR / STEREO MODE ]
+                {t("modeVr")}
               </button>
             </div>
 
@@ -962,7 +964,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                   : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
               }`}
             >
-              [ MSL RAW FEED ]
+              {t("rawFeed")}
             </button>
 
             {/* Close Button */}
@@ -970,7 +972,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               onClick={onClose}
               className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-xs font-bold transition-colors"
             >
-              [ ESC / X ]
+              {t("close")}
             </button>
           </div>
         </div>
@@ -991,7 +993,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           <div className="absolute inset-0 pointer-events-none z-10">
             {teleportingNotice && (
               <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-cyan-500/80 text-cyan-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold shadow-md animate-pulse">
-                [ EVA TELEPORTING TO RETICLE COORDINATES... ]
+                {t("teleporting")}
               </div>
             )}
 
@@ -1002,21 +1004,21 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             {/* Compass Rose & Atmospheric Telemetry (Top Left) */}
             <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 space-y-1">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">BEARING:</span>
+                <span className="text-slate-500">{t("bearing")}</span>
                 <span className="text-amber-400 font-bold tabular-nums">{camAzimuth}°</span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">PITCH:</span>
+                <span className="text-slate-500">{t("pitch")}</span>
                 <span className="text-slate-200 font-bold tabular-nums">{camPitch > 0 ? `+${camPitch}` : camPitch}°</span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">FOV:</span>
+                <span className="text-slate-500">{t("fov")}</span>
                 <span className="text-cyan-400 font-bold tabular-nums">{camFov}°</span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-slate-500">ATM TAU:</span>
+                <span className="text-slate-500">{t("atmTau")}</span>
                 <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>
-                  {dustStormActive ? "2.4 (DUST STORM)" : "0.3 (CLEAR)"}
+                  {dustStormActive ? t("dustStormActive") : t("clearSky")}
                 </span>
               </div>
             </div>
@@ -1035,7 +1037,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                 </div>
                 <div className="space-y-2 text-[11px]">
                   <div className="flex justify-between border-b border-slate-800/60 pb-1">
-                    <span className="text-slate-500">INSTRUMENT:</span>
+                    <span className="text-slate-500">{t("instrument")}</span>
                     <span className="text-slate-200 font-bold">{activePin.instrument}</span>
                   </div>
                   <div className="flex justify-between border-b border-slate-800/60 pb-1">
@@ -1056,7 +1058,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     <span className="text-emerald-400 font-bold text-[10px] uppercase">
-                      LIVE NASA MSL RAW FEED
+                      {t("liveMslRawFeed")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-slate-400">
@@ -1080,17 +1082,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                     loading="lazy"
                   />
                   <div className="absolute bottom-1 left-1 bg-black/80 px-1 py-0.5 border border-slate-800 text-[9px] text-amber-300 font-mono">
-                    SOL {currentPhoto.sol} // {currentPhoto.instrument}
+                    {t("sol")} {currentPhoto.sol} // {currentPhoto.instrument}
                   </div>
                 </div>
 
                 <div className="space-y-1 text-[10px] text-slate-400">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">IMAGE ID:</span>
+                    <span className="text-slate-500">{t("imageId")}</span>
                     <span className="text-slate-300 truncate max-w-[170px]">{currentPhoto.imageid}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">ACQUIRED:</span>
+                    <span className="text-slate-500">{t("acquired")}</span>
                     <span className="text-slate-300">{currentPhoto.date_taken_utc.slice(0, 10)}</span>
                   </div>
                   {currentPhoto.caption && (
@@ -1106,13 +1108,13 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                     onClick={() => setPhotoIdx((prev) => (prev > 0 ? prev - 1 : curiosityPhotos.length - 1))}
                     className="flex-1 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] text-[10px] font-bold"
                   >
-                    [ &lt; PREV SOL ]
+                    {t("prevSol")}
                   </button>
                   <button
                     onClick={() => setPhotoIdx((prev) => (prev < curiosityPhotos.length - 1 ? prev + 1 : 0))}
                     className="flex-1 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] text-[10px] font-bold"
                   >
-                    [ NEXT SOL &gt; ]
+                    {t("nextSol")}
                   </button>
                 </div>
               </div>
@@ -1124,28 +1126,28 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         <div className="h-10 bg-[#0b0f17] border-t border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
           <div className="flex items-center gap-4 text-slate-300">
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">EVA CAM ELEV:</span>
+              <span className="text-slate-500">{t("evaCamElev")}</span>
               <span className="text-amber-400 font-bold tabular-nums">{camElevation} m</span>
             </div>
             <span className="text-slate-700">|</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">RETICLE TGT:</span>
+              <span className="text-slate-500">{t("reticleTgt")}</span>
               {reticleCoords ? (
                 <span className="text-cyan-400 font-bold tabular-nums">
                   X: {reticleCoords.x > 0 ? `+${reticleCoords.x}` : reticleCoords.x}m, Z: {reticleCoords.z > 0 ? `+${reticleCoords.z}` : reticleCoords.z}m ({reticleCoords.elev}m)
                 </span>
               ) : (
-                <span className="text-slate-600">SEARCHING TERRAIN...</span>
+                <span className="text-slate-600">{t("searchingTerrain")}</span>
               )}
             </div>
           </div>
 
           <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-500">
-            <span>[ DRAG: 360° PAN ]</span>
+            <span>{t("hintPan")}</span>
             <span>•</span>
-            <span>[ CLICK GROUND: TELEPORT EVA (1.7M) ]</span>
+            <span>{t("hintTeleport")}</span>
             <span>•</span>
-            <span>[ WHEEL: ZOOM ]</span>
+            <span>{t("hintZoom")}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1153,7 +1155,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               onClick={handleResetOrigin}
               className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-[11px] font-bold transition-colors"
             >
-              [ RESET ORIGIN ]
+              {t("resetOrigin")}
             </button>
           </div>
         </div>

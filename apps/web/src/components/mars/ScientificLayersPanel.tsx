@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { MARTIAN_SCIENTIFIC_LAYERS } from "@/lib/martian/martianLayers";
 import {
   OrbitalImagerySource,
@@ -25,6 +26,7 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
   onSelectOrbitalSource,
   wmtsStatus = "streaming",
 }) => {
+  const t = useTranslations("layers");
   const isDark = theme === "dark";
   const activePreset = ORBITAL_WMTS_PRESETS[orbitalSource] || ORBITAL_WMTS_PRESETS.jpl_hirise;
   const [probeSuccess, setProbeSuccess] = React.useState<boolean | null>(null);
@@ -62,13 +64,13 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
       {/* Header */}
       <div className={`border-b ${isDark ? "border-slate-800" : "border-slate-300"} pb-2`}>
         <span className="font-mono text-[10px] tracking-widest uppercase text-cyan-500 font-bold block">
-          PLANETARY GIS TELEMETRY LAYERS
+          {t("title")}
         </span>
         <h3 className={`text-xs font-bold font-mono ${isDark ? "text-white" : "text-slate-900"} uppercase mt-0.5`}>
-          Mount Sharp Multi-Layer Overlays
+          {t("subtitle")}
         </h3>
         <p className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-500"} mt-0.5 font-mono`}>
-          Planetary telemetry combining USGS geologic mapping, HRSC elevation contours, and Morgan et al. (2020) thermal indices.
+          {t("description")}
         </p>
       </div>
 
@@ -118,7 +120,7 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                       : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
                   }`}
                 >
-                  {isVisible ? "[ACTIVE]" : "[DISABLED]"}
+                  {isVisible ? t("active") : t("disabled")}
                 </button>
               </div>
 
@@ -131,10 +133,10 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                       isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
                     } space-y-1 text-[9px]`}>
                       <span className="text-amber-400 uppercase font-bold tracking-wider block">
-                        THEMIS NIGHT IR &amp; REGOLITH BEARING DETECTOR:
+                        {t("sandTrapTitle")}
                       </span>
                       <p className="text-slate-300">
-                        Bedrock stays warm at night (&gt;185 K, ATI &gt;350 tiu) providing safe <strong className="text-cyan-400">[BEDROCK FIRM]</strong> footings. Cold nighttime anomalies (&lt;178 K, ATI &lt;200 tiu) flag dangerous <strong className="text-red-400">[SOFT SAND TRAP RISK]</strong> where astronaut boots or rover wheels risk catastrophic sinkage.
+                        {t("sandTrapDesc")}
                       </p>
                     </div>
                   )}
@@ -145,10 +147,10 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                       isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
                     } space-y-1 text-[9px]`}>
                       <span className="text-purple-400 uppercase font-bold tracking-wider block">
-                        MGS MAG CRUSTAL MAGNETIC DEFLECTION UMBRELLA:
+                        {t("magneticTitle")}
                       </span>
                       <p className="text-slate-300">
-                        Mars lacks a global dipole dynamo, but ancient Noachian crustal rocks hold strong localized remanent magnetization (15-85 nT in Gale Crater) that partially deflects incoming cosmic rays and solar proton events, providing natural radiation shielding.
+                        {t("magneticDesc")}
                       </p>
                     </div>
                   )}
@@ -158,7 +160,7 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                     } space-y-1.5`}>
                       <div className="flex items-center justify-between text-[9px]">
                         <span className="text-slate-400 uppercase font-bold tracking-wider">
-                          ORBITAL WMTS SOURCE:
+                          {t("orbitalWmtsSource")}
                         </span>
                         {/* Live / Fallback Status Badge */}
                         <span
@@ -168,9 +170,7 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                               : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
                           }`}
                         >
-                          {isProxyActive
-                            ? "[JPL WMTS PROXY ACTIVE]"
-                            : "[LOCAL + OPM FALLBACK]"}
+                          {isProxyActive ? t("proxyActive") : t("proxyFallback")}
                         </span>
                       </div>
 
@@ -205,17 +205,17 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                       {/* Active Footprint & Endpoint Metadata */}
                       <div className="text-[8px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-800/80">
                         <span className="truncate max-w-[200px]">
-                          FOOTPRINT: GALE CRATER / MOUNT SHARP
+                          {t("footprint")}
                         </span>
                         <span className="text-amber-500 tabular-nums">
-                          RES: {activePreset.resolution}
+                          {t("resolution", { res: activePreset.resolution })}
                         </span>
                       </div>
                     </div>
                   )}
 
                   <span className={`text-[8px] uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"} block`}>
-                    LEGEND &amp; STRATIGRAPHIC RAMPS
+                    {t("legendTitle")}
                   </span>
                   <div className="grid grid-cols-1 gap-1">
                     {layer.legend.map((item, idx) => (
@@ -238,14 +238,14 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                   <div className={`mt-1.5 text-[9px] ${
                     isDark ? "bg-[#080c14] border-slate-800 text-slate-400" : "bg-slate-50 border-slate-200 text-slate-600"
                   } p-1.5 border flex items-center justify-between`}>
-                    <span className="truncate">SOURCE: {layer.sourceCitation.attributionText}</span>
+                    <span className="truncate">{t("source", { source: layer.sourceCitation.attributionText })}</span>
                     <a
                       href={layer.sourceCitation.sourceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-cyan-500 hover:underline shrink-0 ml-2 font-bold"
                     >
-                      [PDS DOCS]
+                      {t("pdsDocs")}
                     </a>
                   </div>
                 </div>

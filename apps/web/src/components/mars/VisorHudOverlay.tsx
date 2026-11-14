@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import { computeRadioLineOfSight } from "@/lib/martian/scientificParams";
@@ -23,6 +24,7 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   currentSol = 4180,
   theme = "dark",
 }) => {
+  const t = useTranslations("hud");
   const isDark = theme === "dark";
   const target = selectedWaypoint ?? activeRoute?.targetWaypoint;
 
@@ -99,7 +101,7 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
           isDark ? "bg-[#0b0f17]" : "bg-white"
         } px-5 py-1.5 border border-amber-600/90 text-amber-500 shadow-sm`}>
           <div className={`text-[8px] ${isDark ? "text-slate-400" : "text-slate-500"} tracking-widest uppercase`}>
-            ASTRONAUT BEARING
+            {t("astronautBearing")}
           </div>
           <div className="flex items-center gap-3 text-xs font-bold tabular-nums">
             <span className={isDark ? "text-slate-600" : "text-slate-400"}>120°</span>
@@ -120,17 +122,17 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
         <div className={`flex items-center justify-between border-b ${isDark ? "border-cyan-900/80" : "border-cyan-200"} pb-1.5 text-[10px]`}>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-cyan-400" />
-            <span className="font-bold tracking-wider text-cyan-500 uppercase">PLSS LIFE SUPPORT</span>
+            <span className="font-bold tracking-wider text-cyan-500 uppercase">{t("plssLifeSupport")}</span>
           </div>
           <span className={`font-bold ${dustStormActive ? "text-amber-500" : "text-emerald-500"}`}>
-            {dustStormActive ? "[ELEVATED LOAD]" : "[NOMINAL]"}
+            {dustStormActive ? t("elevatedLoad") : t("nominal")}
           </span>
         </div>
 
         {/* O2 Tank Meter */}
         <div>
           <div className="flex justify-between text-[10px] mb-1">
-            <span className={isDark ? "text-slate-400" : "text-slate-600"}>O2 TANK CAPACITY:</span>
+            <span className={isDark ? "text-slate-400" : "text-slate-600"}>{t("o2Capacity")}</span>
             <span className={`font-bold ${isDark ? "text-cyan-200" : "text-cyan-800"} tabular-nums`}>
               {o2Level}% (3.8h)
             </span>
@@ -143,21 +145,21 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 gap-1.5 text-[9px]">
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>SUIT PRESSURE</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("suitPressure")}</span>
             <span className={`font-bold ${isDark ? "text-white" : "text-slate-900"} tabular-nums`}>29.6 kPa</span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>HEART RATE</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("heartRate")}</span>
             <span className="font-bold text-emerald-500 tabular-nums">{calculatedHeartRate} BPM</span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>RAD DOSE</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("radDose")}</span>
             <span className="font-bold text-amber-500 tabular-nums">
               {radRateText}
             </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>SUIT BATTERY</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("suitBattery")}</span>
             <span className={`font-bold tabular-nums ${batteryPct < 40 ? "text-red-500" : "text-cyan-500"}`}>
               {batteryPct}%
             </span>
@@ -172,30 +174,30 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
         <div className={`flex items-center justify-between border-b ${isDark ? "border-amber-900/80" : "border-amber-200"} pb-1.5 text-[10px]`}>
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 ${dustStormActive ? "bg-red-500 animate-ping" : "bg-amber-400"}`} />
-            <span className="font-bold tracking-wider text-amber-500 uppercase">ENVIRONMENT &amp; WEATHER</span>
+            <span className="font-bold tracking-wider text-amber-500 uppercase">{t("envWeather")}</span>
           </div>
           <span className={`font-bold ${isDark ? "text-slate-300" : "text-slate-700"} tabular-nums`}>SOL {currentSol}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-1.5 text-[9px]">
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>REMS WIND</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("remsWind")}</span>
             <span className={`font-bold tabular-nums ${dustStormActive ? "text-red-500" : isDark ? "text-white" : "text-slate-900"}`}>
               {windSpeed}
             </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>DUST OPACITY</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("dustOpacity")}</span>
             <span className={`font-bold tabular-nums ${dustStormActive ? "text-amber-500" : "text-emerald-500"}`}>
               {dustTau}
             </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>SOLAR FLUX</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("solarFlux")}</span>
             <span className={`font-bold ${isDark ? "text-white" : "text-slate-900"} tabular-nums`}>{solarFlux}</span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>DONKI SPACE WX</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("donkiSpaceWx")}</span>
             <span className={`font-bold tabular-nums ${speAlert === "WARNING" ? "text-rose-500 animate-pulse" : speAlert === "WATCH" ? "text-amber-500" : "text-emerald-500"}`}>
               [{speAlert}]
             </span>
@@ -204,9 +206,9 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
 
         {/* Radio Line-of-Sight Telemetry */}
         <div className={`flex items-center justify-between text-[9px] pt-1 border-t ${isDark ? "border-amber-900/60" : "border-amber-200"}`}>
-          <span className={isDark ? "text-slate-400" : "text-slate-600"}>RADIO COMMS:</span>
+          <span className={isDark ? "text-slate-400" : "text-slate-600"}>{t("radioComms")}</span>
           <span className={`font-bold ${radioLos === "CONNECTED" ? "text-emerald-400" : "text-rose-400"}`}>
-            [{radioLos === "CONNECTED" ? "LOS CONNECTED" : "BLOCKED - MRO RELAY"}]
+            [{radioLos === "CONNECTED" ? t("losConnected") : t("blockedMro")}]
           </span>
         </div>
       </div>
@@ -217,8 +219,8 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
           isDark ? "bg-[#0b0f17] border-amber-600/90 text-amber-300" : "bg-white border-amber-600 text-amber-900 shadow-md"
         } p-3 border space-y-2 pointer-events-auto`}>
           <div className={`flex items-center justify-between border-b ${isDark ? "border-amber-900/80" : "border-amber-200"} pb-1 text-[10px]`}>
-            <span className="font-bold tracking-wider text-amber-500 uppercase">TARGET NAVIGATION</span>
-            <span className="text-cyan-500 font-bold">[LOCKED]</span>
+            <span className="font-bold tracking-wider text-amber-500 uppercase">{t("targetNav")}</span>
+            <span className="text-cyan-500 font-bold">{t("locked")}</span>
           </div>
 
           <div>
@@ -232,13 +234,13 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
 
           <div className="grid grid-cols-2 gap-1.5 text-[9px]">
             <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>DISTANCE</span>
+              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("distance")}</span>
               <span className="font-bold text-amber-500 tabular-nums">
                 {activeRoute?.totalDistanceKm ?? 4.2} km
               </span>
             </div>
             <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>MEAN SLOPE</span>
+              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("meanSlope")}</span>
               <span className="font-bold text-emerald-500 tabular-nums">{target.meanSlopeDeg}°</span>
             </div>
           </div>
@@ -252,7 +254,7 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <span>INSPECT SURFACE POV</span>
+            <span>{t("inspectPov")}</span>
           </button>
         </div>
       )}

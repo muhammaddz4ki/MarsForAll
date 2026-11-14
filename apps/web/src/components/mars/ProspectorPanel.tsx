@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   MountSharpWaypoint,
   getFull35Parameters,
@@ -26,6 +27,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
   dustStormActive = false,
   theme = "dark",
 }) => {
+  const t = useTranslations("prospector");
   const isDark = theme === "dark";
   const [activeTab, setActiveTab] = useState<"ml_fusion" | "params_35" | "sharad_radar">("ml_fusion");
 
@@ -100,13 +102,13 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
   if (!waypoint) {
     return (
       <div className={`p-4 text-center font-mono text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-        <p className="mb-2">Select any waypoint or sector on Mount Sharp to execute the Prospector ML Multi-Layer Fusion assessment.</p>
+        <p className="mb-2">{t("awaitingTarget")}</p>
         <span className={`inline-block px-2 py-0.5 border text-[11px] font-bold ${
           isDark
             ? "bg-[#111827] border-slate-700 text-amber-400"
             : "bg-slate-100 border-slate-300 text-amber-700"
         }`}>
-          [STATUS: AWAITING TARGET LOCK]
+          {t("statusAwaitingLock")}
         </span>
       </div>
     );
@@ -133,7 +135,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           <span className={`font-mono text-[10px] tracking-widest uppercase ${
             isDark ? "text-cyan-400" : "text-cyan-700 font-bold"
           }`}>
-            PROSPECTOR // ML DATA FUSION
+            {t("title")}
           </span>
           <span
             className={`px-1.5 py-0.5 font-mono text-[9px] font-bold border ${
@@ -144,7 +146,11 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
             }`}
           >
-            [{evaluation.operationalRecommendation.replace(/_/g, " ")}]
+            {evaluation.operationalRecommendation === "PRIORITY_SAMPLING_SITE"
+              ? `[${t("prioritySampling")}]`
+              : evaluation.operationalRecommendation === "HAZARD_BYPASS_REQUIRED"
+              ? `[${t("hazardBypass")}]`
+              : `[${t("nominalSurvey")}]`}
           </span>
         </div>
         <h3 className={`text-xs font-bold mt-1 uppercase font-mono ${isDark ? "text-white" : "text-slate-900"}`}>
@@ -164,7 +170,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            [ ML FUSION ]
+            {t("tabMlFusion")}
           </button>
           <button
             onClick={() => setActiveTab("params_35")}
@@ -174,7 +180,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            [ 35-PARAM MATRIX ]
+            {t("tabParams35")}
           </button>
           <button
             onClick={() => setActiveTab("sharad_radar")}
@@ -184,7 +190,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 : "text-slate-400 hover:text-slate-200"
             }`}
           >
-            [ SHARAD RADAR ]
+            {t("tabSharad")}
           </button>
         </div>
       </div>
@@ -198,13 +204,13 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
               isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
             }`}>
               <span className={`text-[9px] font-mono uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                RESOURCE PROMISE
+                {t("resourcePromise")}
               </span>
               <div className="text-2xl font-bold font-mono text-amber-500 tabular-nums my-0.5">
                 {evaluation.promiseScore}%
               </div>
               <span className={`text-[9px] font-mono ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                INTACT VEINS &amp; VOLATILES
+                {t("intactVeins")}
               </span>
             </div>
 
@@ -212,7 +218,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
               isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
             }`}>
               <span className={`text-[9px] font-mono uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                UNCERTAINTY INDEX
+                {t("uncertaintyIndex")}
               </span>
               <div className="text-2xl font-bold font-mono text-cyan-500 tabular-nums my-0.5">
                 ±{dustStormActive ? (Number(evaluation.uncertaintyPercent) + 14.7).toFixed(1) : evaluation.uncertaintyPercent}%
@@ -224,7 +230,13 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                   ? "text-emerald-500 font-bold"
                   : "text-yellow-500 font-bold"
               }`}>
-                {dustStormActive ? "[DUST INTERFERENCE]" : `[${evaluation.confidenceLevel} CONFIDENCE]`}
+                {dustStormActive
+                  ? t("dustInterference")
+                  : evaluation.confidenceLevel === "HIGH"
+                  ? t("highConfidence")
+                  : evaluation.confidenceLevel === "MODERATE"
+                  ? t("moderateConfidence")
+                  : t("lowConfidence")}
               </span>
             </div>
           </div>
@@ -235,7 +247,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           }`}>
             <div className="flex items-center justify-between border-b pb-1 text-[9px] font-mono">
               <span className={`font-bold uppercase tracking-wider ${isDark ? "text-cyan-400" : "text-cyan-800"}`}>
-                SWIM 5-TERM WATER-ICE INDEX (MORGAN ET AL. 2020)
+                {t("swimTitle")}
               </span>
               <span className="text-amber-500 font-bold tabular-nums">
                 SWIM: {swim.compositeSwimScore > 0 ? "+" : ""}{swim.compositeSwimScore}
@@ -273,7 +285,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
             <div className="pt-1">
               <div className="flex justify-between text-[9px] font-mono mb-1">
                 <span className={isDark ? "text-slate-400" : "text-slate-600"}>
-                  SHARAD DIELECTRIC PERMITTIVITY (ε&apos;):
+                  {t("sharadPermittivity")}
                 </span>
                 <span className="font-bold text-cyan-400 tabular-nums">
                   ε&apos; = {swim.epsilonPrime} [{swim.materialClassification.split("(")[0].trim()}]
@@ -294,9 +306,9 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           }`}>
             <div className="flex items-center justify-between border-b pb-1 text-[9px] font-mono">
               <span className={`font-bold uppercase tracking-wider ${isDark ? "text-amber-400" : "text-amber-800"}`}>
-                CHEMCAM ROCK CHEMISTRY (JPL MMGIS FIG. 2)
+                {t("chemcamTitle")}
               </span>
-              <span className="text-slate-500 font-mono">LIBS ABUNDANCE</span>
+              <span className="text-slate-500 font-mono">{t("libsAbundance")}</span>
             </div>
 
             <div className="w-full h-3 border border-slate-700 flex overflow-hidden">
@@ -326,16 +338,16 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           {/* Domain 1: Topography */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-cyan-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D1] TOPOGRAPHY &amp; GEOMETRY</span>
+              <span>{t("domainTopography")}</span>
               <span className="text-slate-500">MOLA / HIRISE DTM</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">ELEVATION:</span> <span className="text-white font-bold tabular-nums">{p35.elevationM} m</span></div>
-              <div><span className="text-slate-500">SLOPE:</span> <span className="text-white font-bold tabular-nums">{p35.slopeDeg}°</span></div>
-              <div><span className="text-slate-500">ROUGHNESS:</span> <span className="text-white font-bold tabular-nums">{p35.roughnessM} m</span></div>
-              <div><span className="text-slate-500">ASPECT:</span> <span className="text-white font-bold tabular-nums">{p35.aspectDeg}° ({p35.aspectCardinal})</span></div>
+              <div><span className="text-slate-500">{t("elevation")}</span> <span className="text-white font-bold tabular-nums">{p35.elevationM} m</span></div>
+              <div><span className="text-slate-500">{t("slope")}</span> <span className="text-white font-bold tabular-nums">{p35.slopeDeg}°</span></div>
+              <div><span className="text-slate-500">{t("roughness")}</span> <span className="text-white font-bold tabular-nums">{p35.roughnessM} m</span></div>
+              <div><span className="text-slate-500">{t("aspect")}</span> <span className="text-white font-bold tabular-nums">{p35.aspectDeg}° ({p35.aspectCardinal})</span></div>
               <div className="col-span-2 text-slate-400">
-                <span className="text-slate-500">SOLAR ILLUM:</span> Az {p35.sunIllumination.azimuthDeg}°, Zen {p35.sunIllumination.zenithDeg}°, Shadow {p35.sunIllumination.shadowRatioPct}%
+                <span className="text-slate-500">{t("solarIllum")}</span> Az {p35.sunIllumination.azimuthDeg}°, Zen {p35.sunIllumination.zenithDeg}°, Shadow {p35.sunIllumination.shadowRatioPct}%
               </div>
             </div>
           </div>
@@ -343,61 +355,61 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           {/* Domain 2: Thermal & Surface Physics */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-amber-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D2] THERMAL &amp; SURFACE PHYSICS</span>
+              <span>{t("domainThermal")}</span>
               <span className="text-slate-500">THEMIS / TES</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">DAY TEMP:</span> <span className="text-amber-400 font-bold tabular-nums">{p35.daySurfaceTempC}°C</span></div>
-              <div><span className="text-slate-500">NIGHT TEMP:</span> <span className="text-cyan-400 font-bold tabular-nums">{p35.nightSurfaceTempC}°C</span></div>
-              <div><span className="text-slate-500">THERMAL INERTIA:</span> <span className="text-white font-bold tabular-nums">{p35.thermalInertiaTiu} tiu</span></div>
-              <div><span className="text-slate-500">DUST COVER:</span> <span className="text-white font-bold tabular-nums">{p35.dustCoverIndex}</span></div>
-              <div className="col-span-2"><span className="text-slate-500">BOLOMETRIC ALBEDO:</span> <span className="text-white font-bold tabular-nums">{p35.bolometricAlbedo}</span></div>
+              <div><span className="text-slate-500">{t("dayTemp")}</span> <span className="text-amber-400 font-bold tabular-nums">{p35.daySurfaceTempC}°C</span></div>
+              <div><span className="text-slate-500">{t("nightTemp")}</span> <span className="text-cyan-400 font-bold tabular-nums">{p35.nightSurfaceTempC}°C</span></div>
+              <div><span className="text-slate-500">{t("thermalInertia")}</span> <span className="text-white font-bold tabular-nums">{p35.thermalInertiaTiu} tiu</span></div>
+              <div><span className="text-slate-500">{t("dustCover")}</span> <span className="text-white font-bold tabular-nums">{p35.dustCoverIndex}</span></div>
+              <div className="col-span-2"><span className="text-slate-500">{t("bolometricAlbedo")}</span> <span className="text-white font-bold tabular-nums">{p35.bolometricAlbedo}</span></div>
             </div>
           </div>
 
           {/* Domain 3: Weather & Atmosphere */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-emerald-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D3] WEATHER &amp; ATMOSPHERE</span>
+              <span>{t("domainWeather")}</span>
               <span className="text-slate-500">MSL REMS / MEDA</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">EVA AIR TEMP:</span> <span className="text-white font-bold tabular-nums">{p35.ambientAirTempC}°C</span></div>
-              <div><span className="text-slate-500">PRESSURE:</span> <span className="text-white font-bold tabular-nums">{p35.atmosphericPressurePa} Pa</span></div>
-              <div><span className="text-slate-500">WIND:</span> <span className="text-white font-bold tabular-nums">{p35.windSpeedMs} m/s @ {p35.windDirectionDeg}°</span></div>
-              <div><span className="text-slate-500">DUST TAU:</span> <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>{dustStormActive ? "2.40" : p35.dustOpacityTau}</span></div>
-              <div className="col-span-2"><span className="text-slate-500">HUMIDITY:</span> <span className="text-white font-bold tabular-nums">{p35.relativeHumidityPct}%</span></div>
+              <div><span className="text-slate-500">{t("airTemp")}</span> <span className="text-white font-bold tabular-nums">{p35.ambientAirTempC}°C</span></div>
+              <div><span className="text-slate-500">{t("pressure")}</span> <span className="text-white font-bold tabular-nums">{p35.atmosphericPressurePa} Pa</span></div>
+              <div><span className="text-slate-500">{t("wind")}</span> <span className="text-white font-bold tabular-nums">{p35.windSpeedMs} m/s @ {p35.windDirectionDeg}°</span></div>
+              <div><span className="text-slate-500">{t("dustTau")}</span> <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>{dustStormActive ? "2.40" : p35.dustOpacityTau}</span></div>
+              <div className="col-span-2"><span className="text-slate-500">{t("humidity")}</span> <span className="text-white font-bold tabular-nums">{p35.relativeHumidityPct}%</span></div>
             </div>
           </div>
 
           {/* Domain 4: Radiation & Space Hazards */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-rose-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D4] RADIATION &amp; SPACE HAZARDS</span>
+              <span>{t("domainRadiation")}</span>
               <span className="text-slate-500">MSL RAD / DONKI / MGS</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">GCR DOSE:</span> <span className="text-white font-bold tabular-nums">{p35.gcrDoseRateUGyDay} µGy/day</span></div>
-              <div><span className="text-slate-500">EQUIV RATE:</span> <span className="text-white font-bold tabular-nums">{p35.doseRateMSvHr} mSv/hr</span></div>
-              <div><span className="text-slate-500">SPE ALERT:</span> <span className="text-emerald-400 font-bold">[{p35.speAlertLevel}]</span></div>
-              <div><span className="text-slate-500">UV INDEX:</span> <span className="text-amber-400 font-bold">[{p35.uvIndexLevel}]</span></div>
-              <div className="col-span-2"><span className="text-slate-500">CRUSTAL SHIELDING:</span> <span className="text-cyan-400 font-bold tabular-nums">{p35.crustalMagneticFieldNt} nT</span></div>
+              <div><span className="text-slate-500">{t("gcrDose")}</span> <span className="text-white font-bold tabular-nums">{p35.gcrDoseRateUGyDay} µGy/day</span></div>
+              <div><span className="text-slate-500">{t("equivRate")}</span> <span className="text-white font-bold tabular-nums">{p35.doseRateMSvHr} mSv/hr</span></div>
+              <div><span className="text-slate-500">{t("speAlert")}</span> <span className="text-emerald-400 font-bold">[{p35.speAlertLevel}]</span></div>
+              <div><span className="text-slate-500">{t("uvIndex")}</span> <span className="text-amber-400 font-bold">[{p35.uvIndexLevel}]</span></div>
+              <div className="col-span-2"><span className="text-slate-500">{t("crustalShielding")}</span> <span className="text-cyan-400 font-bold tabular-nums">{p35.crustalMagneticFieldNt} nT</span></div>
             </div>
           </div>
 
           {/* Domain 5: Mineralogy & Water */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-indigo-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D5] MINERALOGY &amp; WATER</span>
+              <span>{t("domainMineralogy")}</span>
               <span className="text-slate-500">CRISM / GRS</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">SULFATES:</span> <span className="text-amber-400 font-bold tabular-nums">{(p35.crismSpectralIndices.sulfatesGypsumJarosite * 100).toFixed(0)}%</span></div>
-              <div><span className="text-slate-500">SMECTITE CLAY:</span> <span className="text-cyan-400 font-bold tabular-nums">{(p35.crismSpectralIndices.phyllosilicatesClays * 100).toFixed(0)}%</span></div>
-              <div><span className="text-slate-500">HEMATITE:</span> <span className="text-white font-bold tabular-nums">{p35.crismSpectralIndices.hematiteFerricOxidePct}%</span></div>
-              <div><span className="text-slate-500">WEH ICE EQUIV:</span> <span className="text-cyan-300 font-bold tabular-nums">{p35.waterEquivalentHydrogenWtPct} wt%</span></div>
+              <div><span className="text-slate-500">{t("sulfates")}</span> <span className="text-amber-400 font-bold tabular-nums">{(p35.crismSpectralIndices.sulfatesGypsumJarosite * 100).toFixed(0)}%</span></div>
+              <div><span className="text-slate-500">{t("smectiteClay")}</span> <span className="text-cyan-400 font-bold tabular-nums">{(p35.crismSpectralIndices.phyllosilicatesClays * 100).toFixed(0)}%</span></div>
+              <div><span className="text-slate-500">{t("hematite")}</span> <span className="text-white font-bold tabular-nums">{p35.crismSpectralIndices.hematiteFerricOxidePct}%</span></div>
+              <div><span className="text-slate-500">{t("wehIce")}</span> <span className="text-cyan-300 font-bold tabular-nums">{p35.waterEquivalentHydrogenWtPct} wt%</span></div>
               <div className="col-span-2 text-slate-400">
-                <span className="text-slate-500">ELEMENTAL:</span> Si {p35.elementalChemistry.siPct}%, Fe {p35.elementalChemistry.fePct}%, Mg {p35.elementalChemistry.mgPct}%, Cl {p35.elementalChemistry.clPct}%
+                <span className="text-slate-500">{t("elemental")}</span> Si {p35.elementalChemistry.siPct}%, Fe {p35.elementalChemistry.fePct}%, Mg {p35.elementalChemistry.mgPct}%, Cl {p35.elementalChemistry.clPct}%
               </div>
             </div>
           </div>
@@ -405,16 +417,16 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
           {/* Domain 6 & 7: Subsurface & Nav */}
           <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1">
             <div className="flex justify-between text-yellow-400 font-bold border-b border-slate-800 pb-1 text-[9px]">
-              <span>[D6/D7] SUBSURFACE &amp; NAV COMMS</span>
+              <span>{t("domainSubsurface")}</span>
               <span className="text-slate-500">SHARAD / USGS / RF</span>
             </div>
             <div className="grid grid-cols-2 gap-1 text-[9px] pt-1">
-              <div><span className="text-slate-500">GEOLOGIC EPOCH:</span> <span className="text-white font-bold">{p35.geologicEpoch}</span></div>
-              <div><span className="text-slate-500">GRAVITY:</span> <span className="text-white font-bold tabular-nums">{p35.gravityAnomalyMgal} mGal</span></div>
-              <div><span className="text-slate-500">MISSION SOL:</span> <span className="text-white font-bold tabular-nums">Sol {p35.sol}</span></div>
-              <div><span className="text-slate-500">HAB DISTANCE:</span> <span className="text-white font-bold tabular-nums">{p35.routeMetrics.routeDistanceKm} km</span></div>
+              <div><span className="text-slate-500">{t("geologicEpoch")}</span> <span className="text-white font-bold">{p35.geologicEpoch}</span></div>
+              <div><span className="text-slate-500">{t("gravity")}</span> <span className="text-white font-bold tabular-nums">{p35.gravityAnomalyMgal} mGal</span></div>
+              <div><span className="text-slate-500">{t("missionSol")}</span> <span className="text-white font-bold tabular-nums">Sol {p35.sol}</span></div>
+              <div><span className="text-slate-500">{t("habDistance")}</span> <span className="text-white font-bold tabular-nums">{p35.routeMetrics.routeDistanceKm} km</span></div>
               <div className="col-span-2">
-                <span className="text-slate-500">RADIO COMMS:</span>{" "}
+                <span className="text-slate-500">{t("radioComms")}</span>{" "}
                 <span className={`font-bold ${p35.radioLineOfSight === "CONNECTED" ? "text-emerald-400" : "text-rose-400"}`}>
                   [{p35.radioLineOfSight}]
                 </span>
@@ -429,7 +441,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
         <div className="space-y-3 font-mono text-xs">
           <div className="border border-slate-800 bg-[#07090e] p-2.5">
             <div className="flex justify-between text-[10px] text-cyan-400 font-bold border-b border-slate-800 pb-1 mb-2">
-              <span>SHARAD 20-MHZ RADARGRAM STRATIGRAPHY (0-500M)</span>
+              <span>{t("sharadStratigraphy")}</span>
               <span className="text-slate-500">MRO SHARAD SOUNDER</span>
             </div>
 
@@ -448,7 +460,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 >
                   <div className="flex justify-between text-[10px] font-bold">
                     <span className={idx === 1 ? "text-cyan-300" : "text-amber-400"}>
-                      DEPTH: {layer.depthStartM}m - {layer.depthEndM}m (Δ {layer.depthEndM - layer.depthStartM}m)
+                      {t("depth")} {layer.depthStartM}m - {layer.depthEndM}m (Δ {layer.depthEndM - layer.depthStartM}m)
                     </span>
                     <span className="text-white tabular-nums">
                       ε&apos; = {layer.dielectricPermittivity} | {layer.densityGPerCm3} g/cm³
@@ -466,16 +478,16 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
 
             <div className="mt-3 p-2 bg-[#111827] border border-slate-800 text-[9px] text-slate-400 space-y-1">
               <div className="flex justify-between">
-                <span>SOUNDING RADAR FREQ:</span>
+                <span>{t("soundingFreq")}</span>
                 <span className="text-slate-200 font-bold">15 - 25 MHz (Center 20 MHz)</span>
               </div>
               <div className="flex justify-between">
-                <span>VERTICAL RESOLUTION:</span>
+                <span>{t("verticalRes")}</span>
                 <span className="text-slate-200 font-bold">~15 m in free-space (ε&apos; scaled)</span>
               </div>
               <div className="flex justify-between">
-                <span>RADAR ATTENUATION:</span>
-                <span className="text-emerald-400 font-bold">LOW (High transmission through dry sulfates)</span>
+                <span>{t("radarAttenuation")}</span>
+                <span className="text-emerald-400 font-bold">{t("radarAttenuationLow")}</span>
               </div>
             </div>
           </div>
@@ -492,7 +504,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
             <circle cx="12" cy="12" r="3" />
           </svg>
-          <span>INSPECT 3D POV (NASA MOLA &amp; MSL RAW FEED)</span>
+          <span>{t("inspect3d")}</span>
         </button>
 
         <button
@@ -507,7 +519,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
             <circle cx="12" cy="12" r="10" />
             <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
           </svg>
-          <span>PLAN MARSWALK ROUTE TO TARGET</span>
+          <span>{t("planRoute")}</span>
         </button>
       </div>
     </div>
