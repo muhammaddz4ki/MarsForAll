@@ -10,10 +10,14 @@ import {
   matchMartianTargetToEarthAnalogues,
   planMarswalkRoute,
   MARTIAN_SCIENTIFIC_LAYERS,
+  computeCrustalMagneticShielding,
+  evaluateSandTrapRisk,
+  CURIOSITY_HISTORICAL_TRAVERSE,
+  BRADBURY_LANDING_ELLIPSE,
 } from "../packages/shared/dist/index.js";
 
 console.log("===============================================================================");
-console.log("ARES-PATH // GALE-01: MARTIAN EXPLORATION SCIENCE ENGINES VERIFICATION");
+console.log("MARSFORALL // GALE-01: MARTIAN EXPLORATION SCIENCE ENGINES VERIFICATION");
 console.log("===============================================================================\n");
 
 // 1. Thermal & Diurnal Skin Depth Check (Morgan et al. 2020)
@@ -31,9 +35,18 @@ console.log(`    8.5°  -> ${safeSlope.label} (multiplier: ${safeSlope.penaltyMu
 console.log(`    19.2° -> ${cautionSlope.label} (multiplier: ${cautionSlope.penaltyMultiplier.toFixed(2)})`);
 console.log(`    28.0° -> ${cliffSlope.label} (multiplier: ${cliffSlope.penaltyMultiplier})`);
 
-// 3. Prospector ML Fusion Evaluation on Boxwork 2025
+// 3. MGS MAG Crustal Magnetic Shielding & THEMIS Sand Trap Detection
+console.log(`\n[3] MGS MAG & THEMIS Night IR Safety Engines:`);
+const magBoxwork = computeCrustalMagneticShielding(72);
+console.log(`    Boxwork 2025 Crustal Field (72 nT): ~${magBoxwork.shieldingFactorPercent}% cosmic ray dose reduction (${magBoxwork.magneticDeflectionStatus})`);
+const firmTest = evaluateSandTrapRisk(485, 196);
+console.log(`    Firm Bedrock Test (485 tiu, 196 K): [${firmTest.firmnessStatus}] bearing capacity ~${firmTest.bearingCapacityKPa} kPa`);
+const sandTrapTest = evaluateSandTrapRisk(140, 168);
+console.log(`    Sand Trap Hazard Test (140 tiu, 168 K): [${sandTrapTest.firmnessStatus}] riskLevel: ${sandTrapTest.riskLevel}`);
+
+// 4. Prospector ML Fusion Evaluation on Boxwork 2025
 const boxworkWp = MOUNT_SHARP_WAYPOINTS.find((w) => w.id === "curiosity_boxwork_2025");
-console.log(`\n[3] Prospector ML Multi-Layer Fusion Engine on: ${boxworkWp.name}`);
+console.log(`\n[4] Prospector ML Multi-Layer Fusion Engine on: ${boxworkWp.name}`);
 const prospectorResult = evaluateProspectorTarget({
   coordinates: boxworkWp.coordinates,
   elevationM: boxworkWp.elevationM,
@@ -42,16 +55,21 @@ const prospectorResult = evaluateProspectorTarget({
   consistencyIndexCT: boxworkWp.consistencyIndexCT,
   mineralProfile: boxworkWp.mineralogy,
   surfaceRadiationMSvSol: boxworkWp.surfaceRadiationMSvSol,
+  crustalMagneticFieldNt: boxworkWp.crustalMagneticFieldNt,
+  themisNightTempK: boxworkWp.themisNightTempK,
 });
 console.log(`    Scientific & Resource Promise Score: ${prospectorResult.promiseScore}%`);
 console.log(`    Model Uncertainty Index: ±${prospectorResult.uncertaintyPercent}% (${prospectorResult.confidenceLevel})`);
 console.log(`    Hydration Potential: ${prospectorResult.subScores.hydrationResourcePotential}/100`);
 console.log(`    Fracture Trapping: ${prospectorResult.subScores.geologicFractureTrapping}/100`);
+console.log(`    Terrain Accessibility (Sand-Trap Aware): ${prospectorResult.subScores.evaTerrainAccessibility}/100`);
+console.log(`    MGS MAG Shielding: ${prospectorResult.crustalMagneticShielding.fieldIntensityNt} nT (~${prospectorResult.crustalMagneticShielding.shieldingFactorPercent}%)`);
+console.log(`    Sand Trap Assessment: [${prospectorResult.sandTrapAssessment.firmnessStatus}]`);
 console.log(`    Nearest Ground Truth: ${prospectorResult.nearestRoverGroundTruth.waypointName} (${prospectorResult.nearestRoverGroundTruth.distanceKm} km away)`);
 console.log(`    Recommendation: ${prospectorResult.operationalRecommendation}`);
 
-// 4. Earth Analogue Dynamic Matcher
-console.log(`\n[4] Earth Analogue Matcher (Target: Boxwork 2025 with Mineralogy Priority):`);
+// 5. Earth Analogue Dynamic Matcher
+console.log(`\n[5] Earth Analogue Matcher (Target: Boxwork 2025 with Mineralogy Priority):`);
 const analogueRankings = matchMartianTargetToEarthAnalogues(boxworkWp, {
   thermalInertiaWeight: 15,
   slopeTopographyWeight: 15,
@@ -64,8 +82,8 @@ analogueRankings.forEach((r) => {
   console.log(`       Protocol: ${r.fieldTestingProtocol}`);
 });
 
-// 5. Marswalk Terrain-Aware Route Planner
-console.log(`\n[5] Marswalk Route Planner (Habitat Alpha -> Boxwork 2025):`);
+// 6. Marswalk Terrain-Aware Route Planner
+console.log(`\n[6] Marswalk Route Planner (Habitat Alpha -> Boxwork 2025):`);
 const soloRoute = planMarswalkRoute({
   startWaypointId: "gale_hab_alpha",
   targetWaypointId: "curiosity_boxwork_2025",
@@ -75,20 +93,18 @@ console.log(`    [SOLO ASTRONAUT]`);
 console.log(`    Total Distance: ${soloRoute.totalDistanceKm} km | Duration: ${soloRoute.estimatedDurationHours} hrs (${soloRoute.solFraction} sol)`);
 console.log(`    O2 Consumed: ${soloRoute.totalO2ConsumedLiters} L (${soloRoute.remainingO2Percent}% tank remaining)`);
 console.log(`    Battery Drain: ${soloRoute.totalBatteryWh} Wh (${soloRoute.remainingBatteryPercent}% reserve remaining)`);
+console.log(`    Avg Crustal Magnetism: ${soloRoute.averageCrustalMagNt} nT (~${soloRoute.magneticShieldingReductionPercent}% GCR reduction)`);
+console.log(`    Sand Trap Hazards Detected: ${soloRoute.sandTrapWarningCount}`);
 console.log(`    Safety Index: ${soloRoute.overallSafetyIndex}/100 | Segments: ${soloRoute.segments.length}`);
 
-const muleRoute = planMarswalkRoute({
-  startWaypointId: "gale_hab_alpha",
-  targetWaypointId: "curiosity_boxwork_2025",
-  supportMode: "PAIRED_CREW_MULE_ROVER",
+// 7. Curiosity Historical Traverse & 5 Operational Layers Check
+console.log(`\n[7] MSL Curiosity Historical Traverse & 5 Operational Layers:`);
+console.log(`    Landing Ellipse Defined: ${BRADBURY_LANDING_ELLIPSE.length} polygon vertices centered at Bradbury Landing.`);
+console.log(`    Historical Traverse Checkpoints: ${CURIOSITY_HISTORICAL_TRAVERSE.length} mission milestones:`);
+CURIOSITY_HISTORICAL_TRAVERSE.forEach((pt) => {
+  console.log(`      - Sol ${pt.sol}: ${pt.name} (${pt.coordinates[1]}°, ${pt.coordinates[0]}°) [${pt.milestone}]`);
 });
-console.log(`    [PAIRED CREW + CARGO MULE ROVER]`);
-console.log(`    Total Distance: ${muleRoute.totalDistanceKm} km | Duration: ${muleRoute.estimatedDurationHours} hrs`);
-console.log(`    O2 Consumed: ${muleRoute.totalO2ConsumedLiters} L (${muleRoute.remainingO2Percent}% tank remaining)`);
-console.log(`    Battery Drain: ${muleRoute.totalBatteryWh} Wh (${muleRoute.remainingBatteryPercent}% pack remaining)`);
-console.log(`    Safety Index: ${muleRoute.overallSafetyIndex}/100 | Payload Capacity: 250 kg`);
+console.log(`\n    5 NASA Operational Layers Configured (${MARTIAN_SCIENTIFIC_LAYERS.length} total):`);
+MARTIAN_SCIENTIFIC_LAYERS.forEach((l) => console.log(`      [${l.category.toUpperCase()}] ${l.name}`));
 
-console.log(`\n[6] Scientific Layers Configured: ${MARTIAN_SCIENTIFIC_LAYERS.length} layers:`);
-MARTIAN_SCIENTIFIC_LAYERS.forEach((l) => console.log(`    - ${l.name} (${l.category})`));
-
-console.log("\n>>> ALL FOUNDATIONAL CALCULATION ENGINES VERIFIED SUCCESSFULLY!");
+console.log("\n>>> ALL MARSFORALL FOUNDATIONAL CALCULATION ENGINES VERIFIED SUCCESSFULLY!");

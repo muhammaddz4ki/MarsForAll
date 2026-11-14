@@ -82,6 +82,13 @@ export function evaluateSubsurfaceConsistency(
 
 /**
  * 5-Term Subsurface Water Ice Mapping (SWIM) Model (Morgan et al. 2020)
+ *
+ * Integrates 5 independent geophysical indicators:
+ *   - CN: Neutron-detected hydrogen (MONS / HEND / DAN) in [-1, +1]
+ *   - CT: Thermal inertia consistency in [-1, 0, +1]
+ *   - CG: Geomorphic periglacial polygon landform score in [-1, +1]
+ *   - CRS: SHARAD surface radar return reflectivity in [-1, +1]
+ *   - CRD: SHARAD dielectric permittivity consistency in [-1, +1]
  */
 export interface Swim5TermConsistency {
   cn: number; // Neutron (-1 to +1)
@@ -94,6 +101,11 @@ export interface Swim5TermConsistency {
   materialClassification: string;
 }
 
+/**
+ * Computes dielectric permittivity from SHARAD radar two-way travel time delay:
+ * epsilon' = (c * delta_t / (2 * h))^2
+ * where c = 0.299792 m/ns (speed of light in vacuum), delta_t is delay in ns, h is depth in meters.
+ */
 export function computeDielectricPermittivity(twoWayDelayNs: number, layerDepthMeters: number): number {
   if (layerDepthMeters <= 0) return 7.5;
   const c = 0.299792;
@@ -101,6 +113,12 @@ export function computeDielectricPermittivity(twoWayDelayNs: number, layerDepthM
   return Number(Math.pow(ratio, 2).toFixed(2));
 }
 
+/**
+ * Maps dielectric permittivity epsilon' to SWIM consistency score CRD [-1, +1]:
+ *   epsilon' <= 3.15 -> +1.0 (pure water ice)
+ *   epsilon' = 5.0  -> 0.0  (mixture)
+ *   epsilon' >= 7.0 -> -1.0 (dry basaltic bedrock)
+ */
 export function evaluateDielectricConsistency(epsilonPrime: number): { crd: number; materialCategory: string } {
   if (epsilonPrime <= 3.15) {
     return { crd: 1.0, materialCategory: "Pure Water Ice (epsilon' <= 3.15)" };
@@ -115,6 +133,9 @@ export function evaluateDielectricConsistency(epsilonPrime: number): { crd: numb
   }
 }
 
+/**
+ * Computes the weighted composite SWIM score across all 5 instruments.
+ */
 export function computeCompositeSwimScore(params: {
   cn: number;
   ct: ConsistencyIndexCT;
@@ -122,6 +143,7 @@ export function computeCompositeSwimScore(params: {
   crs: number;
   crd: number;
 }): { compositeScore: number; classification: "HIGH_CONFIDENCE_ICE" | "POTENTIAL_HYDRATED_UNIT" | "INCONCLUSIVE" | "ICE_FREE_BEDROCK" } {
+  // SWIM Weight distribution: Neutron 25%, Thermal 25%, Geomorphology 20%, Radar Surface 10%, Radar Dielectric 20%
   const score = 0.25 * params.cn + 0.25 * params.ct + 0.20 * params.cg + 0.10 * params.crs + 0.20 * params.crd;
   const compositeScore = Number(score.toFixed(2));
   let classification: "HIGH_CONFIDENCE_ICE" | "POTENTIAL_HYDRATED_UNIT" | "INCONCLUSIVE" | "ICE_FREE_BEDROCK";
@@ -132,6 +154,9 @@ export function computeCompositeSwimScore(params: {
   return { compositeScore, classification };
 }
 
+/**
+ * Terrain mobility hazard classification based on slope gradient.
+ */
 export type SlopeMobilityClass = "SAFE_WALK" | "SUIT_EXERTION_CAUTION" | "IMPASSABLE_CLIFF_HAZARD";
 
 export function classifySlopeHazard(slopeDegrees: number): {
@@ -139,6 +164,7 @@ export function classifySlopeHazard(slopeDegrees: number): {
   penaltyMultiplier: number;
   label: string;
   color: string;
+  maxSlopeEnvelopeDeg: number;
 } {
   if (slopeDegrees < 15.0) {
     return {
@@ -146,6 +172,7 @@ export function classifySlopeHazard(slopeDegrees: number): {
       penaltyMultiplier: 1.0 + (slopeDegrees / 15.0) * 0.25,
       label: "Safe Walk (<15°)",
       color: "#22c55e",
+      maxSlopeEnvelopeDeg: 15.0,
     };
   }
   if (slopeDegrees <= 25.0) {
@@ -155,6 +182,7 @@ export function classifySlopeHazard(slopeDegrees: number): {
       penaltyMultiplier: 2.2 * Math.exp(0.085 * excess),
       label: "Suit Exertion Caution (15°-25°)",
       color: "#eab308",
+      maxSlopeEnvelopeDeg: 25.0,
     };
   }
   return {
@@ -162,9 +190,13 @@ export function classifySlopeHazard(slopeDegrees: number): {
     penaltyMultiplier: Infinity,
     label: "Impassable Cliff / Boulder Hazard (>25°)",
     color: "#ef4444",
+    maxSlopeEnvelopeDeg: 90.0,
   };
 }
 
+/**
+ * Photometric Scattering & Lambertian Illumination (Papers 2909 & 2132)
+ */
 export interface PhotometricRoughnessParams {
   hapkeRoughnessDeg: number;
   geometricAlbedo: number;
@@ -181,11 +213,14 @@ export interface LambertianPhotometryMetrics {
   solarElevationDeg: number;
   solarIncidenceDeg: number;
   mu0CosIncidence: number;
-  terrainContrastIndex: number;
-  glareObstacleIndex: number;
+  terrainContrastIndex: number; // 0 - 100%
+  glareObstacleIndex: number; // 0 - 100%
   shadowLengthMultiplier: number;
 }
 
+/**
+ * Evaluates Lambertian photometric scattering on Mars regolith per Sol (Paper 2132)
+ */
 export function computeLambertianPhotometry(solarElevationDeg: number): LambertianPhotometryMetrics {
   const clampedElev = Math.max(1, Math.min(89, solarElevationDeg));
   const incidence = 90 - clampedElev;
@@ -219,6 +254,9 @@ export function computeTerrainImpedance(
   return slopeHazard.penaltyMultiplier * roughnessFactor * shadowPenalty;
 }
 
+/**
+ * NASA AMMOS MMGIS Instrument Telemetry Definitions (Paper 2541)
+ */
 export interface InstrumentQuicklook {
   instrument: "Mastcam" | "ChemCam" | "APXS" | "REMS" | "RAD";
   status: "nominal" | "active_scan" | "standby" | "alert";
@@ -294,7 +332,100 @@ export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPrese
     sublabel: "Gale Crater Offline Contour & Ridge Vectors",
     resolution: "100% Offline Embedded GeoJSON",
     tiles: [],
-    attribution: "ARES-PATH Embedded Basal Geology",
+    attribution: "MARSFORALL Embedded Basal Geology",
   },
 };
 
+/**
+ * MGS MAG Crustal Magnetic Field Deflection Model
+ * Mars Global Surveyor Magnetometer / Electron Reflectometer (MAG/ER).
+ * In Gale Crater, localized ancient remanent magnetization in bedrock (15 - 85 nT)
+ * provides a partial magnetic deflection umbrella against Solar Energetic Particles (SEP)
+ * and Galactic Cosmic Rays (GCR).
+ */
+export interface CrustalMagneticShielding {
+  fieldIntensityNt: number;
+  shieldingFactorPercent: number; // 0 - 20% dose reduction
+  magneticDeflectionStatus: "MINIMAL_SHIELDING" | "MODERATE_DEFLECTION" | "HIGH_MAGNETIC_UMBRELLA";
+  scientificSummary: string;
+}
+
+export function computeCrustalMagneticShielding(fieldIntensityNt: number): CrustalMagneticShielding {
+  const clamped = Math.max(0, Math.min(120, fieldIntensityNt));
+  // 0 nT -> 0%, 50 nT -> 9.5%, 85 nT -> 16.2%
+  const shieldingFactorPercent = Number((clamped * 0.19).toFixed(1));
+  let magneticDeflectionStatus: "MINIMAL_SHIELDING" | "MODERATE_DEFLECTION" | "HIGH_MAGNETIC_UMBRELLA";
+  if (clamped >= 60) {
+    magneticDeflectionStatus = "HIGH_MAGNETIC_UMBRELLA";
+  } else if (clamped >= 35) {
+    magneticDeflectionStatus = "MODERATE_DEFLECTION";
+  } else {
+    magneticDeflectionStatus = "MINIMAL_SHIELDING";
+  }
+
+  const scientificSummary = `MGS MAG Crustal Field: ${clamped} nT provides ~${shieldingFactorPercent}% partial GCR/SEP deflection over regional bedrock.`;
+  return {
+    fieldIntensityNt: clamped,
+    shieldingFactorPercent,
+    magneticDeflectionStatus,
+    scientificSummary,
+  };
+}
+
+/**
+ * THEMIS Night IR & Apparent Thermal Inertia (ATI) Sand Trap Risk Detector
+ *
+ * Differentiates consolidated bedrock (stays warm in night IR, high thermal inertia)
+ * from loose eolian sand dunes and thick dust mantles (cools rapidly in night IR, low thermal inertia),
+ * which present critical entrapment risks for astronaut boots and rover wheels.
+ */
+export type SandTrapRiskLevel = "LOW" | "MODERATE" | "HIGH";
+export type SurfaceFirmnessStatus = "BEDROCK FIRM" | "MODERATE COMPACTION" | "SOFT SAND TRAP RISK";
+
+export interface SandTrapEvaluation {
+  riskLevel: SandTrapRiskLevel;
+  firmnessStatus: SurfaceFirmnessStatus;
+  apparentThermalInertiaTiu: number;
+  themisNightTempK: number;
+  bearingCapacityKPa: number;
+  recommendation: string;
+}
+
+export function evaluateSandTrapRisk(
+  thermalInertiaTiu: number,
+  themisNightTempK: number
+): SandTrapEvaluation {
+  // Bedrock: TI >= 350 tiu, Night Temp >= 185 K
+  if (thermalInertiaTiu >= 350 && themisNightTempK >= 185) {
+    return {
+      riskLevel: "LOW",
+      firmnessStatus: "BEDROCK FIRM",
+      apparentThermalInertiaTiu: thermalInertiaTiu,
+      themisNightTempK,
+      bearingCapacityKPa: 220,
+      recommendation: "Solid bedrock pavement. Optimal traction for astronaut EVA boots and cargo transport.",
+    };
+  }
+
+  // Moderate Compaction: TI >= 200 tiu or Night Temp >= 178 K
+  if (thermalInertiaTiu >= 200 || themisNightTempK >= 178) {
+    return {
+      riskLevel: "MODERATE",
+      firmnessStatus: "MODERATE COMPACTION",
+      apparentThermalInertiaTiu: thermalInertiaTiu,
+      themisNightTempK,
+      bearingCapacityKPa: 110,
+      recommendation: "Indurated regolith / sulfate crust. Nominal traction with minor slip risk on slopes.",
+    };
+  }
+
+  // Sand Trap Risk: TI < 200 tiu and Night Temp < 178 K
+  return {
+    riskLevel: "HIGH",
+    firmnessStatus: "SOFT SAND TRAP RISK",
+    apparentThermalInertiaTiu: thermalInertiaTiu,
+    themisNightTempK,
+    bearingCapacityKPa: 28,
+    recommendation: "Unconsolidated eolian drift / fine dust sinkage risk. Restrict wheeled traversal and deploy suit snowshoes.",
+  };
+}

@@ -1,22 +1,10 @@
-# .cursorrules — ARES-PATH // GALE-01 Project Guidelines
+# MARSFORALL // GALE-01 Cursor Rules
+# Project: MARSFORALL // GALE-01 (NASA Space Apps Challenge 2026)
 
-# Project Identity
-You are working on "ARES-PATH // GALE-01", a planetary GIS and Marswalk route planner for NASA Space Apps Challenge 2026.
-Primary Target: Mount Sharp (Aeolis Mons), Gale Crater, Mars (Lat: -5.4453°, Lon: 137.8414°), focusing on Curiosity 2025 boxwork formations.
-
-# Branding Constraints (ZERO NASA LOGOS)
-- NEVER download, embed, or render official NASA meatball or worm logos.
-- Use only the custom vector mission emblem: `/images/ares-path-badge.svg`.
-- Citations must be text-only (USGS, JPL Mars Trek, AMMOS MMGIS, NASA Worldview).
-
-# UI Design Rules (ZERO GRADIENTS, ZERO EMOJIS)
-- ZERO GRADIENTS: No bg-gradient-*, linear-gradient, radial-gradient, or glow shadows. Flat solid backgrounds (#07090e, #0b0f17, #111827) and crisp 1px borders.
-- ZERO EMOJIS: Never use Unicode emojis in UI text, labels, buttons, or badges. Use monochrome SVG icons or bracketed badges like [SAFE], [CAUTION], [HAZARD].
-- TABULAR NUMBERS: Use `font-mono tabular-nums` for all telemetry, coordinates, and percentages with explicit units (m, km, deg, tiu, mSv/sol, L/min, kg).
-
-# Core Models & Engines
-- 4 Scientific Layers: Optical & Geologic, Topographic & Hazard (<15°, 15-25°, >25°), Thermal ATI & CT (Morgan et al. 2020), Radiation RAD & REMS.
-- Prospector ML Scorer: Promise Score (0-100%) and Model Uncertainty Index (±%).
-- Earth Analogue Matcher: Real-time dynamic priority weight sliders matching Haughton, Death Valley, Rio Tinto, Atacama.
-- Marswalk A* Router: Terrain-aware least-cost route for Solo Astronaut vs Paired Crew + Mule Rover.
-- Offline-First: Always keep local GeoJSON fallbacks active.
+- ALWAYS enforce zero gradients in CSS and Tailwind (no bg-gradient-*, linear-gradient, radial-gradient).
+- ALWAYS enforce zero emojis in all UI elements, labels, buttons, and alerts.
+- NEVER use official NASA logos, meatballs, or worms. Use `/images/marsforall-badge.svg`.
+- Enforce 5 operational NASA planetary layers (Optik HiRISE/CTX, Topografi 1m DTM, Termal THEMIS Sand Trap, Sains CRISM/WEH, Keselamatan MGS MAG/RAD).
+- Render Curiosity Historical Traverse and Bradbury Landing Ellipse with dashed cyan tactical line styling.
+- Ensure all numerical telemetry uses font-mono tabular-nums with explicit SI units.
+- Ensure offline-first operation with embedded GeoJSON datasets.

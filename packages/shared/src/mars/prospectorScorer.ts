@@ -13,6 +13,10 @@ import {
   Swim5TermConsistency,
   computeCompositeSwimScore,
   evaluateDielectricConsistency,
+  computeCrustalMagneticShielding,
+  CrustalMagneticShielding,
+  evaluateSandTrapRisk,
+  SandTrapEvaluation,
 } from "./scientificParams.js";
 import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
 
@@ -32,6 +36,8 @@ export interface ProspectorInputQuery {
   surfaceRadiationMSvSol: number;
   dustCoverIndexTau?: number;
   swimOverride?: Swim5TermConsistency;
+  crustalMagneticFieldNt?: number;
+  themisNightTempK?: number;
 }
 
 export interface ProspectorEvaluationResult {
@@ -45,6 +51,8 @@ export interface ProspectorEvaluationResult {
     inSituCalibrationScore: number; // 0 - 100
   };
   swimModel: Swim5TermConsistency;
+  crustalMagneticShielding: CrustalMagneticShielding;
+  sandTrapAssessment: SandTrapEvaluation;
   nearestRoverGroundTruth: {
     waypointId: string;
     waypointName: string;
@@ -104,13 +112,25 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     Math.round(tiNormalized * 55 + (query.mineralProfile.sulfatePercent / 50) * 45)
   );
 
-  // 3. EVA Terrain Accessibility Score (20% weight)
+  // 3. EVA Terrain Accessibility Score (20% weight) & Sand Trap Integration
   const slopeHazard = classifySlopeHazard(query.slopeDeg);
   let accessibilityScore = 100;
   if (slopeHazard.classification === "SUIT_EXERTION_CAUTION") {
     accessibilityScore = Math.max(30, Math.round(100 - (query.slopeDeg - 15) * 6.5));
   } else if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD") {
     accessibilityScore = 5;
+  }
+
+  // Evaluate Sand Trap condition via THEMIS Night IR & Thermal Inertia
+  const defaultNightTemp = query.apparentThermalInertiaTiu >= 350 ? 190 : 175;
+  const sandTrapAssessment = evaluateSandTrapRisk(
+    query.apparentThermalInertiaTiu,
+    query.themisNightTempK ?? defaultNightTemp
+  );
+  if (sandTrapAssessment.riskLevel === "HIGH") {
+    accessibilityScore = Math.max(10, accessibilityScore - 25);
+  } else if (sandTrapAssessment.riskLevel === "MODERATE") {
+    accessibilityScore = Math.max(20, accessibilityScore - 10);
   }
 
   // 4. In-Situ Calibration & Distance Penalty
@@ -126,6 +146,10 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   }
 
   const calibrationScore = Math.max(15, Math.min(100, Math.round(100 * Math.exp(-minDistanceKm / 4.5))));
+
+  // Evaluate MGS MAG Crustal Magnetic Field & Natural Shielding
+  const effectiveFieldNt = query.crustalMagneticFieldNt ?? closestWp.crustalMagneticFieldNt ?? 30;
+  const crustalMagneticShielding = computeCrustalMagneticShielding(effectiveFieldNt);
 
   // 5. Full 5-Term SWIM Subsurface Water Ice Mapping Model (Morgan et al. 2020)
   let swimModel: Swim5TermConsistency;
@@ -211,8 +235,23 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     `Sensor resolution gap: Target is ${minDistanceKm.toFixed(2)} km from nearest in-situ ground truth (${closestWp.name}), yielding ±${totalUncertainty}% model uncertainty.`
   );
 
+  // Rationale for Sand Trap & MGS MAG
+  if (sandTrapAssessment.riskLevel === "HIGH") {
+    rationale.push(
+      `[CRITICAL TRAVERSAL HAZARD]: Soft sand trap condition (${sandTrapAssessment.firmnessStatus}) detected via low THEMIS Night IR (${sandTrapAssessment.themisNightTempK} K) & TI (${sandTrapAssessment.apparentThermalInertiaTiu} tiu). Bearing capacity ~${sandTrapAssessment.bearingCapacityKPa} kPa.`
+    );
+  } else if (sandTrapAssessment.firmnessStatus === "BEDROCK FIRM") {
+    rationale.push(
+      `THEMIS Night IR & TES confirm [BEDROCK FIRM] pavement (${sandTrapAssessment.themisNightTempK} K, ${sandTrapAssessment.apparentThermalInertiaTiu} tiu). Excellent traction with bearing capacity ~${sandTrapAssessment.bearingCapacityKPa} kPa.`
+    );
+  }
+
+  rationale.push(
+    `MGS MAG Crustal Magnetism: Local remanent crustal field is ${crustalMagneticShielding.fieldIntensityNt} nT (${crustalMagneticShielding.magneticDeflectionStatus}), providing ~${crustalMagneticShielding.shieldingFactorPercent}% natural shielding against GCR/SEP radiation.`
+  );
+
   let operationalRecommendation: "PRIORITY_SAMPLING_SITE" | "SECONDARY_EXPLORATION" | "HAZARD_BYPASS_REQUIRED";
-  if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD") {
+  if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD" || sandTrapAssessment.riskLevel === "HIGH") {
     operationalRecommendation = "HAZARD_BYPASS_REQUIRED";
   } else if (promiseScore >= 70 && confidenceLevel !== "RECONNAISSANCE_ONLY") {
     operationalRecommendation = "PRIORITY_SAMPLING_SITE";
@@ -231,6 +270,8 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
       inSituCalibrationScore: calibrationScore,
     },
     swimModel,
+    crustalMagneticShielding,
+    sandTrapAssessment,
     nearestRoverGroundTruth: {
       waypointId: closestWp.id,
       waypointName: closestWp.name,

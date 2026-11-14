@@ -1,6 +1,6 @@
 {
   "mission": {
-    "codename": "ARES-PATH // GALE-01",
+    "codename": "MARSFORALL // GALE-01",
     "challenge": "NASA Space Apps Challenge 2026",
     "theme": "Guía de Supervivencia Interplanetaria: Mapa Marciano",
     "targetSite": "Monte Sharp (Aeolis Mons), Cráter Gale, Marte",
@@ -19,7 +19,7 @@
     "themeLight": "CLARO"
   },
   "docks": {
-    "layers": "CAPAS CIENTÍFICAS (4)",
+    "layers": "CAPAS OPERATIVAS (5)",
     "marswalk": "RUTA MARSWALK",
     "prospector": "PROSPECTOR ML",
     "earthAnalogues": "ANÁLOGOS TERRESTRES"

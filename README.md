@@ -1,10 +1,10 @@
-# ARES-PATH // GALE-01
+# MARSFORALL // GALE-01
 ### Interplanetary Survival Guide: Hyperlocalized Martian Excursion Map & ML Prospector
 
 > **NASA Space Apps Challenge 2026 Submission**  
 > **Challenge:** Interplanetary Survival Guide: Martian Map  
 > **Primary Target:** Mount Sharp (*Aeolis Mons*), Gale Crater, Mars (`Lat: -5.4453°, Lon: 137.8414°`)  
-> **Scientific Focus:** Curiosity Rover 2025 Boxwork Crystalline Fracture Ridge Exploration & Excursion Safety
+> **Scientific Focus:** Curiosity Rover 2025 Boxwork Mineral Vein Discovery, 5 NASA Operational Layers, & Curiosity Historical Traverse
 
 ---
 
@@ -12,7 +12,7 @@
 
 Global planetary exploration portals (such as JPL Mars Trek and USGS Astrogeology Planetary Geologic Mapping) are engineered for regional orbital surveys. However, human astronauts conducting localized surface extravehicular activities ("Marswalks") face extreme terrain and environmental challenges requiring hyperlocalized, multi-layered telemetry.
 
-**ARES-PATH // GALE-01** provides an autonomous, offline-first tactical decision interface for crewed Martian surface operations. Focused on Mount Sharp in Gale Crater—specifically the intricate boxwork mineral ridges identified by the MSL Curiosity rover in 2025—the platform synthesizes multimodal orbital GIS data, thermal subsurface consistency models, real-time rover environmental telemetry, machine-learning resource prospecting, and physiological consumable tracking into a unified mission cockpit.
+**MARSFORALL // GALE-01** provides an autonomous, offline-first tactical decision interface for crewed Martian surface operations. Focused on Mount Sharp in Gale Crater—specifically the intricate boxwork mineral ridges identified by the MSL Curiosity rover in 2025—the platform synthesizes multimodal orbital GIS data, thermal subsurface consistency models, real-time rover environmental telemetry, machine-learning resource prospecting, and physiological consumable tracking into a unified mission cockpit.
 
 ---
 
@@ -25,28 +25,32 @@ Global planetary exploration portals (such as JPL Mars Trek and USGS Astrogeolog
   - `[Habitat Mission Control]`: Multi-panel strategic operations view for Science Officers and Flight Directors.
   - `[Astronaut Helmet Visor HUD]`: Minimalist heads-up display overlay with compass tape, pitch ladder, slope safety alerts, and real-time oxygen/battery telemetry for surface EVAs.
 
-### B. 4 Specialized Scientific Overlay Layers
-1. **Optical & Geologic Units**: Delineates boxwork crystalline fracture networks, clay-bearing strata, magnesium-sulfate units, and basaltic sand dunes.
-2. **Topographic DEM & Mobility Hazard**: Slope classification with strict traversal zoning:
-   - `[SAFE <15°]`: Green corridor, nominal rover/EVA wheel traction.
-   - `[CAUTION 15°-25°]`: Yellow sector, loose regolith slip danger, throttle restricted.
-   - `[HAZARD >25°]`: Red boundary, catastrophic rollover and landslide hazard.
-3. **Thermal Inertia & Subsurface Ice Consistency**: Implements the Morgan et al. 2020 consistency index (`+1` consistent with buried water ice/hydrated minerals, `0` inconclusive, `-1` inconsistent) alongside Apparent Thermal Inertia (`ATI` in $\text{J}\cdot\text{m}^{-2}\cdot\text{K}^{-1}\cdot\text{s}^{-1/2}$).
-4. **Radiation & Space Weather**: Surface absorbed dose rate from Curiosity's Radiation Assessment Detector (RAD, nominal $\sim 0.64\text{ mSv/sol}$) and Rover Environmental Monitoring Station (REMS) UV and diurnal temperature telemetry.
+### B. 5 Operational Scientific Overlay Layers (NASA Mars Trek Catalog)
+1. **Layer 1: Optical & Geologic Units**: HiRISE 25 cm/px & CTX 6 m/px orbital imagery blended with USGS Planetary Geologic Mapping units (Noachian/Hesperian/Amazonian, boxwork veins, smectite clay, hematite ridge, capping sandstone).
+2. **Layer 2: Topographic DEM & Mobility Hazard**: MOLA & HiRISE 1m DTM contours with slope classification:
+   - `[SAFE <15°]`: Green corridor, nominal rover/EVA foot traction.
+   - `[CAUTION 15°-25°]`: Yellow sector, elevated metabolic exertion.
+   - `[HAZARD >25°]`: Red boundary, catastrophic rollover and cliff hazard.
+3. **Layer 3: Thermal & Subsurface Sand Trap Detector**: THEMIS Night IR & TES Apparent Thermal Inertia with Morgan et al. 2020 consistency index (`+1` consistent with buried water ice/hydrated minerals, `0` inconclusive, `-1` inconsistent), identifying firm bedrock (`[BEDROCK FIRM]`) vs loose dust/sand sinkage hazards (`[SOFT SAND TRAP RISK]`).
+4. **Layer 4: Science & Hydrated Mineralogy**: CRISM 18 m/px hyperspectral mapping (smectite clays, polyhydrated sulfates, hematite, silica) and GRS/MONS/DAN Water-Equivalent Hydrogen (`WEH %`).
+5. **Layer 5: Safety & Space Environment**: MGS MAG Crustal Magnetic Field intensity (`nT`) natural radiation shielding combined with MSL RAD surface dosimetry (`mSv/sol`) and REMS atmospheric conditions.
 
-### C. ML Prospector Engine & Uncertainty Quantification
-- **Multi-Factor Fusion Model**: Evaluates hydrated mineral signatures (CRISM $2.3\ \mu\text{m}$ absorption), thermal inertia, morphological fractured network indicators, and extraction viability.
-- **Confidence Scoring**: Delivers a Scientific Resource Promise Score ($0\text{--}100\%$) paired with an Uncertainty Index ($\pm\%$) and an automated decision matrix (`[TRIAGE: PRIORITY 1]`, `[TRIAGE: PRIORITY 2]`, `[PASS]`).
+### C. Curiosity Rover Historical Traverse & Landing Ellipse
+- Complete Gale Crater mission timeline path: Bradbury Landing Ellipse -> Yellowknife Bay -> Pahrump Hills -> Vera Rubin Ridge -> Glen Torridon -> Gediz Vallis -> Boxwork 2025.
+- Dashed tactical cyan trail with historical Sol checkpoints and interactive toggle.
 
-### D. 7-Parameter Weighted Earth Analogue Matcher
+### D. ML Prospector Engine & Uncertainty Quantification
+- **Multi-Factor Fusion Model**: Evaluates hydrated mineral signatures, apparent thermal inertia, MGS MAG deflection, and regolith sinkage risk.
+- **Confidence Scoring**: Delivers a Scientific Resource Promise Score ($0\text{--}100\%$) paired with an Uncertainty Index ($\pm\%$) and an automated decision matrix (`[PRIORITY_SAMPLING_SITE]`, `[SECONDARY_EXPLORATION]`, `[HAZARD_BYPASS_REQUIRED]`).
+
+### E. Weighted Earth Analogue Matcher
 Calibrates Martian surface samples against terrestrial analogues using Euclidean feature weighting:
-- **Utah Brushy Basin Member**: Fluvial smectite clays and silica ridge networks.
-- **Atacama Desert (Yungay Basin)**: Hyper-arid perchlorate salts, sulfate crusts, and low-moisture extremes.
-- **Rio Tinto Iron Gossan**: Acidic ferric-sulfate precipitations and gossan weathering caps.
-- **Svalbard Basalt Volcanic Vents**: Cold cryogenic hydrothermal vents and carbonate globules.
-- **Axel Heiberg Island Cold Springs**: Cryogenic subzero brine springs and permafrost gullies.
+- **Haughton Impact Crater (Devon Island, Canada)**: Polygon permafrost breccias.
+- **Mars Hill & Badwater (Death Valley, USA)**: Alluvial gravel fans and scree slopes.
+- **Río Tinto (Spain)**: Acidic gossan iron-sulfate deposits.
+- **Atacama Desert (Yungay Basin, Chile)**: Hyper-arid nitrate/perchlorate salts.
 
-### E. Terrain-Aware Marswalk Route Planner
+### F. Terrain-Aware Marswalk Route Planner
 - **Slope-Penalized Pathfinding**: Dynamic distance calculation with exponential slope penalties for ascents $>15^\circ$.
 - **Astronaut Life Support Modeling**: Calculates MET expenditure, metabolic oxygen consumption rates ($0.95\text{--}2.20\text{ L/min}$), battery draw, and enforces a mandatory $25\%$ emergency reserve threshold.
 

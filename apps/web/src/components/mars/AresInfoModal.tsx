@@ -50,15 +50,15 @@ export const AresInfoModal: React.FC<AresInfoModalProps> = ({
               MISSION BRIEF &amp; ARCHITECTURAL SCOPE
             </h4>
             <p className="font-mono text-[11px]">
-              <strong>ARES-PATH // GALE-01</strong> is an autonomous planetary GIS, machine learning prospector,
+              <strong>MARSFORALL // GALE-01</strong> is an autonomous planetary GIS, machine learning prospector,
               and Marswalk route navigation system developed for the <strong>NASA Space Apps Challenge 2026</strong> submission:
               <em>"Interplanetary Survival Guide: Martian Map"</em>.
             </p>
             <p className={`mt-1.5 ${isDark ? "text-slate-400" : "text-slate-600"} font-mono text-[11px]`}>
               While global exploratory portals (such as JPL Mars Trek) address regional views,
-              ARES-PATH solves the hyperlocalized operational gap required for human astronaut surface excursions
-              ("Marswalks") on Mount Sharp (Aeolis Mons), Gale Crater, specifically evaluating the 2025 Curiosity rover
-              Boxwork crystalline mineral vein discoveries.
+              MARSFORALL solves the hyperlocalized operational gap required for human astronaut surface excursions
+              ("Marswalks") on Mount Sharp (Aeolis Mons), Gale Crater, specifically integrating 5 NASA operational layers,
+              the 2025 Curiosity rover Boxwork mineral veins, MGS MAG crustal magnetic shielding, and historical traverse logs.
             </p>
           </section>
 

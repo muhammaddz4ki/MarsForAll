@@ -125,7 +125,33 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
               {/* Legends & Orbital Source Controls if Visible */}
               {isVisible && (
                 <div className={`mt-2.5 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"} space-y-2 font-mono`}>
-                  {/* Specialized Orbital Source Controls for Optical Layer */}
+                  {/* Specialized Callout for Layer 3: Sand Trap Detector */}
+                  {layer.id === "layer_thermal_subsurface" && (
+                    <div className={`p-2 border ${
+                      isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
+                    } space-y-1 text-[9px]`}>
+                      <span className="text-amber-400 uppercase font-bold tracking-wider block">
+                        THEMIS NIGHT IR &amp; REGOLITH BEARING DETECTOR:
+                      </span>
+                      <p className="text-slate-300">
+                        Bedrock stays warm at night (&gt;185 K, ATI &gt;350 tiu) providing safe <strong className="text-cyan-400">[BEDROCK FIRM]</strong> footings. Cold nighttime anomalies (&lt;178 K, ATI &lt;200 tiu) flag dangerous <strong className="text-red-400">[SOFT SAND TRAP RISK]</strong> where astronaut boots or rover wheels risk catastrophic sinkage.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Specialized Callout for Layer 5: MGS MAG Crustal Shielding */}
+                  {layer.id === "layer_safety_magnetic" && (
+                    <div className={`p-2 border ${
+                      isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
+                    } space-y-1 text-[9px]`}>
+                      <span className="text-purple-400 uppercase font-bold tracking-wider block">
+                        MGS MAG CRUSTAL MAGNETIC DEFLECTION UMBRELLA:
+                      </span>
+                      <p className="text-slate-300">
+                        Mars lacks a global dipole dynamo, but ancient Noachian crustal rocks hold strong localized remanent magnetization (15-85 nT in Gale Crater) that partially deflects incoming cosmic rays and solar proton events, providing natural radiation shielding.
+                      </p>
+                    </div>
+                  )}
                   {layer.id === "layer_optical_geologic" && (
                     <div className={`p-2 border ${
                       isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"

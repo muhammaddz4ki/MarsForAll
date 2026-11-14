@@ -328,7 +328,102 @@ export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPrese
     sublabel: "Gale Crater Offline Contour & Ridge Vectors",
     resolution: "100% Offline Embedded GeoJSON",
     tiles: [],
-    attribution: "ARES-PATH Embedded Basal Geology",
+    attribution: "MARSFORALL Embedded Basal Geology",
   },
 };
+
+/**
+ * MGS MAG Crustal Magnetic Field Deflection Model
+ * Mars Global Surveyor Magnetometer / Electron Reflectometer (MAG/ER).
+ * In Gale Crater, localized ancient remanent magnetization in bedrock (15 - 85 nT)
+ * provides a partial magnetic deflection umbrella against Solar Energetic Particles (SEP)
+ * and Galactic Cosmic Rays (GCR).
+ */
+export interface CrustalMagneticShielding {
+  fieldIntensityNt: number;
+  shieldingFactorPercent: number; // 0 - 20% dose reduction
+  magneticDeflectionStatus: "MINIMAL_SHIELDING" | "MODERATE_DEFLECTION" | "HIGH_MAGNETIC_UMBRELLA";
+  scientificSummary: string;
+}
+
+export function computeCrustalMagneticShielding(fieldIntensityNt: number): CrustalMagneticShielding {
+  const clamped = Math.max(0, Math.min(120, fieldIntensityNt));
+  // 0 nT -> 0%, 50 nT -> 9.5%, 85 nT -> 16.2%
+  const shieldingFactorPercent = Number((clamped * 0.19).toFixed(1));
+  let magneticDeflectionStatus: "MINIMAL_SHIELDING" | "MODERATE_DEFLECTION" | "HIGH_MAGNETIC_UMBRELLA";
+  if (clamped >= 60) {
+    magneticDeflectionStatus = "HIGH_MAGNETIC_UMBRELLA";
+  } else if (clamped >= 35) {
+    magneticDeflectionStatus = "MODERATE_DEFLECTION";
+  } else {
+    magneticDeflectionStatus = "MINIMAL_SHIELDING";
+  }
+
+  const scientificSummary = `MGS MAG Crustal Field: ${clamped} nT provides ~${shieldingFactorPercent}% partial GCR/SEP deflection over regional bedrock.`;
+  return {
+    fieldIntensityNt: clamped,
+    shieldingFactorPercent,
+    magneticDeflectionStatus,
+    scientificSummary,
+  };
+}
+
+/**
+ * THEMIS Night IR & Apparent Thermal Inertia (ATI) Sand Trap Risk Detector
+ *
+ * Differentiates consolidated bedrock (stays warm in night IR, high thermal inertia)
+ * from loose eolian sand dunes and thick dust mantles (cools rapidly in night IR, low thermal inertia),
+ * which present critical entrapment risks for astronaut boots and rover wheels.
+ */
+export type SandTrapRiskLevel = "LOW" | "MODERATE" | "HIGH";
+export type SurfaceFirmnessStatus = "BEDROCK FIRM" | "MODERATE COMPACTION" | "SOFT SAND TRAP RISK";
+
+export interface SandTrapEvaluation {
+  riskLevel: SandTrapRiskLevel;
+  firmnessStatus: SurfaceFirmnessStatus;
+  apparentThermalInertiaTiu: number;
+  themisNightTempK: number;
+  bearingCapacityKPa: number;
+  recommendation: string;
+}
+
+export function evaluateSandTrapRisk(
+  thermalInertiaTiu: number,
+  themisNightTempK: number
+): SandTrapEvaluation {
+  // Bedrock: TI >= 350 tiu, Night Temp >= 185 K
+  if (thermalInertiaTiu >= 350 && themisNightTempK >= 185) {
+    return {
+      riskLevel: "LOW",
+      firmnessStatus: "BEDROCK FIRM",
+      apparentThermalInertiaTiu: thermalInertiaTiu,
+      themisNightTempK,
+      bearingCapacityKPa: 220,
+      recommendation: "Solid bedrock pavement. Optimal traction for astronaut EVA boots and cargo transport.",
+    };
+  }
+
+  // Moderate Compaction: TI >= 200 tiu or Night Temp >= 178 K
+  if (thermalInertiaTiu >= 200 || themisNightTempK >= 178) {
+    return {
+      riskLevel: "MODERATE",
+      firmnessStatus: "MODERATE COMPACTION",
+      apparentThermalInertiaTiu: thermalInertiaTiu,
+      themisNightTempK,
+      bearingCapacityKPa: 110,
+      recommendation: "Indurated regolith / sulfate crust. Nominal traction with minor slip risk on slopes.",
+    };
+  }
+
+  // Sand Trap Risk: TI < 200 tiu and Night Temp < 178 K
+  return {
+    riskLevel: "HIGH",
+    firmnessStatus: "SOFT SAND TRAP RISK",
+    apparentThermalInertiaTiu: thermalInertiaTiu,
+    themisNightTempK,
+    bearingCapacityKPa: 28,
+    recommendation: "Unconsolidated eolian drift / fine dust sinkage risk. Restrict wheeled traversal and deploy suit snowshoes.",
+  };
+}
+
 

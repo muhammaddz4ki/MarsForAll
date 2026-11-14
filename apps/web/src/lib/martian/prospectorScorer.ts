@@ -13,6 +13,10 @@ import {
   Swim5TermConsistency,
   computeCompositeSwimScore,
   evaluateDielectricConsistency,
+  computeCrustalMagneticShielding,
+  CrustalMagneticShielding,
+  evaluateSandTrapRisk,
+  SandTrapEvaluation,
 } from "./scientificParams";
 import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints";
 
@@ -32,6 +36,8 @@ export interface ProspectorInputQuery {
   surfaceRadiationMSvSol: number;
   dustCoverIndexTau?: number;
   swimOverride?: Swim5TermConsistency;
+  crustalMagneticFieldNt?: number;
+  themisNightTempK?: number;
 }
 
 export interface ProspectorEvaluationResult {
@@ -45,6 +51,8 @@ export interface ProspectorEvaluationResult {
     inSituCalibrationScore: number; // 0 - 100
   };
   swimModel: Swim5TermConsistency;
+  crustalMagneticShielding: CrustalMagneticShielding;
+  sandTrapAssessment: SandTrapEvaluation;
   nearestRoverGroundTruth: {
     waypointId: string;
     waypointName: string;
@@ -57,6 +65,10 @@ export interface ProspectorEvaluationResult {
   operationalRecommendation: "PRIORITY_SAMPLING_SITE" | "SECONDARY_EXPLORATION" | "HAZARD_BYPASS_REQUIRED";
 }
 
+/**
+ * Great-circle aerocentric distance approximation between two Martian coordinates in kilometers.
+ * Mars mean radius R_mars = 3389.5 km.
+ */
 export function calculateMartianDistanceKm(coordA: [number, number], coordB: [number, number]): number {
   const R = 3389.5;
   const rad = Math.PI / 180.0;
@@ -72,9 +84,13 @@ export function calculateMartianDistanceKm(coordA: [number, number], coordB: [nu
   return R * c;
 }
 
+/**
+ * Executes the Prospector Multi-Layer Fusion assessment with full 5-term SWIM integration.
+ */
 export function evaluateProspectorTarget(query: ProspectorInputQuery): ProspectorEvaluationResult {
   const dustTau = query.dustCoverIndexTau ?? 0.35;
 
+  // 1. Hydration & Resource Potential (40% weight)
   const hydrationRaw =
     query.mineralProfile.sulfatePercent * 1.1 +
     query.mineralProfile.phyllosilicateClayPercent * 1.3 +
@@ -89,12 +105,14 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   }
   const hydrationScore = Math.min(100, Math.round(hydrationClamped * thermalMultiplier));
 
+  // 2. Geologic Fracture Trapping & Boxwork Likelihood (30% weight)
   const tiNormalized = Math.min(1.0, Math.max(0.0, (query.apparentThermalInertiaTiu - 100) / 500));
   const fractureTrappingScore = Math.min(
     100,
     Math.round(tiNormalized * 55 + (query.mineralProfile.sulfatePercent / 50) * 45)
   );
 
+  // 3. EVA Terrain Accessibility Score (20% weight) & Sand Trap Integration
   const slopeHazard = classifySlopeHazard(query.slopeDeg);
   let accessibilityScore = 100;
   if (slopeHazard.classification === "SUIT_EXERTION_CAUTION") {
@@ -103,6 +121,19 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     accessibilityScore = 5;
   }
 
+  // Evaluate Sand Trap condition via THEMIS Night IR & Thermal Inertia
+  const defaultNightTemp = query.apparentThermalInertiaTiu >= 350 ? 190 : 175;
+  const sandTrapAssessment = evaluateSandTrapRisk(
+    query.apparentThermalInertiaTiu,
+    query.themisNightTempK ?? defaultNightTemp
+  );
+  if (sandTrapAssessment.riskLevel === "HIGH") {
+    accessibilityScore = Math.max(10, accessibilityScore - 25);
+  } else if (sandTrapAssessment.riskLevel === "MODERATE") {
+    accessibilityScore = Math.max(20, accessibilityScore - 10);
+  }
+
+  // 4. In-Situ Calibration & Distance Penalty
   let closestWp = MOUNT_SHARP_WAYPOINTS[0];
   let minDistanceKm = Infinity;
 
@@ -116,12 +147,18 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
 
   const calibrationScore = Math.max(15, Math.min(100, Math.round(100 * Math.exp(-minDistanceKm / 4.5))));
 
+  // Evaluate MGS MAG Crustal Magnetic Field & Natural Shielding
+  const effectiveFieldNt = query.crustalMagneticFieldNt ?? closestWp.crustalMagneticFieldNt ?? 30;
+  const crustalMagneticShielding = computeCrustalMagneticShielding(effectiveFieldNt);
+
+  // 5. Full 5-Term SWIM Subsurface Water Ice Mapping Model (Morgan et al. 2020)
   let swimModel: Swim5TermConsistency;
   if (query.swimOverride) {
     swimModel = query.swimOverride;
   } else if (closestWp && closestWp.swimIndicators && minDistanceKm < 0.5) {
     swimModel = closestWp.swimIndicators;
   } else {
+    // Dynamic synthesis based on local parameters:
     const cnEst = Number((query.mineralProfile.phyllosilicateClayPercent * 0.012 + (query.consistencyIndexCT === 1 ? 0.35 : 0.0) - 0.2).toFixed(2));
     const ctEst = query.consistencyIndexCT;
     const cgEst = Number((tiNormalized * 0.8 - 0.4).toFixed(2));
@@ -147,6 +184,7 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     };
   }
 
+  // Overall Composite Promise Score (0 - 100%)
   const rawComposite =
     hydrationScore * 0.38 +
     fractureTrappingScore * 0.32 +
@@ -155,6 +193,7 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
 
   const promiseScore = Math.max(0, Math.min(100, Math.round(rawComposite)));
 
+  // Model Uncertainty Index (±%)
   const baseResolutionGap = 8.0;
   const distanceUncertainty = Math.min(22.0, (minDistanceKm / 10.0) * 15.0);
   const dustUncertainty = dustTau * 12.0;
@@ -168,6 +207,7 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   const confidenceLevel =
     totalUncertainty <= 14.0 ? "HIGH" : totalUncertainty <= 25.0 ? "MODERATE" : "RECONNAISSANCE_ONLY";
 
+  // Scientific Rationale Assembly
   const rationale: string[] = [];
   if (query.consistencyIndexCT === 1) {
     rationale.push("Morgan et al. (2020) CT=+1 index confirms high thermal inertia substrate beneath thin dust cover, strongly indicative of indurated mineral cement or cemented water-ice.");
@@ -195,8 +235,23 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     `Sensor resolution gap: Target is ${minDistanceKm.toFixed(2)} km from nearest in-situ ground truth (${closestWp.name}), yielding ±${totalUncertainty}% model uncertainty.`
   );
 
+  // Rationale for Sand Trap & MGS MAG
+  if (sandTrapAssessment.riskLevel === "HIGH") {
+    rationale.push(
+      `[CRITICAL TRAVERSAL HAZARD]: Soft sand trap condition (${sandTrapAssessment.firmnessStatus}) detected via low THEMIS Night IR (${sandTrapAssessment.themisNightTempK} K) & TI (${sandTrapAssessment.apparentThermalInertiaTiu} tiu). Bearing capacity ~${sandTrapAssessment.bearingCapacityKPa} kPa.`
+    );
+  } else if (sandTrapAssessment.firmnessStatus === "BEDROCK FIRM") {
+    rationale.push(
+      `THEMIS Night IR & TES confirm [BEDROCK FIRM] pavement (${sandTrapAssessment.themisNightTempK} K, ${sandTrapAssessment.apparentThermalInertiaTiu} tiu). Excellent traction with bearing capacity ~${sandTrapAssessment.bearingCapacityKPa} kPa.`
+    );
+  }
+
+  rationale.push(
+    `MGS MAG Crustal Magnetism: Local remanent crustal field is ${crustalMagneticShielding.fieldIntensityNt} nT (${crustalMagneticShielding.magneticDeflectionStatus}), providing ~${crustalMagneticShielding.shieldingFactorPercent}% natural shielding against GCR/SEP radiation.`
+  );
+
   let operationalRecommendation: "PRIORITY_SAMPLING_SITE" | "SECONDARY_EXPLORATION" | "HAZARD_BYPASS_REQUIRED";
-  if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD") {
+  if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD" || sandTrapAssessment.riskLevel === "HIGH") {
     operationalRecommendation = "HAZARD_BYPASS_REQUIRED";
   } else if (promiseScore >= 70 && confidenceLevel !== "RECONNAISSANCE_ONLY") {
     operationalRecommendation = "PRIORITY_SAMPLING_SITE";
@@ -215,6 +270,8 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
       inSituCalibrationScore: calibrationScore,
     },
     swimModel,
+    crustalMagneticShielding,
+    sandTrapAssessment,
     nearestRoverGroundTruth: {
       waypointId: closestWp.id,
       waypointName: closestWp.name,

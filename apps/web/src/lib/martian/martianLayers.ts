@@ -1,11 +1,12 @@
 /**
- * Scientific Map Layer Definitions for Mount Sharp (Aeolis Mons), Gale Crater
+ * Scientific & Operational Map Layer Definitions for Mount Sharp (Aeolis Mons), Gale Crater
  *
- * Implements the 4 core scientific layers specified by NASA Space Apps Challenge 2026:
- * 1. Optical & Geologic Units (USGS / HiRISE Boxwork, Clay, Sulfate)
- * 2. Topographic & Mobility Hazard (1m DEM, Slope Gradient Masks <15°, 15-25°, >25°)
- * 3. Thermal & Subsurface (TES/THEMIS ATI & Morgan et al. 2020 CT Index)
- * 4. Radiation & Space Weather (RAD surface dose mSv/sol, REMS atmospheric telemetry)
+ * Implements the 5 Integrated Operational Layers from the NASA Mars Trek Catalog:
+ * 1. OPTIK (HiRISE 25cm/px + CTX 5m/px + USGS Geology)
+ * 2. TOPOGRAFI (MOLA / HiRISE 1m Stereo DTM Slope & Roughness)
+ * 3. TERMAL (THEMIS Night IR & TES Inertia — Sand Trap Detector)
+ * 4. SAINS / MINERAL (CRISM 18m Hydrated Minerals & GRS/MONS WEH)
+ * 5. KESELAMATAN (MGS MAG Crustal Magnetic Field + RAD/REMS)
  */
 
 export interface ScientificLegendItem {
@@ -17,7 +18,7 @@ export interface ScientificLegendItem {
 export interface MartianLayerDef {
   id: string;
   name: string;
-  category: "optical_geology" | "topography_hazard" | "thermal_subsurface" | "radiation_environment";
+  category: "optical_geology" | "topography_hazard" | "thermal_subsurface" | "science_mineral" | "safety_magnetic";
   description: string;
   defaultVisible: boolean;
   opacity: number;
@@ -35,10 +36,10 @@ export interface MartianLayerDef {
 export const MARTIAN_SCIENTIFIC_LAYERS: MartianLayerDef[] = [
   {
     id: "layer_optical_geologic",
-    name: "Optical Basemap & USGS Geologic Units",
+    name: "Layer 1: Optical & USGS Geologic Units",
     category: "optical_geology",
     description:
-      "HiRISE 25 cm/px visible mosaic blended with USGS Planetary Geologic Mapping units. Highlights 2025 Curiosity boxwork mineral veins, Glen Torridon clay troughs, and sulfate strata.",
+      "HiRISE 25 cm/px & CTX 6 m/px orbital mosaic blended with USGS Planetary Geologic Mapping units. Visual surface survey for identifying boulder fields, small scarps, and Noachian/Hesperian/Amazonian stratigraphic contacts.",
     defaultVisible: true,
     opacity: 0.9,
     legend: [
@@ -50,7 +51,7 @@ export const MARTIAN_SCIENTIFIC_LAYERS: MartianLayerDef[] = [
     ],
     sourceCitation: {
       dataset: "USGS Scientific Investigations Map 3355 & HiRISE PDS Mosaic",
-      instrumentOrMission: "NASA MRO HiRISE / USGS Planetary Geologic Mapping",
+      instrumentOrMission: "NASA MRO HiRISE / CTX & USGS Planetary Geology",
       attributionText: "USGS-NASA Planetary Geologic Mapping Program & University of Arizona HiRISE",
       sourceUrl: "https://planetarymaps.usgs.gov/",
     },
@@ -58,16 +59,16 @@ export const MARTIAN_SCIENTIFIC_LAYERS: MartianLayerDef[] = [
   },
   {
     id: "layer_topographic_hazard",
-    name: "1m DEM Elevation & Slope Mobility Hazard Mask",
+    name: "Layer 2: Topographic Slope & 1m DTM Hazard Mask",
     category: "topography_hazard",
     description:
-      "High-Resolution Stereo Camera (HRSC) & HiRISE 1m/px elevation contours and terrain hazard color-coding for astronaut suit safety.",
+      "MOLA, HRSC, and HiRISE 1m/px stereo digital elevation model (DTM). Classifies terrain slope gradients (<15° Safe, 15°–25° Caution, >25° Cliff Hazard) and meter-scale surface roughness.",
     defaultVisible: true,
     opacity: 0.75,
     legend: [
-      { label: "Safe Walk (<15°)", color: "#22c55e", description: "Nominal metabolic expenditure, low slippage risk" },
-      { label: "Suit Exertion Caution (15°-25°)", color: "#eab308", description: "Elevated O2 consumption, anchor rigging recommended" },
-      { label: "Impassable Cliff Hazard (>25°)", color: "#ef4444", description: "Strict bypass required; high boulder-fall & tumble risk" },
+      { label: "Safe Walk (<15°)", color: "#22c55e", description: "Nominal metabolic expenditure, optimal boot/wheel traction" },
+      { label: "Suit Exertion Caution (15°-25°)", color: "#eab308", description: "Elevated O2 consumption, loose scree slip risk" },
+      { label: "Impassable Cliff Hazard (>25°)", color: "#ef4444", description: "Strict bypass required; rollover and falling rock danger" },
     ],
     sourceCitation: {
       dataset: "Gale Crater High-Resolution Digital Elevation Model (1m/px)",
@@ -78,44 +79,65 @@ export const MARTIAN_SCIENTIFIC_LAYERS: MartianLayerDef[] = [
   },
   {
     id: "layer_thermal_subsurface",
-    name: "TES/THEMIS Apparent Thermal Inertia & Subsurface Ice (CT)",
+    name: "Layer 3: THEMIS Night IR & Sand Trap Detector",
     category: "thermal_subsurface",
     description:
-      "MGS Thermal Emission Spectrometer (TES) & Mars Odyssey THEMIS Apparent Thermal Inertia (ATI) with Morgan et al. (2020) Subsurface Consistency Scoring.",
+      "THEMIS Night Infrared temperature (K) and TES Apparent Thermal Inertia (tiu). Differentiates firm bedrock (warm at night, high inertia) from soft sand traps and deep dust deposits (cold at night, high sinkage hazard).",
     defaultVisible: false,
     opacity: 0.8,
     legend: [
-      { label: "CT = +1 (Ice/Hydration Consistent)", color: "#38bdf8", description: "Low-TI mantle over high-TI indurated or ice-cemented layer (<1 skin depth)" },
-      { label: "CT = 0 (Unresolved / Single Layer)", color: "#94a3b8", description: "Uniform thermal half-space or deep overburden (>3 skin depths)" },
-      { label: "CT = -1 (Inverted / Desiccated)", color: "#f97316", description: "High-TI crust over porous low-TI desiccated subsoil" },
-      { label: "ATI > 450 tiu (Dense Rock / Veins)", color: "#6366f1", description: "Crystalline bedrock & mineralized boxwork ridges" },
+      { label: "[BEDROCK FIRM] (ATI > 350 tiu, >185 K)", color: "#0284c7", description: "Indurated rock pavement; maximum bearing strength" },
+      { label: "[MODERATE COMPACTION] (200-350 tiu)", color: "#eab308", description: "Consolidated sulfate regolith crust; standard traversal" },
+      { label: "[SOFT SAND TRAP RISK] (ATI < 200 tiu, <178 K)", color: "#ea580c", description: "Unconsolidated eolian drift; critical entrapment hazard" },
+      { label: "CT = +1 (Subsurface Hydration)", color: "#38bdf8", description: "Morgan et al. 2020 low-TI mantle over high-TI substrate" },
     ],
     sourceCitation: {
-      dataset: "Subsurface Water-Ice & Thermal Inertia Model (Morgan et al. 2020)",
-      instrumentOrMission: "MGS TES & Mars Odyssey THEMIS",
-      attributionText: "Morgan et al. / Nature Astronomy / ASU Mars Space Flight Facility",
+      dataset: "THEMIS Night IR & TES Apparent Thermal Inertia Model",
+      instrumentOrMission: "NASA 2001 Mars Odyssey THEMIS & MGS TES",
+      attributionText: "ASU Mars Space Flight Facility & Morgan et al. (Nature Astronomy)",
       sourceUrl: "https://doi.org/10.1038/s41550-020-01290-7",
     },
   },
   {
-    id: "layer_radiation_weather",
-    name: "Gale RAD Surface Radiation & REMS Microclimate",
-    category: "radiation_environment",
+    id: "layer_science_mineral",
+    name: "Layer 4: CRISM Hydrated Minerals & GRS WEH",
+    category: "science_mineral",
     description:
-      "MSL Radiation Assessment Detector (RAD) dosimetry (mSv/sol) with Rover Environmental Monitoring Station (REMS) dust opacity and diurnal thermal swings.",
+      "MRO Compact Reconnaissance Imaging Spectrometer for Mars (CRISM 18m/px) and Odyssey GRS/MONS Water-Equivalent Hydrogen (WEH %). Highlights primary astronaut scientific extraction targets.",
     defaultVisible: false,
-    opacity: 0.7,
+    opacity: 0.85,
     legend: [
-      { label: "Nominal Background (0.55 - 0.65 mSv/sol)", color: "#3b82f6", description: "Protected basin floor with thicker atmospheric shielding" },
-      { label: "Moderate Ridge Exposure (0.65 - 0.75 mSv/sol)", color: "#f59e0b", description: "Elevated ridges with decreased column density" },
-      { label: "High Exposure / SEP Alert (>0.75 mSv/sol)", color: "#dc2626", description: "Solar energetic particle risk; limit continuous EVA duration" },
+      { label: "High Hydration (WEH > 6.0%)", color: "#06b6d4", description: "Polyhydrated sulfates and hydrous vein networks" },
+      { label: "Phyllosilicate Clay Zone (4.5-6.0%)", color: "#10b981", description: "Smectite clays in ancient lacustrine mudstone" },
+      { label: "Crystalline Hematite (Fe2O3)", color: "#f43f5e", description: "Secondary groundwater diagenetic precipitate" },
+      { label: "Basaltic Mafic Sand (WEH < 3.5%)", color: "#64748b", description: "Anhydrous olivine/pyroxene eolian sand sheets" },
     ],
     sourceCitation: {
-      dataset: "Curiosity MSL RAD Dosimetry & REMS Atmospheric Logs",
-      instrumentOrMission: "NASA MSL Curiosity Rover / SwRI / CAB (CSIC-INTA)",
-      attributionText: "NASA AMMOS MMGIS & Southwest Research Institute (SwRI)",
-      sourceUrl: "https://github.com/NASA-AMMOS/MMGIS",
+      dataset: "CRISM Targeted Hyperspectral & Mars Odyssey GRS Mapping",
+      instrumentOrMission: "NASA MRO CRISM & Mars Odyssey GRS/MONS",
+      attributionText: "JHU-APL / NASA Planetary Data System Geosciences Node",
+      sourceUrl: "https://crism.jhuapl.edu/",
+    },
+  },
+  {
+    id: "layer_safety_magnetic",
+    name: "Layer 5: MGS MAG Crustal Magnetic & RAD Environment",
+    category: "safety_magnetic",
+    description:
+      "Mars Global Surveyor (MGS) Magnetometer crustal magnetic field anomalies (nT) providing natural deflection of cosmic radiation, synthesized with MSL RAD dosimeter readings and REMS atmospheric conditions.",
+    defaultVisible: false,
+    opacity: 0.75,
+    legend: [
+      { label: "High Crustal Field (>60 nT)", color: "#8b5cf6", description: "Strong natural magnetic deflection umbrella (~12-16% dose reduction)" },
+      { label: "Moderate Crustal Field (35-60 nT)", color: "#3b82f6", description: "Localized remanent magnetization in ancient Noachian crust" },
+      { label: "Nominal Background RAD (<0.65 mSv/sol)", color: "#10b981", description: "Safe astronaut EVA exposure envelope" },
+      { label: "Elevated RAD / SEP Alert (>0.75 mSv/sol)", color: "#dc2626", description: "Decreased shielding; restrict continuous surface excursion" },
+    ],
+    sourceCitation: {
+      dataset: "MGS MAG/ER Magnetic Crustal Field & MSL RAD Dosimetry",
+      instrumentOrMission: "NASA MGS MAG & MSL Curiosity RAD / REMS",
+      attributionText: "NASA Goddard Space Flight Center, SwRI & CAB (CSIC-INTA)",
+      sourceUrl: "https://pds-ppi.igpp.ucla.edu/",
     },
   },
 ];
-

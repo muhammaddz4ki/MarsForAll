@@ -6,6 +6,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MountSharpWaypoint,
   MOUNT_SHARP_WAYPOINTS,
+  CURIOSITY_HISTORICAL_TRAVERSE,
+  BRADBURY_LANDING_ELLIPSE,
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import {
@@ -101,7 +103,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  const curiosityMarkersRef = useRef<Marker[]>([]);
   const customMarkerRef = useRef<Marker | null>(null);
+  const [showCuriosityTraverse, setShowCuriosityTraverse] = useState<boolean>(true);
 
   const isDark = theme === "dark";
 
@@ -316,7 +320,93 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
-      // Layer 4: Marswalk Route line source & layer (Crisp Solid Cyan Line, NO BLUR)
+      // Layer 4: CRISM Hydrated Minerals & WEH Zone (Layer 4)
+      map.addLayer({
+        id: "science_mineral_fills",
+        type: "fill",
+        source: "gale_geology",
+        layout: {
+          visibility: activeLayers["layer_science_mineral"] ? "visible" : "none",
+        },
+        paint: {
+          "fill-color": "#06b6d4",
+          "fill-opacity": 0.28,
+        },
+      });
+
+      // Layer 5: MGS MAG Crustal Magnetic Field & Natural Shielding Zone (Layer 5)
+      map.addLayer({
+        id: "safety_magnetic_fills",
+        type: "fill",
+        source: "gale_geology",
+        layout: {
+          visibility: activeLayers["layer_safety_magnetic"] ? "visible" : "none",
+        },
+        paint: {
+          "fill-color": "#8b5cf6",
+          "fill-opacity": 0.22,
+        },
+      });
+
+      // Curiosity Landing Ellipse Source & Layers
+      map.addSource("curiosity_landing_ellipse_source", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: { name: "Bradbury Landing Ellipse (20km x 7km)" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [BRADBURY_LANDING_ELLIPSE],
+          },
+        },
+      });
+
+      map.addLayer({
+        id: "curiosity_ellipse_fill",
+        type: "fill",
+        source: "curiosity_landing_ellipse_source",
+        paint: {
+          "fill-color": "#38bdf8",
+          "fill-opacity": 0.08,
+        },
+      });
+
+      map.addLayer({
+        id: "curiosity_ellipse_line",
+        type: "line",
+        source: "curiosity_landing_ellipse_source",
+        paint: {
+          "line-color": "#38bdf8",
+          "line-width": 1.5,
+          "line-dasharray": [4, 4],
+        },
+      });
+
+      // Curiosity Historical Traverse Line Source & Layer
+      map.addSource("curiosity_traverse_source", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: { name: "MSL Curiosity Historical Traverse (Sol 0 - Sol 4180+)" },
+          geometry: {
+            type: "LineString",
+            coordinates: CURIOSITY_HISTORICAL_TRAVERSE.map((p) => p.coordinates),
+          },
+        },
+      });
+
+      map.addLayer({
+        id: "curiosity_traverse_line",
+        type: "line",
+        source: "curiosity_traverse_source",
+        paint: {
+          "line-color": "#06b6d4",
+          "line-width": 2,
+          "line-dasharray": [3, 2],
+        },
+      });
+
+      // Marswalk Route line source & layer (Crisp Solid Amber/Cyan Line)
       map.addSource("marswalk_route_source", {
         type: "geojson",
         data: {
@@ -505,7 +595,44 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         activeLayers["layer_thermal_subsurface"] ? "visible" : "none"
       );
     }
+    if (map.getLayer("science_mineral_fills")) {
+      map.setLayoutProperty(
+        "science_mineral_fills",
+        "visibility",
+        activeLayers["layer_science_mineral"] ? "visible" : "none"
+      );
+    }
+    if (map.getLayer("safety_magnetic_fills")) {
+      map.setLayoutProperty(
+        "safety_magnetic_fills",
+        "visibility",
+        activeLayers["layer_safety_magnetic"] ? "visible" : "none"
+      );
+    }
   }, [activeLayers]);
+
+  // Sync Curiosity Historical Traverse Visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const vis = showCuriosityTraverse ? "visible" : "none";
+    if (map.getLayer("curiosity_ellipse_fill")) {
+      map.setLayoutProperty("curiosity_ellipse_fill", "visibility", vis);
+    }
+    if (map.getLayer("curiosity_ellipse_line")) {
+      map.setLayoutProperty("curiosity_ellipse_line", "visibility", vis);
+    }
+    if (map.getLayer("curiosity_traverse_line")) {
+      map.setLayoutProperty("curiosity_traverse_line", "visibility", vis);
+    }
+
+    // Toggle curiosity markers
+    curiosityMarkersRef.current.forEach((m) => {
+      const el = m.getElement();
+      if (el) el.style.display = showCuriosityTraverse ? "block" : "none";
+    });
+  }, [showCuriosityTraverse]);
 
   // Render Marswalk Path on Route Calculation
   useEffect(() => {
@@ -619,8 +746,61 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [customPinCoords, isDark]);
 
+  // Render Curiosity Historical Sol Checkpoint Markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    curiosityMarkersRef.current.forEach((m) => m.remove());
+    curiosityMarkersRef.current = [];
+
+    CURIOSITY_HISTORICAL_TRAVERSE.forEach((pt) => {
+      const el = document.createElement("div");
+      el.className = "cursor-pointer select-none group";
+      el.style.display = showCuriosityTraverse ? "block" : "none";
+      el.innerHTML = `
+        <div class="relative flex flex-col items-center">
+          <div class="w-3.5 h-3.5 bg-[#083344] border border-[#06b6d4] flex items-center justify-center text-[8px] text-[#a5f3fc] font-mono font-bold transition-transform group-hover:scale-125">
+            •
+          </div>
+          <div class="absolute -bottom-3.5 whitespace-nowrap px-1 bg-[#07090e]/95 text-[#a5f3fc] border border-[#0891b2] text-[7px] font-mono font-bold tracking-tight">
+            SOL ${pt.sol}
+          </div>
+        </div>
+      `;
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        map.flyTo({ center: pt.coordinates, zoom: 12.8, duration: 600 });
+      });
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(pt.coordinates)
+        .addTo(map);
+
+      curiosityMarkersRef.current.push(marker);
+    });
+  }, [showCuriosityTraverse, isDark]);
+
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
+      {/* Tactical Curiosity Traverse Toggle & HUD Widget */}
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 font-mono text-[10px]">
+        <button
+          onClick={() => setShowCuriosityTraverse((prev) => !prev)}
+          className={`flex items-center gap-1.5 px-2.5 py-1 border transition-colors ${
+            showCuriosityTraverse
+              ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4] font-bold"
+              : isDark
+              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
+              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900"
+          }`}
+        >
+          <span className={`w-2 h-2 ${showCuriosityTraverse ? "bg-[#06b6d4]" : "bg-slate-500"}`} />
+          <span>CURIOSITY TRAVERSE: {showCuriosityTraverse ? "[ON]" : "[OFF]"}</span>
+        </button>
+      </div>
+
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

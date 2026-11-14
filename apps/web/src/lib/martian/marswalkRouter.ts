@@ -14,6 +14,9 @@ import {
   computeTerrainImpedance,
   computeLambertianPhotometry,
   LambertianPhotometryMetrics,
+  SandTrapRiskLevel,
+  SurfaceFirmnessStatus,
+  computeCrustalMagneticShielding,
 } from "./scientificParams";
 import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints";
 import { calculateMartianDistanceKm } from "./prospectorScorer";
@@ -43,6 +46,9 @@ export interface RouteSegment {
   segmentDurationHours: number;
   o2ConsumedLiters: number;
   batteryConsumedWh: number;
+  sandTrapRisk: SandTrapRiskLevel;
+  surfaceFirmness: SurfaceFirmnessStatus;
+  crustalMagneticFieldNt: number;
   isHazardWarning: boolean;
   hazardDescription?: string;
 }
@@ -61,6 +67,9 @@ export interface MarswalkRouteResult {
   remainingO2Percent: number;
   totalBatteryWh: number;
   remainingBatteryPercent: number;
+  averageCrustalMagNt: number;
+  magneticShieldingReductionPercent: number;
+  sandTrapWarningCount: number;
   overallSafetyIndex: number; // 0 - 100
   segments: RouteSegment[];
   pathCoordinates: [number, number, number][]; // [lon, lat, elevation]
@@ -297,11 +306,21 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
 
       const segRad = (nodeA.radiationMSvSol / 24.66) * segHours;
 
+      const nodeBWp = pool.find((w) => w.id === nodeB.id);
+      const segSandRisk: SandTrapRiskLevel = nodeBWp?.sandTrapRisk ?? (nodeB.elevationM > -4100 ? "LOW" : "MODERATE");
+      const segFirmness: SurfaceFirmnessStatus = nodeBWp?.surfaceFirmness ?? (segSandRisk === "HIGH" ? "SOFT SAND TRAP RISK" : segSandRisk === "MODERATE" ? "MODERATE COMPACTION" : "BEDROCK FIRM");
+      const segMagNt = nodeBWp?.crustalMagneticFieldNt ?? 38;
+
       let isHazard = false;
       let hazardDesc = "";
       if (slope > profile.maxSafeSlopeDeg) {
         isHazard = true;
         hazardDesc = `Slope of ${slope.toFixed(1)}° approaches limits for ${options.supportMode}. Extra anchor rigging advised.`;
+        hazardAlerts.push(hazardDesc);
+      }
+      if (segSandRisk === "HIGH") {
+        isHazard = true;
+        hazardDesc = `SAND TRAP RISK: Soft regolith drift near ${nodeB.id} presents high entrapment/sinkage hazard.`;
         hazardAlerts.push(hazardDesc);
       }
       if (nodeB.radiationMSvSol > 0.72) {
@@ -321,6 +340,9 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
         segmentDurationHours: parseFloat(segHours.toFixed(2)),
         o2ConsumedLiters: Math.round(segO2),
         batteryConsumedWh: Math.round(segBattery),
+        sandTrapRisk: segSandRisk,
+        surfaceFirmness: segFirmness,
+        crustalMagneticFieldNt: segMagNt,
         isHazardWarning: isHazard,
         hazardDescription: hazardDesc,
       });
@@ -335,10 +357,17 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
   const remainingO2Percent = Math.max(0, Math.round(((profile.o2TankCapacityLiters - totalO2Liters) / profile.o2TankCapacityLiters) * 100));
   const remainingBatteryPercent = Math.max(0, Math.round(((profile.batteryPackWh - totalBatteryWh) / profile.batteryPackWh) * 100));
 
+  const avgCrustalMag = segments.length > 0
+    ? Math.round(segments.reduce((acc, s) => acc + s.crustalMagneticFieldNt, 0) / segments.length)
+    : 38;
+  const magShielding = computeCrustalMagneticShielding(avgCrustalMag);
+  const sandTrapCount = segments.filter((s) => s.sandTrapRisk === "HIGH").length;
+
   let safetyScore = 100;
   if (hazardAlerts.length > 0) safetyScore -= hazardAlerts.length * 12;
   if (remainingO2Percent < 30) safetyScore -= 20;
   if (remainingBatteryPercent < 25) safetyScore -= 20;
+  if (sandTrapCount > 0) safetyScore -= sandTrapCount * 15;
   safetyScore = Math.max(10, Math.min(100, safetyScore));
 
   const checklist: string[] = [
@@ -346,6 +375,8 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     `Max payload allocation: ${profile.payloadCapacityKg} kg`,
     `Primary consumable: ${Math.round(totalO2Liters)} L O2 (${remainingO2Percent}% reserve remaining)`,
     `Energy consumption: ${Math.round(totalBatteryWh)} Wh (${remainingBatteryPercent}% battery reserve remaining)`,
+    `MGS MAG natural shielding: ~${magShielding.shieldingFactorPercent}% cosmic radiation reduction (Avg: ${avgCrustalMag} nT)`,
+    `Sand trap safety: ${sandTrapCount === 0 ? "100% Firm Bedrock / Compacted Regolith" : `${sandTrapCount} soft sand drift crossing(s) detected`}`,
     `Comm relay check: Lock on Mars Reconnaissance Orbiter (MRO) pass during return egress.`,
     `Emergency beacon active on 401.5 MHz UHF planetary emergency frequency.`,
   ];
@@ -369,6 +400,9 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     remainingO2Percent,
     totalBatteryWh: Math.round(totalBatteryWh),
     remainingBatteryPercent,
+    averageCrustalMagNt: avgCrustalMag,
+    magneticShieldingReductionPercent: magShielding.shieldingFactorPercent,
+    sandTrapWarningCount: sandTrapCount,
     overallSafetyIndex: safetyScore,
     segments,
     pathCoordinates: pathCoords,

@@ -53,12 +53,13 @@ export const AresMartianApp: React.FC = () => {
   const [pitch3D, setPitch3D] = useState<boolean>(true);
   const [resetNorthTrigger, setResetNorthTrigger] = useState<number>(0);
 
-  // 4 Scientific Layers State
+  // 5 Operational Scientific Layers State (NASA Mars Trek Catalog)
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
     layer_optical_geologic: true,
     layer_topographic_hazard: true,
     layer_thermal_subsurface: false,
-    layer_radiation_weather: false,
+    layer_science_mineral: false,
+    layer_safety_magnetic: false,
   });
 
   const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
@@ -143,6 +144,12 @@ export const AresMartianApp: React.FC = () => {
       craterDensityBeta: 0.26,
       surfaceRadiationMSvSol: 0.69,
       windExposureRisk: "moderate",
+      crustalMagneticFieldNt: 46,
+      themisNightTempK: 186,
+      sandTrapRisk: "LOW",
+      surfaceFirmness: "BEDROCK FIRM",
+      waterEquivalentHydrogenPercent: 4.8,
+      dominantHydratedMineral: "Mixed Sulfate / Clay Interpolated Flank Deposit",
       mineralogy: {
         sulfatePercent: 34,
         hematitePercent: 18,
@@ -162,7 +169,7 @@ export const AresMartianApp: React.FC = () => {
   // 1-Click Export EVA Mission Manifest
   const handleExportEvaManifest = () => {
     const manifest = {
-      mission: "ARES-PATH // GALE-01",
+      mission: "MARSFORALL // GALE-01",
       challenge: "NASA Space Apps Challenge 2026",
       theme: "Interplanetary Survival Guide: Martian Map",
       generatedAtSol: currentSol,
@@ -183,6 +190,12 @@ export const AresMartianApp: React.FC = () => {
         geologicUnit: selectedWaypoint.geologicUnit,
         apparentThermalInertiaTiu: selectedWaypoint.apparentThermalInertiaTiu,
         consistencyIndexCT: selectedWaypoint.consistencyIndexCT,
+        crustalMagneticFieldNt: selectedWaypoint.crustalMagneticFieldNt,
+        themisNightTempK: selectedWaypoint.themisNightTempK,
+        sandTrapRisk: selectedWaypoint.sandTrapRisk,
+        surfaceFirmness: selectedWaypoint.surfaceFirmness,
+        waterEquivalentHydrogenPercent: selectedWaypoint.waterEquivalentHydrogenPercent,
+        dominantHydratedMineral: selectedWaypoint.dominantHydratedMineral,
         swimIndicators: selectedWaypoint.swimIndicators,
         chemCamOxides: selectedWaypoint.chemCamOxides,
         mineralogy: selectedWaypoint.mineralogy,
@@ -198,6 +211,9 @@ export const AresMartianApp: React.FC = () => {
             remainingO2Percent: activeRoute.remainingO2Percent,
             batteryConsumedWh: activeRoute.totalBatteryWh,
             remainingBatteryPercent: activeRoute.remainingBatteryPercent,
+            averageCrustalMagNt: activeRoute.averageCrustalMagNt,
+            magneticShieldingReductionPercent: activeRoute.magneticShieldingReductionPercent,
+            sandTrapWarningCount: activeRoute.sandTrapWarningCount,
             safetyScore: activeRoute.overallSafetyIndex,
             hazardAlerts: activeRoute.hazardAlerts,
             photometry: activeRoute.photometry,
@@ -215,6 +231,8 @@ export const AresMartianApp: React.FC = () => {
         "NASA JPL Mars Trek (Gale Crater DEM & Basemap Orthomosaics)",
         "USGS Planetary Geologic Mapping Program (Mount Sharp Structural Units)",
         "NASA PDS MSL Curiosity Science Team (ChemCam LIBS, APXS, RAD, REMS, Mastcam)",
+        "NASA MGS Magnetometer / Electron Reflectometer (Crustal Field Anomalies)",
+        "NASA 2001 Mars Odyssey THEMIS & GRS / MONS",
       ],
     };
 
@@ -224,11 +242,11 @@ export const AresMartianApp: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `ares-eva-manifest-sol${currentSol}.json`;
+    link.download = `marsforall-eva-manifest-sol${currentSol}.json`;
     link.click();
     URL.revokeObjectURL(url);
 
-    setExportNotification(`[EVA MANIFEST EXPORTED: ares-eva-manifest-sol${currentSol}.json]`);
+    setExportNotification(`[EVA MANIFEST EXPORTED: marsforall-eva-manifest-sol${currentSol}.json]`);
     setTimeout(() => setExportNotification(null), 4000);
   };
 
@@ -542,14 +560,30 @@ export const AresMartianApp: React.FC = () => {
           {/* Slot Kiri Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums) */}
           <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
             isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-          } gap-2.5 max-w-[45%]`}>
+          } gap-2.5 max-w-[55%]`}>
             {viewMode === "mission_control" ? (
               <>
-                <span className="text-amber-500 font-bold">GALE CRATER</span>
+                <span className="text-amber-500 font-bold">MARSFORALL</span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
                 <span className="text-slate-400">DATUM -4500m TO -3500m</span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                 <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span
+                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
+                    selectedWaypoint.sandTrapRisk === "HIGH"
+                      ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
+                      : selectedWaypoint.sandTrapRisk === "MODERATE"
+                      ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                      : "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                  }`}
+                >
+                  [{selectedWaypoint.surfaceFirmness}]
+                </span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span className="text-purple-400 font-medium">
+                  MAG: {selectedWaypoint.crustalMagneticFieldNt} nT
+                </span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                 <span
                   className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${

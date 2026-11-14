@@ -15,19 +15,19 @@ export function generateStaticParams() {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "ARES-PATH // GALE-01 | Martian Excursion Map & Survival Guide",
-    template: "%s | ARES-PATH // GALE-01",
+    default: "MARSFORALL // GALE-01 | Martian Excursion Map & Survival Guide",
+    template: "%s | MARSFORALL // GALE-01",
   },
   description:
-    "NASA Space Apps Challenge 2026: Hyperlocalized Mount Sharp (Gale Crater) Surface Map, ML Prospector Fusion & Terrain-Aware Marswalk Route Planner.",
-  applicationName: "ARES-PATH",
+    "NASA Space Apps Challenge 2026: Hyperlocalized Mount Sharp (Gale Crater) Surface Map, 5 NASA Operational Layers, ML Prospector Fusion & Curiosity Historical Traverse.",
+  applicationName: "MARSFORALL",
   icons: {
     icon: [
-      { url: "/images/ares-path-badge.svg", type: "image/svg+xml" },
+      { url: "/images/marsforall-badge.svg", type: "image/svg+xml" },
       { url: "/favicon.png", type: "image/png" },
     ],
-    shortcut: "/images/ares-path-badge.svg",
-    apple: "/images/ares-path-badge.svg",
+    shortcut: "/images/marsforall-badge.svg",
+    apple: "/images/marsforall-badge.svg",
   },
   keywords: [
     "Mars",
