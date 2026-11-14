@@ -2,19 +2,31 @@
 
 import React from "react";
 import { MARTIAN_SCIENTIFIC_LAYERS } from "@/lib/martian/martianLayers";
+import {
+  OrbitalImagerySource,
+  WmtsStreamStatus,
+  ORBITAL_WMTS_PRESETS,
+} from "@/lib/martian/scientificParams";
 
 interface ScientificLayersPanelProps {
   activeLayers: Record<string, boolean>;
   onToggleLayer: (layerId: string) => void;
   theme?: "dark" | "light";
+  orbitalSource?: OrbitalImagerySource;
+  onSelectOrbitalSource?: (source: OrbitalImagerySource) => void;
+  wmtsStatus?: WmtsStreamStatus;
 }
 
 export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
   activeLayers,
   onToggleLayer,
   theme = "dark",
+  orbitalSource = "jpl_hirise",
+  onSelectOrbitalSource,
+  wmtsStatus = "streaming",
 }) => {
   const isDark = theme === "dark";
+  const activePreset = ORBITAL_WMTS_PRESETS[orbitalSource] || ORBITAL_WMTS_PRESETS.jpl_hirise;
 
   return (
     <div className={`flex flex-col h-full overflow-y-auto ${
@@ -83,9 +95,72 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                 </button>
               </div>
 
-              {/* Legends if Visible */}
+              {/* Legends & Orbital Source Controls if Visible */}
               {isVisible && (
-                <div className={`mt-2.5 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"} space-y-1 font-mono`}>
+                <div className={`mt-2.5 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"} space-y-2 font-mono`}>
+                  {/* Specialized Orbital Source Controls for Optical Layer */}
+                  {layer.id === "layer_optical_geologic" && (
+                    <div className={`p-2 border ${
+                      isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
+                    } space-y-1.5`}>
+                      <div className="flex items-center justify-between text-[9px]">
+                        <span className="text-slate-400 uppercase font-bold tracking-wider">
+                          ORBITAL WMTS SOURCE:
+                        </span>
+                        {/* Live / Fallback Status Badge */}
+                        <span
+                          className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums ${
+                            wmtsStatus === "streaming" && orbitalSource !== "local_vector"
+                              ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                              : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                          }`}
+                        >
+                          {wmtsStatus === "streaming" && orbitalSource !== "local_vector"
+                            ? "[JPL WMTS STREAMING]"
+                            : "[LOCAL VECTOR FALLBACK]"}
+                        </span>
+                      </div>
+
+                      {/* 4-Button Grid for WMTS Source Switcher */}
+                      <div className="grid grid-cols-2 gap-1 text-[9px]">
+                        {(["jpl_hirise", "mola_hrsc", "opm_basemap", "local_vector"] as const).map((key) => {
+                          const preset = ORBITAL_WMTS_PRESETS[key];
+                          const isSelected = orbitalSource === key;
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => onSelectOrbitalSource?.(key)}
+                              className={`p-1.5 border text-left flex flex-col justify-between transition-colors ${
+                                isSelected
+                                  ? isDark
+                                    ? "bg-[#161e2e] border-amber-500 text-white font-bold"
+                                    : "bg-white border-amber-500 text-amber-950 font-bold shadow-sm"
+                                  : isDark
+                                  ? "bg-[#0b0f17] border-slate-800 text-slate-400 hover:text-slate-200"
+                                  : "bg-slate-100 border-slate-300 text-slate-600 hover:text-slate-900"
+                              }`}
+                            >
+                              <span className="truncate">{preset.label}</span>
+                              <span className="text-[8px] text-slate-400 mt-0.5 tabular-nums">
+                                {preset.resolution}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Active Footprint & Endpoint Metadata */}
+                      <div className="text-[8px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-800/80">
+                        <span className="truncate max-w-[200px]">
+                          FOOTPRINT: GALE CRATER / MOUNT SHARP
+                        </span>
+                        <span className="text-amber-500 tabular-nums">
+                          RES: {activePreset.resolution}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <span className={`text-[8px] uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"} block`}>
                     LEGEND &amp; STRATIGRAPHIC RAMPS
                   </span>

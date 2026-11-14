@@ -278,3 +278,57 @@ export interface GaleAtmosphericTelemetry {
   radSurfaceDoseMSvPerSol: number;
   sepRadiationWarning: boolean;
 }
+
+export type OrbitalImagerySource = "jpl_hirise" | "mola_hrsc" | "opm_basemap" | "local_vector";
+export type WmtsStreamStatus = "streaming" | "fallback";
+
+export interface OrbitalWmtsPreset {
+  id: OrbitalImagerySource;
+  label: string;
+  sublabel: string;
+  resolution: string;
+  tiles: string[];
+  attribution: string;
+}
+
+export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPreset> = {
+  jpl_hirise: {
+    id: "jpl_hirise",
+    label: "JPL GALE HIRISE WMTS",
+    sublabel: "Mount Sharp High-Resolution Orthomosaic (0.25m/px)",
+    resolution: "0.25 m/px",
+    tiles: [
+      "https://trek.nasa.gov/tiles/Mars/EQ/Gale_HiRISE_Mosaic/1.0.0/default/default028mm/{z}/{y}/{x}.png",
+    ],
+    attribution: "NASA/JPL/University of Arizona / Mars Trek WMTS",
+  },
+  mola_hrsc: {
+    id: "mola_hrsc",
+    label: "MOLA / HRSC CLRSHADE WMTS",
+    sublabel: "Mars Global Colorized Hillshade Blend (200m/px)",
+    resolution: "200 m/px",
+    tiles: [
+      "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
+    ],
+    attribution: "NASA/JPL/DLR / USGS Astrogeology",
+  },
+  opm_basemap: {
+    id: "opm_basemap",
+    label: "OPENPLANETARY MARS BASE",
+    sublabel: "Shaded Relief Basemap v0.1",
+    resolution: "Global Tile Cache",
+    tiles: [
+      "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
+    ],
+    attribution: "OpenPlanetary / CARTO / USGS",
+  },
+  local_vector: {
+    id: "local_vector",
+    label: "LOCAL PROCEDURAL VECTOR",
+    sublabel: "Gale Crater Offline Contour & Ridge Vectors",
+    resolution: "100% Offline Embedded GeoJSON",
+    tiles: [],
+    attribution: "ARES-PATH Embedded Basal Geology",
+  },
+};
+

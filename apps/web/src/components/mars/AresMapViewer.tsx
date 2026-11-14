@@ -8,6 +8,10 @@ import {
   MOUNT_SHARP_WAYPOINTS,
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
+import {
+  OrbitalImagerySource,
+  WmtsStreamStatus,
+} from "@/lib/martian/scientificParams";
 import mountSharpGeology from "@/data/mountSharpGeology.json";
 import martianTerrainBase from "@/data/martianTerrainBase.json";
 
@@ -24,6 +28,8 @@ interface AresMapViewerProps {
   customPinCoords: [number, number] | null;
   theme?: "dark" | "light";
   tileMode?: "live_trek" | "offline_procedural";
+  orbitalSource?: OrbitalImagerySource;
+  onWmtsStatusChange?: (status: WmtsStreamStatus) => void;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -89,6 +95,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   customPinCoords,
   theme = "dark",
   tileMode = "live_trek",
+  orbitalSource = "jpl_hirise",
+  onWmtsStatusChange,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -101,6 +109,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     if (!mapContainerRef.current || mapRef.current) return;
 
     // Initialize MapLibre with 100% Martian raster basemap & procedural vector terrain
+    // Official NASA/JPL Mars Trek WMTS endpoints for Gale Crater / Mount Sharp (HiRISE, MOLA/HRSC, OPM)
     // ZERO Earth tiles (no Carto/OSM/Mapbox Earth tiles)
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -108,13 +117,30 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         version: 8,
         name: "Ares-Martian-Map-Base",
         sources: {
+          mars_hirise_gale: {
+            type: "raster",
+            tiles: [
+              "https://trek.nasa.gov/tiles/Mars/EQ/Gale_HiRISE_Mosaic/1.0.0/default/default028mm/{z}/{y}/{x}.png",
+            ],
+            tileSize: 256,
+            maxzoom: 18,
+            attribution: "NASA/JPL/Univ. of Arizona / Mars Trek WMTS",
+          },
           mars_mola_shaded: {
+            type: "raster",
+            tiles: [
+              "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
+            ],
+            tileSize: 256,
+            attribution: "NASA/JPL/DLR / USGS Astrogeology",
+          },
+          mars_opm_basemap: {
             type: "raster",
             tiles: [
               "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
-            attribution: "USGS Astrogeology / NASA JPL Mars Trek / OpenPlanetary",
+            attribution: "OpenPlanetary / CARTO / USGS",
           },
         },
         layers: [
@@ -124,15 +150,44 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "background",
             paint: { "background-color": isDark ? "#07090e" : "#e2e8f0" },
           },
-          // Official Mars Basemap Raster
+          // 1. Regional Shaded Relief Basemap
           {
-            id: "mars-planetary-basemap",
+            id: "mars-raster-opm",
             type: "raster",
-            source: "mars_mola_shaded",
+            source: "mars_opm_basemap",
+            layout: {
+              visibility: orbitalSource === "opm_basemap" && tileMode === "live_trek" ? "visible" : "none",
+            },
             paint: {
               "raster-opacity": 0.55,
               "raster-contrast": 0.35,
               "raster-hue-rotate": 12,
+            },
+          },
+          // 2. MOLA + HRSC Colorized Hillshade Blend
+          {
+            id: "mars-raster-mola",
+            type: "raster",
+            source: "mars_mola_shaded",
+            layout: {
+              visibility: orbitalSource === "mola_hrsc" && tileMode === "live_trek" ? "visible" : "none",
+            },
+            paint: {
+              "raster-opacity": 0.60,
+              "raster-contrast": 0.30,
+            },
+          },
+          // 3. HiRISE Gale Crater High-Resolution Orthomosaic (0.25m/px)
+          {
+            id: "mars-raster-hirise",
+            type: "raster",
+            source: "mars_hirise_gale",
+            layout: {
+              visibility: orbitalSource === "jpl_hirise" && tileMode === "live_trek" ? "visible" : "none",
+            },
+            paint: {
+              "raster-opacity": 0.70,
+              "raster-contrast": 0.35,
             },
           },
         ],
@@ -281,6 +336,45 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       });
     });
 
+    // Silent error handler for external WMTS raster tiles (no red box error or crash)
+    map.on("error", (e: any) => {
+      const errText = (e?.error?.message || e?.message || "").toLowerCase();
+      const sourceId = (e?.sourceId || "").toLowerCase();
+      if (
+        sourceId.startsWith("mars_") ||
+        errText.includes("tile") ||
+        errText.includes("fetch") ||
+        errText.includes("network") ||
+        errText.includes("404") ||
+        errText.includes("cors")
+      ) {
+        if (onWmtsStatusChange) {
+          onWmtsStatusChange("fallback");
+        }
+        // Seamlessly suppress failing external raster tiles
+        ["mars-raster-hirise", "mars-raster-mola", "mars-raster-opm"].forEach((id) => {
+          if (map.getLayer(id)) {
+            map.setLayoutProperty(id, "visibility", "none");
+          }
+        });
+      }
+    });
+
+    // Detect successful WMTS tile/source load
+    map.on("sourcedata", (e) => {
+      if (
+        e.isSourceLoaded &&
+        e.sourceId?.startsWith("mars_") &&
+        e.dataType === "source" &&
+        orbitalSource !== "local_vector" &&
+        tileMode === "live_trek"
+      ) {
+        if (onWmtsStatusChange) {
+          onWmtsStatusChange("streaming");
+        }
+      }
+    });
+
     // Click anywhere to drop custom pin and interpolate elevation & slope
     map.on("click", (e) => {
       if (onMapClickCoordinate) {
@@ -315,18 +409,41 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [isDark]);
 
-  // Sync tile mode (Live JPL Mars Trek vs Offline Procedural Canvas)
+  // Sync orbital source and tile mode (Live JPL Mars Trek WMTS vs Offline Procedural Canvas)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    if (map.getLayer("mars-planetary-basemap")) {
+
+    const isLive = tileMode === "live_trek";
+
+    if (map.getLayer("mars-raster-hirise")) {
       map.setLayoutProperty(
-        "mars-planetary-basemap",
+        "mars-raster-hirise",
         "visibility",
-        tileMode === "live_trek" ? "visible" : "none"
+        isLive && orbitalSource === "jpl_hirise" ? "visible" : "none"
       );
     }
-  }, [tileMode]);
+    if (map.getLayer("mars-raster-mola")) {
+      map.setLayoutProperty(
+        "mars-raster-mola",
+        "visibility",
+        isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
+      );
+    }
+    if (map.getLayer("mars-raster-opm")) {
+      map.setLayoutProperty(
+        "mars-raster-opm",
+        "visibility",
+        isLive && orbitalSource === "opm_basemap" ? "visible" : "none"
+      );
+    }
+
+    if (orbitalSource === "local_vector" || !isLive) {
+      if (onWmtsStatusChange) onWmtsStatusChange("fallback");
+    } else {
+      if (onWmtsStatusChange) onWmtsStatusChange("streaming");
+    }
+  }, [orbitalSource, tileMode, onWmtsStatusChange]);
 
   // Update pitch when pitch3D prop changes
   useEffect(() => {

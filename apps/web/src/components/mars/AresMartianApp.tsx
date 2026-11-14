@@ -15,6 +15,10 @@ import {
   MountSharpWaypoint,
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
+import {
+  OrbitalImagerySource,
+  WmtsStreamStatus,
+} from "@/lib/martian/scientificParams";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 
@@ -42,6 +46,8 @@ export const AresMartianApp: React.FC = () => {
   const [currentSol, setCurrentSol] = useState<number>(4180);
   const [dustStormActive, setDustStormActive] = useState<boolean>(false);
   const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
+  const [orbitalSource, setOrbitalSource] = useState<OrbitalImagerySource>("jpl_hirise");
+  const [wmtsStatus, setWmtsStatus] = useState<WmtsStreamStatus>("streaming");
 
   // Camera & Map Controls
   const [pitch3D, setPitch3D] = useState<boolean>(true);
@@ -393,6 +399,8 @@ export const AresMartianApp: React.FC = () => {
           customPinCoords={customPin ? customPin.coordinates : null}
           theme={theme}
           tileMode={tileMode}
+          orbitalSource={orbitalSource}
+          onWmtsStatusChange={setWmtsStatus}
         />
 
         {/* MODE: ASTRONAUT VISOR HUD (Simetris 4 Sudut, 16px Margin) */}
@@ -455,6 +463,9 @@ export const AresMartianApp: React.FC = () => {
                     activeLayers={activeLayers}
                     onToggleLayer={handleToggleLayer}
                     theme={theme}
+                    orbitalSource={orbitalSource}
+                    onSelectOrbitalSource={setOrbitalSource}
+                    wmtsStatus={wmtsStatus}
                   />
                 ) : (
                   <MarswalkPlannerPanel
@@ -540,6 +551,17 @@ export const AresMartianApp: React.FC = () => {
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                 <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span
+                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
+                    wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
+                      ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                      : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                  }`}
+                >
+                  {wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
+                    ? "[JPL WMTS STREAMING]"
+                    : "[LOCAL VECTOR FALLBACK]"}
+                </span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setTileMode("live_trek")}
