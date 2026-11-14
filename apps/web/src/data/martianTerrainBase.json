@@ -1,0 +1,278 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "gale_crater_basin_floor",
+      "properties": {
+        "name": "Gale Crater Floor Pavement",
+        "type": "basin_floor",
+        "elevation": -4500,
+        "color": "#120c0a"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.1000, -4.3000],
+            [138.1000, -4.3000],
+            [138.1000, -5.7000],
+            [137.1000, -5.7000],
+            [137.1000, -4.3000]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "aeolis_mons_base_tier1",
+      "properties": {
+        "name": "Aeolis Mons Lower Apron (-4400m)",
+        "type": "contour_tier",
+        "elevation": -4400,
+        "color": "#19100d"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3200, -4.6400],
+            [137.4600, -4.6300],
+            [137.5600, -4.6800],
+            [137.6600, -4.7500],
+            [137.8800, -5.2000],
+            [137.9200, -5.5000],
+            [137.7800, -5.6200],
+            [137.5200, -5.4000],
+            [137.3600, -5.0000],
+            [137.3000, -4.7800],
+            [137.3200, -4.6400]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "aeolis_mons_base_tier2",
+      "properties": {
+        "name": "Aeolis Mons Mid Flank (-4300m)",
+        "type": "contour_tier",
+        "elevation": -4300,
+        "color": "#211511"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3400, -4.6800],
+            [137.4500, -4.6700],
+            [137.5400, -4.7200],
+            [137.6200, -4.8000],
+            [137.8500, -5.2800],
+            [137.8800, -5.4800],
+            [137.7500, -5.5600],
+            [137.5000, -5.3200],
+            [137.3700, -4.9500],
+            [137.3200, -4.8000],
+            [137.3400, -4.6800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "aeolis_mons_base_tier3",
+      "properties": {
+        "name": "Aeolis Mons Upper Flank (-4100m)",
+        "type": "contour_tier",
+        "elevation": -4100,
+        "color": "#2a1a15"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3600, -4.7100],
+            [137.4300, -4.7000],
+            [137.5100, -4.7600],
+            [137.5900, -4.8500],
+            [137.8000, -5.3200],
+            [137.8400, -5.4600],
+            [137.7200, -5.5200],
+            [137.4700, -5.2500],
+            [137.3700, -4.9000],
+            [137.3400, -4.7800],
+            [137.3600, -4.7100]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "aeolis_mons_central_mound",
+      "properties": {
+        "name": "Aeolis Mons High Peak Region (-3800m to -3500m)",
+        "type": "contour_tier",
+        "elevation": -3800,
+        "color": "#36211a"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.4000, -4.7800],
+            [137.4600, -4.7700],
+            [137.5200, -4.8200],
+            [137.7500, -5.3500],
+            [137.7800, -5.4600],
+            [137.6800, -5.4900],
+            [137.4400, -5.1500],
+            [137.3800, -4.8800],
+            [137.4000, -4.7800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "peace_vallis_fan",
+      "properties": {
+        "name": "Peace Vallis Sediment Fan",
+        "type": "alluvial_fan",
+        "color": "#18110e"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.4000, -4.4800],
+            [137.4800, -4.4900],
+            [137.5100, -4.5600],
+            [137.4500, -4.6200],
+            [137.3800, -4.5600],
+            [137.4000, -4.4800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "yellowknife_bay_depression",
+      "properties": {
+        "name": "Yellowknife Bay Mudstone Depression",
+        "type": "lakebed",
+        "color": "#110b09"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.4300, -4.5800],
+            [137.4600, -4.5820],
+            [137.4650, -4.6050],
+            [137.4350, -4.6030],
+            [137.4300, -4.5800]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "boxwork_fracture_lattice_corridor",
+      "properties": {
+        "name": "Boxwork Fracture Ridge Lattice (Curiosity 2025)",
+        "type": "boxwork_network",
+        "color": "#4a2c20"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.7900, -5.4000],
+            [137.8700, -5.4100],
+            [137.8900, -5.4850],
+            [137.8100, -5.5000],
+            [137.7900, -5.4000]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "topographic_ridge_lines",
+      "properties": {
+        "name": "Aeolis Mons Structural Ridge Crests",
+        "type": "ridge_lines",
+        "color": "#633a2a"
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [137.3600, -4.7100],
+            [137.3821, -4.7214],
+            [137.4100, -4.7400]
+          ],
+          [
+            [137.3400, -4.7500],
+            [137.3624, -4.7681],
+            [137.3850, -4.7800]
+          ],
+          [
+            [137.4082, -4.7951],
+            [137.4208, -4.8115],
+            [137.4400, -4.8400]
+          ],
+          [
+            [137.8000, -5.4200],
+            [137.8414, -5.4453],
+            [137.8800, -5.4700]
+          ],
+          [
+            [137.8100, -5.4600],
+            [137.8414, -5.4453],
+            [137.8600, -5.4300]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "crater_rim_features",
+      "properties": {
+        "name": "Impact Crater Rim Annotations",
+        "type": "crater_rims",
+        "color": "#523022"
+      },
+      "geometry": {
+        "type": "MultiLineString",
+        "coordinates": [
+          [
+            [137.3450, -4.6100],
+            [137.3550, -4.6050],
+            [137.3650, -4.6120],
+            [137.3600, -4.6220],
+            [137.3480, -4.6200],
+            [137.3450, -4.6100]
+          ],
+          [
+            [137.4800, -4.7100],
+            [137.4950, -4.7050],
+            [137.5050, -4.7150],
+            [137.4980, -4.7280],
+            [137.4850, -4.7240],
+            [137.4800, -4.7100]
+          ],
+          [
+            [137.7400, -5.3800],
+            [137.7550, -5.3750],
+            [137.7650, -5.3850],
+            [137.7580, -5.3980],
+            [137.7440, -5.3940],
+            [137.7400, -5.3800]
+          ]
+        ]
+      }
+    }
+  ]
+}

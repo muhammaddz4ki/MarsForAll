@@ -11,12 +11,14 @@ interface ProspectorPanelProps {
   waypoint: MountSharpWaypoint | null;
   onOpenPovModal: (wp: MountSharpWaypoint) => void;
   onPlanRouteToWaypoint: (wp: MountSharpWaypoint) => void;
+  dustStormActive?: boolean;
 }
 
 export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
   waypoint,
   onOpenPovModal,
   onPlanRouteToWaypoint,
+  dustStormActive = false,
 }) => {
   if (!waypoint) {
     return (
@@ -80,18 +82,20 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
         <div className="bg-[#111827] p-2.5 border border-slate-800 flex flex-col items-center justify-center text-center">
           <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">UNCERTAINTY INDEX</span>
           <div className="text-2xl font-bold font-mono text-cyan-400 tabular-nums my-0.5">
-            ±{evaluation.uncertaintyPercent}%
+            ±{dustStormActive ? (Number(evaluation.uncertaintyPercent) + 14.7).toFixed(1) : evaluation.uncertaintyPercent}%
           </div>
           <span
             className={`text-[9px] font-mono font-semibold ${
-              evaluation.confidenceLevel === "HIGH"
+              dustStormActive
+                ? "text-amber-400"
+                : evaluation.confidenceLevel === "HIGH"
                 ? "text-emerald-400"
                 : evaluation.confidenceLevel === "MODERATE"
                 ? "text-yellow-400"
                 : "text-red-400"
             }`}
           >
-            [{evaluation.confidenceLevel} CONFIDENCE]
+            {dustStormActive ? "[DUST INTERFERENCE]" : `[${evaluation.confidenceLevel} CONFIDENCE]`}
           </span>
         </div>
       </div>

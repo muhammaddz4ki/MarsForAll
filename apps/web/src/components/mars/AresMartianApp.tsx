@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import AresMissionBadge from "../AresMissionBadge";
 import AresMapViewer from "./AresMapViewer";
 import ProspectorPanel from "./ProspectorPanel";
@@ -17,23 +17,47 @@ import {
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 
 export type ViewMode = "mission_control" | "visor_hud";
-export type SidebarTab = "prospector" | "earth_analogue" | "marswalk" | "layers";
+export type LeftDockTab = "layers" | "marswalk";
+export type RightDockTab = "prospector" | "earth_analogue";
 
 export const AresMartianApp: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("mission_control");
   const [selectedWaypoint, setSelectedWaypoint] = useState<MountSharpWaypoint>(
     MOUNT_SHARP_WAYPOINTS[1] // Default: Curiosity Boxwork 2025 Site
   );
-  const [activeTab, setActiveTab] = useState<SidebarTab>("prospector");
+  const [customPin, setCustomPin] = useState<MountSharpWaypoint | null>(null);
+
+  // Left & Right Symmetrical Dock Tabs
+  const [leftTab, setLeftTab] = useState<LeftDockTab>("layers");
+  const [rightTab, setRightTab] = useState<RightDockTab>("prospector");
+
+  // Sol & Atmospheric Simulation State
+  const [currentSol, setCurrentSol] = useState<number>(4180);
+  const [dustStormActive, setDustStormActive] = useState<boolean>(false);
+
+  // Camera & Map Controls
+  const [pitch3D, setPitch3D] = useState<boolean>(true);
+  const [resetNorthTrigger, setResetNorthTrigger] = useState<number>(0);
+
+  // 4 Scientific Layers State
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
     layer_optical_geologic: true,
     layer_topographic_hazard: true,
     layer_thermal_subsurface: false,
     layer_radiation_weather: false,
   });
+
   const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [exportNotification, setExportNotification] = useState<string | null>(null);
+
+  // Pool of waypoints including any user-dropped custom pin
+  const allWaypoints = useMemo(() => {
+    return customPin
+      ? [...MOUNT_SHARP_WAYPOINTS, customPin]
+      : MOUNT_SHARP_WAYPOINTS;
+  }, [customPin]);
 
   const handleToggleLayer = (layerId: string) => {
     setActiveLayers((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
@@ -50,28 +74,135 @@ export const AresMartianApp: React.FC = () => {
 
   const handlePlanRouteToWaypoint = (wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
-    setActiveTab("marswalk");
+    setLeftTab("marswalk");
+  };
+
+  // Click-anywhere custom coordinate pin
+  const handleMapClickCoordinate = (coords: [number, number], elevation: number) => {
+    const customWp: MountSharpWaypoint = {
+      id: "custom_target_pin",
+      name: `Custom Tactical Pin (Lat ${coords[1]}°, Lon ${coords[0]}°)`,
+      category: "mineral_vein",
+      coordinates: coords,
+      elevationM: elevation,
+      geologicUnit: "Flank Interpolation Unit (Gale / Aeolis Mons)",
+      stratigraphicAge: "Hesperian",
+      apparentThermalInertiaTiu: 395,
+      consistencyIndexCT: 0,
+      meanSlopeDeg: 9.4,
+      maxSlopeDeg: 16.2,
+      roughnessHapkeThetaDeg: 22.0,
+      craterDensityBeta: 0.26,
+      surfaceRadiationMSvSol: 0.69,
+      windExposureRisk: "moderate",
+      mineralogy: {
+        sulfatePercent: 34,
+        hematitePercent: 18,
+        phyllosilicateClayPercent: 22,
+        silicaPercent: 41,
+        perchloratePercent: 0.5,
+      },
+      evaSuitTraversable: true,
+      muleRoverTraversable: true,
+      scientificPriority: 3,
+      briefDescription: "User-designated tactical excursion target on Mount Sharp flank. Evaluated dynamically via Prospector ML inversion.",
+    };
+    setCustomPin(customWp);
+    setSelectedWaypoint(customWp);
+  };
+
+  // 1-Click Export EVA Mission Manifest
+  const handleExportEvaManifest = () => {
+    const manifest = {
+      mission: "ARES-PATH // GALE-01",
+      challenge: "NASA Space Apps Challenge 2026",
+      theme: "Interplanetary Survival Guide: Martian Map",
+      generatedAtSol: currentSol,
+      generatedTimestampUtc: new Date().toISOString(),
+      environmentalConditions: {
+        sol: currentSol,
+        atmosphericCondition: dustStormActive ? "DUST STORM (HIGH SCATTERING)" : "CLEAR SKY (NOMINAL)",
+        dustOpacityTau: dustStormActive ? 2.4 : 0.3,
+        remsWindSpeedMps: dustStormActive ? 24.8 : 6.4,
+        solarFluxWm2: dustStormActive ? 112 : 590,
+        surfaceRadiationMSvSol: selectedWaypoint.surfaceRadiationMSvSol,
+      },
+      activeTarget: {
+        id: selectedWaypoint.id,
+        name: selectedWaypoint.name,
+        coordinates: selectedWaypoint.coordinates,
+        elevationM: selectedWaypoint.elevationM,
+        geologicUnit: selectedWaypoint.geologicUnit,
+        apparentThermalInertiaTiu: selectedWaypoint.apparentThermalInertiaTiu,
+        consistencyIndexCT: selectedWaypoint.consistencyIndexCT,
+        mineralogy: selectedWaypoint.mineralogy,
+      },
+      marswalkPlan: activeRoute
+        ? {
+            origin: activeRoute.startWaypoint.name,
+            destination: activeRoute.targetWaypoint.name,
+            supportMode: activeRoute.supportMode,
+            distanceKm: activeRoute.totalDistanceKm,
+            estimatedDurationHours: activeRoute.estimatedDurationHours,
+            o2ConsumedLiters: activeRoute.totalO2ConsumedLiters,
+            remainingO2Percent: activeRoute.remainingO2Percent,
+            batteryConsumedWh: activeRoute.totalBatteryWh,
+            remainingBatteryPercent: activeRoute.remainingBatteryPercent,
+            safetyScore: activeRoute.overallSafetyIndex,
+            hazardAlerts: activeRoute.hazardAlerts,
+          }
+        : "Direct Surface Excursion Mode (No Calculated Corridor)",
+      topEarthAnalogueTestbed: {
+        siteName: "Haughton Impact Crater, Devon Island (Canada)",
+        matchScore: "76%",
+        fieldProtocol: "Astronaut EVA mobility suits over polygon permafrost & shatter cone terrain.",
+      },
+      scientificAttributions: [
+        "NASA JPL Mars Trek (Gale Crater DEM & Basemap Orthomosaics)",
+        "USGS Planetary Geologic Mapping Program (Mount Sharp Structural Units)",
+        "NASA AMMOS MMGIS Architecture (Open-source planetary GIS)",
+        "NASA PDS MSL Curiosity Science Team (ChemCam, APXS, RAD, REMS, Mastcam)",
+      ],
+    };
+
+    const blob = new Blob([JSON.stringify(manifest, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ares-eva-manifest-sol${currentSol}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    setExportNotification(`[EVA MANIFEST EXPORTED: ares-eva-manifest-sol${currentSol}.json]`);
+    setTimeout(() => setExportNotification(null), 4000);
   };
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#07090e] text-slate-100 flex flex-col font-sans select-none">
-      {/* Top Navigation & Mission Mode Switcher Bar */}
-      <header className="h-12 bg-[#0b0f17] border-b border-slate-800 px-4 flex items-center justify-between z-20 shrink-0">
-        {/* Brand & Mission Badge */}
+      {/* 1. TOP NAVIGATION BAR (h-14, px-4, Apple-grade symmetric grid) */}
+      <header className="h-14 bg-[#0b0f17] border-b border-slate-800 px-4 flex items-center justify-between z-20 shrink-0 overflow-hidden">
+        {/* SLOT KIRI: Badge + Active Coordinates */}
         <div className="flex items-center gap-3">
-          <AresMissionBadge size={30} showSubtext />
-          <div className="hidden lg:flex items-center gap-2 pl-3 border-l border-slate-800 text-[11px] font-mono text-slate-400">
-            <span>TARGET: MOUNT SHARP (GALE CRATER)</span>
+          <AresMissionBadge size={32} showSubtext />
+          <div className="hidden xl:flex items-center gap-2 pl-3 border-l border-slate-800 text-[11px] font-mono text-slate-400">
+            <span className="text-slate-500 uppercase">TARGET:</span>
+            <span className="text-slate-200 uppercase font-medium truncate max-w-[160px]">
+              {selectedWaypoint.name.split(" ")[0]}
+            </span>
             <span className="text-slate-600">/</span>
-            <span className="text-amber-500 tabular-nums">LAT -5.4453° LON 137.8414°</span>
+            <span className="text-amber-500 tabular-nums">
+              LAT {selectedWaypoint.coordinates[1].toFixed(4)}° LON {selectedWaypoint.coordinates[0].toFixed(4)}°
+            </span>
           </div>
         </div>
 
-        {/* Mode Switcher Pill */}
-        <div className="flex items-center p-0.5 bg-[#111827] border border-slate-800 font-mono text-xs">
+        {/* SLOT TENGAH: Symmetrical Segmented Mode Control */}
+        <div className="flex items-center bg-[#07090e] border border-slate-800 p-0.5 font-mono text-xs">
           <button
             onClick={() => setViewMode("mission_control")}
-            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
               viewMode === "mission_control"
                 ? "bg-amber-600 text-slate-950 font-bold"
                 : "text-slate-400 hover:text-slate-200"
@@ -87,7 +218,7 @@ export const AresMartianApp: React.FC = () => {
 
           <button
             onClick={() => setViewMode("visor_hud")}
-            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
               viewMode === "visor_hud"
                 ? "bg-cyan-600 text-slate-950 font-bold"
                 : "text-slate-400 hover:text-slate-200"
@@ -100,135 +231,218 @@ export const AresMartianApp: React.FC = () => {
           </button>
         </div>
 
-        {/* Right Action Tools */}
-        <div className="flex items-center gap-2">
+        {/* SLOT KANAN: Compact Non-Truncated Utility Controls */}
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={() => handleOpenPovModal(selectedWaypoint)}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-[#161e2e] hover:bg-[#1e293b] border border-slate-700 text-amber-400 font-mono text-[11px] transition-colors"
+            onClick={() => setPitch3D(!pitch3D)}
+            title="Toggle 2.5D / 3D Terrain Pitch"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#161e2e] hover:bg-[#1f2937] border border-slate-700 text-amber-400 font-mono text-[11px] font-bold transition-colors whitespace-nowrap"
+          >
+            <span>{pitch3D ? "2.5D PITCH" : "TOP-DOWN"}</span>
+          </button>
+
+          <button
+            onClick={() => setResetNorthTrigger((n) => n + 1)}
+            title="Reset North Heading"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#161e2e] hover:bg-[#1f2937] border border-slate-700 text-slate-200 font-mono text-[11px] font-bold transition-colors whitespace-nowrap"
+          >
+            <span>RESET N</span>
+          </button>
+
+          <button
+            onClick={handleExportEvaManifest}
+            title="Export EVA Mission Manifest (JSON)"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[11px] font-bold transition-colors whitespace-nowrap"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>SURFACE POV</span>
+            <span>EXPORT EVA</span>
           </button>
 
           <button
             onClick={() => setIsInfoOpen(true)}
             title="Scientific Attribution & Mission Brief"
-            className="flex items-center justify-center w-7 h-7 bg-[#161e2e] hover:bg-[#1e293b] border border-slate-700 text-slate-300 font-mono text-xs font-bold transition-colors"
+            className="flex items-center justify-center px-2.5 py-1.5 bg-[#161e2e] hover:bg-[#1f2937] border border-slate-700 text-slate-300 font-mono text-[11px] font-bold transition-colors whitespace-nowrap"
           >
             INFO
           </button>
         </div>
       </header>
 
-      {/* Main Workspace Area */}
-      <div className="relative flex-1 flex overflow-hidden">
-        {/* MapLibre 2.5D / 3D Canvas Viewport */}
-        <div className="flex-1 relative h-full">
-          <AresMapViewer
-            activeLayers={activeLayers}
-            selectedWaypoint={selectedWaypoint}
-            onSelectWaypoint={handleSelectWaypoint}
-            activeRoute={activeRoute}
-            viewMode={viewMode}
-          />
-
-          {/* Astronaut Visor HUD Overlay */}
-          {viewMode === "visor_hud" && (
-            <VisorHudOverlay
-              selectedWaypoint={selectedWaypoint}
-              activeRoute={activeRoute}
-              onOpenPovModal={handleOpenPovModal}
-              onToggleViewMode={() => setViewMode("mission_control")}
-            />
-          )}
+      {/* Export Confirmation Toast */}
+      {exportNotification && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#064e3b] border border-[#10b981] px-4 py-1.5 text-xs font-mono text-[#a7f3d0] font-bold">
+          {exportNotification}
         </div>
+      )}
 
-        {/* Habitat Control Right Workbench Panel (Hidden in Visor HUD mode) */}
-        {viewMode === "mission_control" && (
-          <aside className="w-96 md:w-[440px] h-full bg-[#0b0f17] border-l border-slate-800 flex flex-col z-10 shrink-0">
-            {/* Workbench Tab Navigation */}
-            <div className="flex border-b border-slate-800 bg-[#07090e] p-1 gap-1 shrink-0 font-mono text-[11px]">
-              <button
-                onClick={() => setActiveTab("prospector")}
-                className={`flex-1 py-1.5 px-1 text-center border transition-colors ${
-                  activeTab === "prospector"
-                    ? "bg-[#161e2e] text-amber-400 font-bold border-slate-700"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                PROSPECTOR ML
-              </button>
+      {/* 2. MAIN WORKSPACE AREA */}
+      <div className="relative flex-1 w-full h-full overflow-hidden">
+        {/* Full-width Map Viewport */}
+        <AresMapViewer
+          activeLayers={activeLayers}
+          selectedWaypoint={selectedWaypoint}
+          onSelectWaypoint={handleSelectWaypoint}
+          onMapClickCoordinate={handleMapClickCoordinate}
+          activeRoute={activeRoute}
+          viewMode={viewMode}
+          pitch3D={pitch3D}
+          resetNorthTrigger={resetNorthTrigger}
+          customPinCoords={customPin ? customPin.coordinates : null}
+        />
 
-              <button
-                onClick={() => setActiveTab("earth_analogue")}
-                className={`flex-1 py-1.5 px-1 text-center border transition-colors ${
-                  activeTab === "earth_analogue"
-                    ? "bg-[#161e2e] text-cyan-400 font-bold border-slate-700"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                EARTH MATCHER
-              </button>
-
-              <button
-                onClick={() => setActiveTab("marswalk")}
-                className={`flex-1 py-1.5 px-1 text-center border transition-colors ${
-                  activeTab === "marswalk"
-                    ? "bg-[#161e2e] text-emerald-400 font-bold border-slate-700"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                MARSWALK A*
-              </button>
-
-              <button
-                onClick={() => setActiveTab("layers")}
-                className={`flex-1 py-1.5 px-1 text-center border transition-colors ${
-                  activeTab === "layers"
-                    ? "bg-[#161e2e] text-slate-200 font-bold border-slate-700"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                LAYERS (4)
-              </button>
-            </div>
-
-            {/* Workbench Tab Content */}
-            <div className="flex-1 overflow-hidden">
-              {activeTab === "prospector" && (
-                <ProspectorPanel
-                  waypoint={selectedWaypoint}
-                  onOpenPovModal={handleOpenPovModal}
-                  onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
-                />
-              )}
-
-              {activeTab === "earth_analogue" && (
-                <AnalogueMatcherPanel waypoint={selectedWaypoint} />
-              )}
-
-              {activeTab === "marswalk" && (
-                <MarswalkPlannerPanel
-                  selectedWaypoint={selectedWaypoint}
-                  onRouteCalculated={setActiveRoute}
-                />
-              )}
-
-              {activeTab === "layers" && (
-                <ScientificLayersPanel
-                  activeLayers={activeLayers}
-                  onToggleLayer={handleToggleLayer}
-                />
-              )}
-            </div>
-          </aside>
+        {/* MODE: ASTRONAUT VISOR HUD (Simetris 4 Sudut, 16px Margin) */}
+        {viewMode === "visor_hud" && (
+          <VisorHudOverlay
+            selectedWaypoint={selectedWaypoint}
+            activeRoute={activeRoute}
+            onOpenPovModal={handleOpenPovModal}
+            dustStormActive={dustStormActive}
+            currentSol={currentSol}
+          />
         )}
+
+        {/* MODE: HABITAT MISSION CONTROL (Symmetrical Dual Dock Layout) */}
+        {viewMode === "mission_control" && (
+          <>
+            {/* PANEL KIRI (w-[340px], left-4 top-18 bottom-20): Scientific Layers & Marswalk Planner */}
+            <aside className="absolute left-4 top-18 bottom-20 w-[340px] bg-[#0b0f17] border border-slate-800 flex flex-col z-10 pointer-events-auto shadow-none">
+              {/* Tab Header */}
+              <div className="flex border-b border-slate-800 bg-[#07090e] p-1 gap-1 shrink-0 font-mono text-[11px]">
+                <button
+                  onClick={() => setLeftTab("layers")}
+                  className={`flex-1 py-1.5 text-center border transition-colors ${
+                    leftTab === "layers"
+                      ? "bg-[#161e2e] text-slate-100 font-bold border-slate-700"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  LAYERS (4)
+                </button>
+                <button
+                  onClick={() => setLeftTab("marswalk")}
+                  className={`flex-1 py-1.5 text-center border transition-colors ${
+                    leftTab === "marswalk"
+                      ? "bg-[#161e2e] text-emerald-400 font-bold border-slate-700"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  MARSWALK TRAVERSE
+                </button>
+              </div>
+
+              {/* Tab Body */}
+              <div className="flex-1 overflow-y-auto">
+                {leftTab === "layers" ? (
+                  <ScientificLayersPanel
+                    activeLayers={activeLayers}
+                    onToggleLayer={handleToggleLayer}
+                  />
+                ) : (
+                  <MarswalkPlannerPanel
+                    selectedWaypoint={selectedWaypoint}
+                    onRouteCalculated={setActiveRoute}
+                    availableWaypoints={allWaypoints}
+                  />
+                )}
+              </div>
+            </aside>
+
+            {/* PANEL KANAN (w-[360px], right-4 top-18 bottom-20): Prospector ML Fusion & Earth Analogues */}
+            <aside className="absolute right-4 top-18 bottom-20 w-[360px] bg-[#0b0f17] border border-slate-800 flex flex-col z-10 pointer-events-auto shadow-none">
+              {/* Tab Header */}
+              <div className="flex border-b border-slate-800 bg-[#07090e] p-1 gap-1 shrink-0 font-mono text-[11px]">
+                <button
+                  onClick={() => setRightTab("prospector")}
+                  className={`flex-1 py-1.5 text-center border transition-colors ${
+                    rightTab === "prospector"
+                      ? "bg-[#161e2e] text-amber-400 font-bold border-slate-700"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  PROSPECTOR ML
+                </button>
+                <button
+                  onClick={() => setRightTab("earth_analogue")}
+                  className={`flex-1 py-1.5 text-center border transition-colors ${
+                    rightTab === "earth_analogue"
+                      ? "bg-[#161e2e] text-cyan-400 font-bold border-slate-700"
+                      : "border-transparent text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  EARTH ANALOGUES
+                </button>
+              </div>
+
+              {/* Tab Body */}
+              <div className="flex-1 overflow-y-auto">
+                {rightTab === "prospector" ? (
+                  <ProspectorPanel
+                    waypoint={selectedWaypoint}
+                    onOpenPovModal={handleOpenPovModal}
+                    onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+                    dustStormActive={dustStormActive}
+                  />
+                ) : (
+                  <AnalogueMatcherPanel waypoint={selectedWaypoint} />
+                )}
+              </div>
+            </aside>
+          </>
+        )}
+
+        {/* 3. INTERACTIVE "SOL & DUST STORM" TELEMETRY SCRUBBER (Bar Bawah Simetris) */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center bg-[#0b0f17] border border-slate-800 px-3 py-1.5 font-mono text-[11px] gap-3 pointer-events-auto">
+          {/* Sol Clock Selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-400 text-[10px] uppercase">SOL CLOCK:</span>
+            {[4180, 4181, 4182, 4183, 4184, 4185].map((sol) => (
+              <button
+                key={sol}
+                onClick={() => setCurrentSol(sol)}
+                className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${
+                  currentSol === sol
+                    ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                    : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {sol}
+              </button>
+            ))}
+          </div>
+
+          <span className="text-slate-700">|</span>
+
+          {/* Atmospheric Condition Scrubber */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setDustStormActive(false)}
+              className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
+                !dustStormActive
+                  ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                  : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              CLEAR SKY (TAU 0.3)
+            </button>
+            <button
+              onClick={() => setDustStormActive(true)}
+              className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
+                dustStormActive
+                  ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                  : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              DUST STORM (TAU 2.4)
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Surface POV Eye-Level Inspection Modal */}
+      {/* Surface POV Eye-Level Modal */}
       {isPovOpen && (
         <SurfacePovModal
           waypoint={selectedWaypoint}

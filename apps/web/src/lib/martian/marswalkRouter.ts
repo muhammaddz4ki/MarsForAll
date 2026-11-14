@@ -21,6 +21,7 @@ export interface MarswalkRouteOptions {
   supportMode: MissionSupportMode;
   avoidHighRadiationRidges?: boolean;
   maxExcursionDurationHours?: number; // default 6.0 hours (EVA rule of thumb)
+  customWaypoints?: MountSharpWaypoint[];
 }
 
 export interface RouteSegment {
@@ -132,10 +133,13 @@ function getTopographicCorridorNodes(): NavNode[] {
  * Plan a terrain-aware Marswalk route.
  */
 export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteResult {
-  const startWp = MOUNT_SHARP_WAYPOINTS.find((w) => w.id === options.startWaypointId) ?? MOUNT_SHARP_WAYPOINTS[0];
+  const pool = options.customWaypoints && options.customWaypoints.length > 0
+    ? [...MOUNT_SHARP_WAYPOINTS, ...options.customWaypoints]
+    : MOUNT_SHARP_WAYPOINTS;
+  const startWp = pool.find((w) => w.id === options.startWaypointId) ?? pool[0];
   const targetWp =
-    MOUNT_SHARP_WAYPOINTS.find((w) => w.id === options.targetWaypointId) ??
-    MOUNT_SHARP_WAYPOINTS[1]; // default curiosity_boxwork_2025
+    pool.find((w) => w.id === options.targetWaypointId) ??
+    pool[1]; // default curiosity_boxwork_2025
 
   const profile = MODE_PROFILES[options.supportMode];
   const corridors = getTopographicCorridorNodes();

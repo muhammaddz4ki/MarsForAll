@@ -24,12 +24,17 @@ import {
 interface MarswalkPlannerPanelProps {
   onRouteCalculated: (route: MarswalkRouteResult) => void;
   selectedWaypoint: MountSharpWaypoint | null;
+  availableWaypoints?: MountSharpWaypoint[];
 }
 
 export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   onRouteCalculated,
   selectedWaypoint,
+  availableWaypoints,
 }) => {
+  const waypointList = availableWaypoints && availableWaypoints.length > 0
+    ? availableWaypoints
+    : MOUNT_SHARP_WAYPOINTS;
   const [startId, setStartId] = useState<string>("gale_hab_alpha");
   const [targetId, setTargetId] = useState<string>("curiosity_boxwork_2025");
   const [supportMode, setSupportMode] = useState<MissionSupportMode>("PAIRED_CREW_MULE_ROVER");
@@ -47,10 +52,11 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       targetWaypointId: targetId,
       supportMode,
       avoidHighRadiationRidges: avoidRadiation,
+      customWaypoints: availableWaypoints,
     });
     onRouteCalculated(res);
     return res;
-  }, [startId, targetId, supportMode, avoidRadiation]);
+  }, [startId, targetId, supportMode, avoidRadiation, availableWaypoints]);
 
   const chartData = useMemo(() => {
     let runningDist = 0;
@@ -110,7 +116,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
             onChange={(e) => setStartId(e.target.value)}
             className="w-full bg-[#0b0f17] border border-slate-700 px-2 py-1 text-[11px] font-mono text-white focus:outline-none focus:border-amber-400"
           >
-            {MOUNT_SHARP_WAYPOINTS.map((wp) => (
+            {waypointList.map((wp) => (
               <option key={wp.id} value={wp.id}>
                 {wp.name}
               </option>
@@ -125,7 +131,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
             onChange={(e) => setTargetId(e.target.value)}
             className="w-full bg-[#0b0f17] border border-slate-700 px-2 py-1 text-[11px] font-mono text-white focus:outline-none focus:border-amber-400"
           >
-            {MOUNT_SHARP_WAYPOINTS.map((wp) => (
+            {waypointList.map((wp) => (
               <option key={wp.id} value={wp.id}>
                 {wp.name}
               </option>

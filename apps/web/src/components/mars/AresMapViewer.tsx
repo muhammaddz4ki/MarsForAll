@@ -9,6 +9,7 @@ import {
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import mountSharpGeology from "@/data/mountSharpGeology.json";
+import martianTerrainBase from "@/data/martianTerrainBase.json";
 
 interface AresMapViewerProps {
   activeLayers: Record<string, boolean>;
@@ -17,9 +18,62 @@ interface AresMapViewerProps {
   onMapClickCoordinate?: (coords: [number, number], elevation: number) => void;
   activeRoute: MarswalkRouteResult | null;
   viewMode: "mission_control" | "visor_hud";
+  pitch3D: boolean;
+  onTogglePitch?: () => void;
+  resetNorthTrigger: number;
+  customPinCoords: [number, number] | null;
 }
 
-const MOUNT_SHARP_CENTER: [number, number] = [137.58, -4.95];
+const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
+const MOUNT_SHARP_DEFAULT_ZOOM = 12.2;
+
+const WAYPOINT_SHORT_CODES: Record<
+  string,
+  { code: string; color: string; border: string; text: string }
+> = {
+  gale_hab_alpha: {
+    code: "HAB",
+    color: "bg-[#064e3b]",
+    border: "border-[#10b981]",
+    text: "text-[#34d399]",
+  },
+  curiosity_boxwork_2025: {
+    code: "BOX",
+    color: "bg-[#78350f]",
+    border: "border-[#f59e0b]",
+    text: "text-[#fef3c7]",
+  },
+  vera_rubin_ridge: {
+    code: "VRR",
+    color: "bg-[#451a03]",
+    border: "border-[#ea580c]",
+    text: "text-[#fed7aa]",
+  },
+  glen_torridon_trough: {
+    code: "GLT",
+    color: "bg-[#083344]",
+    border: "border-[#06b6d4]",
+    text: "text-[#a5f3fc]",
+  },
+  greenheugh_pediment: {
+    code: "GHP",
+    color: "bg-[#1e293b]",
+    border: "border-[#94a3b8]",
+    text: "text-slate-200",
+  },
+  gediz_vallis_ridge: {
+    code: "GDV",
+    color: "bg-[#7f1d1d]",
+    border: "border-[#ef4444]",
+    text: "text-[#fca5a5]",
+  },
+  marker_band_valley: {
+    code: "MBV",
+    color: "bg-[#312e81]",
+    border: "border-[#818cf8]",
+    text: "text-[#c7d2fe]",
+  },
+};
 
 export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   activeLayers,
@@ -28,51 +82,59 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onMapClickCoordinate,
   activeRoute,
   viewMode,
+  pitch3D,
+  resetNorthTrigger,
+  customPinCoords,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  const customMarkerRef = useRef<Marker | null>(null);
   const [pitch, setPitch] = useState<number>(45);
   const [bearing, setBearing] = useState<number>(-15);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    // Initialize MapLibre with 100% Martian raster basemap & procedural vector terrain
+    // ZERO Earth tiles (no Carto/OSM/Mapbox Earth tiles)
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
-        name: "Ares-Martian-Base",
+        name: "Ares-Martian-Map-Base",
         sources: {
-          osm_dark_fallback: {
+          mars_mola_shaded: {
             type: "raster",
             tiles: [
-              "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+              "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
-            attribution: "USGS Astrogeology / NASA JPL Mars Trek / Esri",
+            attribution: "USGS Astrogeology / NASA JPL Mars Trek / OpenPlanetary",
           },
         },
         layers: [
+          // Base Space / Deep Regolith solid
           {
-            id: "background-space",
+            id: "background-mars-space",
             type: "background",
             paint: { "background-color": "#07090e" },
           },
+          // Official Mars Basemap Raster
           {
-            id: "planetary-basemap",
+            id: "mars-planetary-basemap",
             type: "raster",
-            source: "osm_dark_fallback",
+            source: "mars_mola_shaded",
             paint: {
-              "raster-opacity": 0.40,
-              "raster-contrast": 0.4,
-              "raster-hue-rotate": 18,
+              "raster-opacity": 0.55,
+              "raster-contrast": 0.35,
+              "raster-hue-rotate": 12,
             },
           },
         ],
       },
       center: MOUNT_SHARP_CENTER,
-      zoom: 10.6,
+      zoom: MOUNT_SHARP_DEFAULT_ZOOM,
       pitch: 45,
       bearing: -15,
       maxPitch: 70,
@@ -80,7 +142,38 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     });
 
     map.on("load", () => {
-      // 1. Add Local Geology GeoJSON Source
+      // 1. Procedural Martian Terrain Base (Ensures 100% authentic Mars even offline)
+      map.addSource("mars_procedural_terrain", {
+        type: "geojson",
+        data: martianTerrainBase as unknown as maplibregl.GeoJSONSourceSpecification["data"],
+      });
+
+      // Procedural Martian Basal Basin
+      map.addLayer({
+        id: "mars_terrain_basin_fills",
+        type: "fill",
+        source: "mars_procedural_terrain",
+        filter: ["==", "$type", "Polygon"],
+        paint: {
+          "fill-color": ["get", "color"],
+          "fill-opacity": 0.75,
+        },
+      });
+
+      // Procedural Ridge Lines and Rim Vectors
+      map.addLayer({
+        id: "mars_terrain_lines",
+        type: "line",
+        source: "mars_procedural_terrain",
+        filter: ["==", "$type", "LineString"],
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 1.5,
+          "line-opacity": 0.85,
+        },
+      });
+
+      // 2. Gale Crater Geology GeoJSON Source
       map.addSource("gale_geology", {
         type: "geojson",
         data: mountSharpGeology as unknown as maplibregl.GeoJSONSourceSpecification["data"],
@@ -96,7 +189,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.28,
+          "fill-opacity": 0.32,
         },
       });
 
@@ -110,11 +203,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         paint: {
           "line-color": ["get", "color"],
           "line-width": 1.5,
-          "line-opacity": 0.85,
+          "line-opacity": 0.9,
         },
       });
 
-      // Layer 2: Topographic & Mobility Hazards (Crisp Flat Dashed Lines)
+      // Layer 2: Topographic & Mobility Hazards (Crisp Flat Lines)
       map.addLayer({
         id: "hazard_slopes",
         type: "line",
@@ -187,10 +280,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     map.on("rotate", () => setBearing(Math.round(map.getBearing())));
     map.on("pitch", () => setPitch(Math.round(map.getPitch())));
 
+    // Click anywhere to drop custom pin and interpolate elevation & slope
     map.on("click", (e) => {
       if (onMapClickCoordinate) {
-        const approxElev = Math.round(-4500 + Math.abs(e.lngLat.lat - -4.6) * 1100);
-        onMapClickCoordinate([e.lngLat.lng, e.lngLat.lat], approxElev);
+        // Approximate elevation based on Gale floor (-4500m) and Mount Sharp radial rise
+        const distFromHab = Math.sqrt(
+          Math.pow((e.lngLat.lng - 137.4417) * 59.2, 2) +
+          Math.pow((e.lngLat.lat - -4.5895) * 59.2, 2)
+        );
+        const approxElev = Math.min(-3500, Math.round(-4500 + distFromHab * 42));
+        onMapClickCoordinate([Number(e.lngLat.lng.toFixed(4)), Number(e.lngLat.lat.toFixed(4))], approxElev);
       }
     });
 
@@ -202,6 +301,21 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     };
   }, []);
 
+  // Update pitch when pitch3D prop changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({ pitch: pitch3D ? 55 : 0, duration: 500 });
+  }, [pitch3D]);
+
+  // Reset North when trigger increments
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || resetNorthTrigger === 0) return;
+    map.easeTo({ bearing: 0, duration: 500 });
+  }, [resetNorthTrigger]);
+
+  // Sync Layer Toggles
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -236,6 +350,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [activeLayers]);
 
+  // Render Marswalk Path on Route Calculation
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -264,7 +379,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [activeRoute]);
 
-  // Render Flat Scientific Waypoint Markers (NO EMOJIS, NO GLOW)
+  // Render Flat Scientific Waypoint Markers (NO EMOJIS, NO GLOW, CLEAR 3-LETTER BADGES)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -274,45 +389,24 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     MOUNT_SHARP_WAYPOINTS.forEach((wp) => {
       const el = document.createElement("div");
-      el.className = "cursor-pointer select-none";
+      el.className = "cursor-pointer select-none group";
 
       const isSelected = selectedWaypoint?.id === wp.id;
-      const isBoxwork = wp.id === "curiosity_boxwork_2025";
-      const isHab = wp.id === "gale_hab_alpha";
-
-      let markerBadge = "";
-      if (isHab) {
-        markerBadge = `
-          <div class="flex items-center justify-center w-7 h-7 bg-[#064e3b] border border-[#10b981] text-[#34d399] text-[10px] font-mono font-bold">
-            HAB
-          </div>
-        `;
-      } else if (isBoxwork) {
-        markerBadge = `
-          <div class="flex items-center justify-center w-7 h-7 bg-[#78350f] border border-[#f59e0b] text-[#fef3c7] text-[9px] font-mono font-black">
-            BOX
-          </div>
-        `;
-      } else if (wp.category === "hazard_zone") {
-        markerBadge = `
-          <div class="flex items-center justify-center w-6 h-6 bg-[#7f1d1d] border border-[#ef4444] text-[#fca5a5] text-[9px] font-mono font-bold">
-            HAZ
-          </div>
-        `;
-      } else {
-        markerBadge = `
-          <div class="flex items-center justify-center w-6 h-6 bg-[#1e293b] border border-[#94a3b8] text-slate-200 text-[9px] font-mono">
-            SCI
-          </div>
-        `;
-      }
+      const codeMeta = WAYPOINT_SHORT_CODES[wp.id] || {
+        code: "SCI",
+        color: "bg-[#1e293b]",
+        border: "border-[#94a3b8]",
+        text: "text-slate-200",
+      };
 
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
-          ${markerBadge}
-          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
+          <div class="flex items-center justify-center w-7 h-7 ${codeMeta.color} border ${codeMeta.border} ${codeMeta.text} text-[10px] font-mono font-bold shadow-none transition-transform group-hover:scale-105">
+            ${codeMeta.code}
+          </div>
+          <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
             isSelected
-              ? "bg-amber-500 text-slate-950 border border-amber-300"
+              ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
               : "bg-[#0b0f17] text-slate-300 border border-slate-700"
           }">
             ${wp.name.split(" ")[0]}
@@ -323,7 +417,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectWaypoint(wp);
-        map.flyTo({ center: wp.coordinates, zoom: 12.2, duration: 800 });
+        map.flyTo({ center: wp.coordinates, zoom: 12.2, duration: 600 });
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -334,49 +428,48 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     });
   }, [selectedWaypoint, onSelectWaypoint]);
 
-  const handlePitchToggle = () => {
+  // Render Custom Click Pin Marker
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const targetPitch = pitch > 20 ? 0 : 55;
-    map.easeTo({ pitch: targetPitch, duration: 600 });
-  };
 
-  const handleResetNorth = () => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.easeTo({ bearing: 0, duration: 500 });
-  };
+    if (customMarkerRef.current) {
+      customMarkerRef.current.remove();
+      customMarkerRef.current = null;
+    }
+
+    if (customPinCoords) {
+      const el = document.createElement("div");
+      el.className = "cursor-pointer select-none";
+      el.innerHTML = `
+        <div class="relative flex flex-col items-center">
+          <div class="flex items-center justify-center w-7 h-7 bg-[#b45309] border border-[#fbbf24] text-white text-[10px] font-mono font-black shadow-none animate-pulse">
+            PIN
+          </div>
+          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 bg-[#111827] text-amber-300 border border-amber-400 text-[8px] font-mono font-bold tracking-wider">
+            CUSTOM-TARGET
+          </div>
+        </div>
+      `;
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(customPinCoords)
+        .addTo(map);
+      customMarkerRef.current = marker;
+    }
+  }, [customPinCoords]);
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-[#07090e]">
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Floating Tactical Map Controls (Flat Solid Buttons, Sharp 1px Borders) */}
-      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
-        <button
-          onClick={handlePitchToggle}
-          title="Toggle 2.5D/3D Terrain Pitch"
-          className="flex items-center justify-center w-8 h-8 bg-[#111827] hover:bg-[#1f2937] border border-slate-700 text-amber-400 font-mono text-[11px] font-bold transition-colors"
-        >
-          {pitch > 20 ? "3D" : "2D"}
-        </button>
-        <button
-          onClick={handleResetNorth}
-          title="Reset North Heading"
-          className="flex items-center justify-center w-8 h-8 bg-[#111827] hover:bg-[#1f2937] border border-slate-700 text-slate-200 font-mono text-[11px] font-bold transition-colors"
-        >
-          N
-        </button>
-      </div>
-
       {/* Real-time Bearing & Coordinate Bar (Flat Solid, Tabular Nums) */}
-      <div className="absolute bottom-2 left-3 z-10 px-2.5 py-1 bg-[#0b0f17] border border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-3">
-        <span>GALE CRATER (AEOLIS MONS)</span>
+      <div className="absolute bottom-2 left-4 z-10 px-2.5 py-1 bg-[#0b0f17] border border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-3">
+        <span className="text-amber-400 font-bold">GALE CRATER // AEOLIS MONS</span>
         <span className="text-slate-700">|</span>
-        <span className="text-amber-400 font-medium tabular-nums">PITCH: {pitch}°</span>
+        <span className="text-slate-300 font-medium tabular-nums">PITCH: {pitch}°</span>
         <span className="text-cyan-400 font-medium tabular-nums">AZ: {bearing}°</span>
         <span className="text-slate-700">|</span>
-        <span className="tabular-nums">DATUM: -4500m TO -3800m</span>
+        <span className="tabular-nums">DATUM: -4500m TO -3500m</span>
       </div>
     </div>
   );
