@@ -73,6 +73,43 @@ const LANDMARK_PINS: LandmarkPin[] = [
   },
 ];
 
+// Jezero Crater (Perseverance Mars 2020) In-Situ Landmark Pins
+const LANDMARK_PINS_JEZERO: LandmarkPin[] = [
+  {
+    id: "pin_jzr_01",
+    code: "PIN-01",
+    name: "CHEYAVA FALLS REDOX VEIN",
+    x: 4.5,
+    z: -8.5,
+    instrument: "SUPERCAM / SHERLOC",
+    metricLabel: "LEOPARD SPOT RIMS",
+    metricValue: "Vivianite / Fe-Phosphate Halos",
+    description: "Millimeter-sized reaction rings with organic signatures along calcium sulfate veins in Neretva Vallis ancient river inflow.",
+  },
+  {
+    id: "pin_jzr_02",
+    code: "PIN-02",
+    name: "PERSEVERANCE ROVER CHASSIS",
+    x: -2.5,
+    z: -4.5,
+    instrument: "HAZCAM / MOBILITY",
+    metricLabel: "BEARING TRACTION",
+    metricValue: "Rigid Olivine Pavement",
+    description: "Mars 2020 52.5cm curved cleat wheels on flat basaltic unit, zero wheel-spin slip at Octavia E. Butler site.",
+  },
+  {
+    id: "pin_jzr_03",
+    code: "PIN-03",
+    name: "DELTA FRONT SMECTITE SCARP",
+    x: -6.5,
+    z: -11.0,
+    instrument: "MASTCAM-Z / PIXL",
+    metricLabel: "CARBONATE & CLAYS",
+    metricValue: "38% Phyllosilicate Mudstone",
+    description: "Ancient river delta front bottomset beds preserving fossil bio-signatures from Lake Jezero 3.7 billion years ago.",
+  },
+];
+
 // Fallback Curiosity Photos for Mount Sharp
 const FALLBACK_CURIOSITY_PHOTOS: CuriosityPhotoItem[] = [
   {
@@ -107,8 +144,67 @@ const FALLBACK_CURIOSITY_PHOTOS: CuriosityPhotoItem[] = [
   },
 ];
 
+// Fallback Perseverance Photos for Jezero Crater
+const FALLBACK_JEZERO_PHOTOS: CuriosityPhotoItem[] = [
+  {
+    imageid: "M2020_1220_PIA26369",
+    sol: 1220,
+    instrument: "MCZ_RIGHT",
+    image_url: "https://photojournal.jpl.nasa.gov/jpeg/PIA26369.jpg",
+    date_taken_utc: "2024-07-18",
+    title: "Sol 1220: Cheyava Falls Leopard Spots Redox Outcrop",
+    caption: "Perseverance Mastcam-Z multi-spectral closeup of calcium sulfate veins surrounded by millimeter-scale iron-phosphate reaction rims in Neretva Vallis.",
+    dataSource: "CACHED_JEZERO_ARCHIVE",
+  },
+  {
+    imageid: "M2020_0750_PIA25828",
+    sol: 750,
+    instrument: "MCZ_LEFT",
+    image_url: "https://photojournal.jpl.nasa.gov/jpeg/PIA25828.jpg",
+    date_taken_utc: "2023-03-30",
+    title: "Sol 750: Three Forks Delta Scarp Exposure",
+    caption: "Towering stratified delta front deposits and delta bottomset mudstones deposited by ancient Martian rivers into Lake Jezero.",
+    dataSource: "CACHED_JEZERO_ARCHIVE",
+  },
+  {
+    imageid: "M2020_0300_PIA25018",
+    sol: 300,
+    instrument: "MCZ_RIGHT",
+    image_url: "https://photojournal.jpl.nasa.gov/jpeg/PIA25018.jpg",
+    date_taken_utc: "2021-12-23",
+    title: "Sol 300: Séítah Olivine Cumulate Bastide Ridge",
+    caption: "Layered olivine-pyroxene rich igneous bedrock outcrop surrounded by active eolian ripples in South Séítah.",
+    dataSource: "CACHED_JEZERO_ARCHIVE",
+  },
+];
+
 // Helper to compute terrain elevation y(x, z) procedurally based on waypoint characteristics
 function getTerrainHeight(x: number, z: number, waypointId: string): number {
+  if (waypointId === "jzr_three_forks_delta") {
+    // Delta front scarp terrace with flat sediment aprons
+    const deltaSlope = -0.06 * z + 0.02 * x;
+    const terrace = Math.floor(z * 0.15) * 0.45;
+    const sedimentRipples = Math.sin(0.6 * x + 0.3 * z) * 0.25;
+    return deltaSlope + terrace + sedimentRipples;
+  }
+
+  if (waypointId === "jzr_seitah_olivine") {
+    // Séítah ribbed eolian dunes and coarse olivine ripples
+    const duneWaves = Math.sin(0.45 * x - 0.75 * z) * 0.85 + Math.cos(0.25 * x + 0.5 * z) * 0.35;
+    return 0.03 * x + duneWaves;
+  }
+
+  if (waypointId === "jzr_bright_angel_redox") {
+    // Neretva Vallis ancient inflow channel bed
+    const channelCut = -Math.cos(x * 0.18) * 1.1 + Math.sin(z * 0.22) * 0.45;
+    return 0.02 * z + channelCut;
+  }
+
+  if (waypointId === "jzr_hab_alpha") {
+    // Flat basaltic crater floor pavement
+    return 0.015 * x - 0.01 * z + Math.sin(x * 0.35) * Math.cos(z * 0.35) * 0.14;
+  }
+
   const isBoxwork = waypointId === "curiosity_boxwork_2025";
 
   if (isBoxwork) {
@@ -353,14 +449,21 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const canvasHostRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
+  const baseElevation = waypoint?.elevationM ?? -4120;
+  const wpId = waypoint?.id ?? "mount_sharp_baseline";
+  const isJezero = wpId.startsWith("jzr_") || (waypoint?.coordinates && waypoint.coordinates[0] < 100);
+
   const [viewMode, setViewMode] = useState<"surface" | "mesh" | "vr_stereo">("surface");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
   // DEM Source Status & Live Photos
   const [demSourceStatus, setDemSourceStatus] = useState<"NASA_MOLA_REAL_DEM" | "LOCAL_PROCEDURAL_CACHED">("LOCAL_PROCEDURAL_CACHED");
-  const [curiosityPhotos, setCuriosityPhotos] = useState<CuriosityPhotoItem[]>(FALLBACK_CURIOSITY_PHOTOS);
+  const [curiosityPhotos, setCuriosityPhotos] = useState<CuriosityPhotoItem[]>(
+    isJezero ? FALLBACK_JEZERO_PHOTOS : FALLBACK_CURIOSITY_PHOTOS
+  );
   const [photoIdx, setPhotoIdx] = useState<number>(0);
   const [isPhotoFeedOpen, setIsPhotoFeedOpen] = useState<boolean>(true);
+  const [is360ArchiveOpen, setIs360ArchiveOpen] = useState<boolean>(false);
 
   // Camera Framing & Telemetry Readouts
   const [camAzimuth, setCamAzimuth] = useState<number>(0);
@@ -403,12 +506,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const lastRaycastTimeRef = useRef<number>(0);
   const lastCamStateUpdateRef = useRef<number>(0);
 
-  const baseElevation = waypoint?.elevationM ?? -4120;
-  const wpId = waypoint?.id ?? "mount_sharp_baseline";
-
-  // Fetch Live NASA MSL Curiosity Photos
+  // Fetch Live NASA Surface Photos (MSL Curiosity or M2020 Perseverance)
   useEffect(() => {
-    fetch("/api/curiosity-photos?limit=12")
+    const mission = isJezero ? "m2020" : "curiosity";
+    fetch(`/api/curiosity-photos?mission=${mission}&limit=12`)
       .then((res) => res.json())
       .then((data) => {
         if (data?.items && data.items.length > 0) {
@@ -418,7 +519,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       .catch(() => {
         // Fallback already pre-loaded
       });
-  }, []);
+  }, [isJezero]);
 
   // Reset camera to initial observation origin
   const handleResetOrigin = useCallback(() => {
@@ -607,7 +708,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     // 8. 3D Spatial Landmark Pins
     const landmarkObjects: THREE.Object3D[] = [];
-    LANDMARK_PINS.forEach((pin) => {
+    const activePinsList = isJezero ? LANDMARK_PINS_JEZERO : LANDMARK_PINS;
+    activePinsList.forEach((pin) => {
       const pinY = getTerrainHeight(pin.x, pin.z, wpId);
 
       const pinGroup = new THREE.Group();
@@ -955,7 +1057,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
             </div>
 
-            {/* Toggle Curiosity Photo Feed */}
+            {/* Toggle Raw Photo Feed */}
             <button
               onClick={() => setIsPhotoFeedOpen(!isPhotoFeedOpen)}
               className={`px-2 py-1 border text-[11px] font-bold font-mono transition-colors ${
@@ -965,6 +1067,18 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               }`}
             >
               {t("rawFeed")}
+            </button>
+
+            {/* Toggle Mastcam-Z 360° Panorama Archive */}
+            <button
+              onClick={() => setIs360ArchiveOpen(!is360ArchiveOpen)}
+              className={`px-2 py-1 border text-[11px] font-bold font-mono transition-colors ${
+                is360ArchiveOpen
+                  ? "bg-[#161e2e] text-cyan-400 border-slate-700"
+                  : "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              {t("panoramas360")}
             </button>
 
             {/* Close Button */}
@@ -1051,14 +1165,61 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </div>
             )}
 
-            {/* Live NASA MSL Curiosity Raw Imagery Inspector Card */}
+            {/* Mastcam-Z 360° Gigapixel Panorama Collection Archive Card */}
+            {is360ArchiveOpen && (
+              <div className="absolute top-16 right-4 w-72 sm:w-80 bg-[#0b0f17] border border-cyan-500/80 p-3 font-mono text-xs text-slate-200 shadow-xl pointer-events-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse" />
+                    <span className="text-cyan-400 font-bold text-[10px] uppercase">
+                      {t("panoramas360")}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setIs360ArchiveOpen(false)}
+                    className="text-slate-400 hover:text-white font-bold px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="space-y-2 text-[11px]">
+                  <div className="text-slate-100 font-bold">
+                    MASTCAM-Z 360° PANORAMA ARCHIVE
+                  </div>
+                  <p className="text-slate-400 text-[10px] leading-relaxed">
+                    Curated multi-spectral 360-degree gigapixel panoramas captured across the Jezero delta and Séítah outcrops by the dual-camera Mastcam-Z mast payload.
+                  </p>
+                  <div className="border border-slate-800 bg-[#07090e] p-2 space-y-1 text-[10px]">
+                    <div className="text-slate-500 font-mono text-[9px] uppercase tracking-wider">OFFICIAL ATTRIBUTION</div>
+                    <div className="text-amber-400 font-bold">
+                      NASA/JPL-Caltech/ASU/MSSS (Bell et al., LPSC 2025)
+                    </div>
+                  </div>
+                  <a
+                    href="https://mastcamz.asu.edu/mastcam-zs-360-panorama-collection/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-[#0e273c] hover:bg-[#163b5c] border border-cyan-500 text-cyan-300 font-mono text-[11px] font-bold transition-colors"
+                  >
+                    <span>{t("open360Collection")}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Live NASA Surface Rover Raw Imagery Inspector Card */}
             {isPhotoFeedOpen && currentPhoto && (
               <div className="absolute bottom-4 right-4 w-72 sm:w-80 bg-[#0b0f17] border border-slate-700 p-2.5 font-mono text-xs text-slate-200 shadow-xl pointer-events-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     <span className="text-emerald-400 font-bold text-[10px] uppercase">
-                      {t("liveMslRawFeed")}
+                      {isJezero ? t("m2020RawFeed") : t("liveMslRawFeed")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[10px] text-slate-400">

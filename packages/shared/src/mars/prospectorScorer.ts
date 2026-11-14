@@ -17,8 +17,8 @@ import {
   CrustalMagneticShielding,
   evaluateSandTrapRisk,
   SandTrapEvaluation,
-} from "./scientificParams.js";
-import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
+} from "./scientificParams";
+import { MountSharpWaypoint, ALL_MARTIAN_WAYPOINTS } from "./mountSharpWaypoints";
 
 export interface ProspectorInputQuery {
   coordinates: [number, number]; // [lon, lat]
@@ -133,11 +133,11 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     accessibilityScore = Math.max(20, accessibilityScore - 10);
   }
 
-  // 4. In-Situ Calibration & Distance Penalty
-  let closestWp = MOUNT_SHARP_WAYPOINTS[0];
+  // 4. In-Situ Calibration & Distance Penalty (Gale & Jezero Network)
+  let closestWp = ALL_MARTIAN_WAYPOINTS[0];
   let minDistanceKm = Infinity;
 
-  for (const wp of MOUNT_SHARP_WAYPOINTS) {
+  for (const wp of ALL_MARTIAN_WAYPOINTS) {
     const dist = calculateMartianDistanceKm(query.coordinates, wp.coordinates);
     if (dist < minDistanceKm) {
       minDistanceKm = dist;

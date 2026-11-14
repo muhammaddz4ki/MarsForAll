@@ -11,6 +11,8 @@ import VisorHudOverlay from "./VisorHudOverlay";
 import {
   MOUNT_SHARP_WAYPOINTS,
   MountSharpWaypoint,
+  MissionSiteId,
+  getWaypointsForSite,
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import {
@@ -66,6 +68,7 @@ export const AresMartianApp: React.FC = () => {
   const tScrubber = useTranslations("scrubber");
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [currentSite, setCurrentSite] = useState<MissionSiteId>("gale_crater");
   const [viewMode, setViewMode] = useState<ViewMode>("mission_control");
   const [selectedWaypoint, setSelectedWaypoint] = useState<MountSharpWaypoint>(
     MOUNT_SHARP_WAYPOINTS[1] // Default: Curiosity Boxwork 2025 Site
@@ -135,12 +138,20 @@ export const AresMartianApp: React.FC = () => {
     }
   };
 
+  // Switch active NASA mission site (Site 01 Gale vs Site 02 Jezero)
+  const handleSwitchSite = useCallback((site: MissionSiteId) => {
+    setCurrentSite(site);
+    const siteWaypoints = getWaypointsForSite(site);
+    setSelectedWaypoint(siteWaypoints[1] || siteWaypoints[0]);
+  }, []);
+
   // Pool of waypoints including any user-dropped custom pin
   const allWaypoints = useMemo(() => {
+    const siteBase = getWaypointsForSite(currentSite);
     return customPin
-      ? [...MOUNT_SHARP_WAYPOINTS, customPin]
-      : MOUNT_SHARP_WAYPOINTS;
-  }, [customPin]);
+      ? [...siteBase, customPin]
+      : siteBase;
+  }, [currentSite, customPin]);
 
   const handleToggleLayer = useCallback((layerId: string) => {
     setActiveLayers((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
@@ -311,6 +322,36 @@ export const AresMartianApp: React.FC = () => {
           </div>
         </div>
 
+        {/* SLOT MISI: Symmetrical Segmented Mission Site Control [ SITE-01: GALE (MSL) | SITE-02: JEZERO (M2020) ] */}
+        <div className={`hidden md:flex items-center ${
+          isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+        } border p-0.5 font-mono text-[10px] shrink-0`}>
+          <button
+            onClick={() => handleSwitchSite("gale_crater")}
+            className={`px-2.5 py-1 font-bold transition-colors ${
+              currentSite === "gale_crater"
+                ? "bg-amber-600 text-slate-950"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            {tNav("siteGale")}
+          </button>
+          <button
+            onClick={() => handleSwitchSite("jezero_crater")}
+            className={`px-2.5 py-1 font-bold transition-colors ${
+              currentSite === "jezero_crater"
+                ? "bg-amber-600 text-slate-950"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            {tNav("siteJezero")}
+          </button>
+        </div>
+
         {/* SLOT TENGAH: Symmetrical Segmented Mode Control */}
         <div className={`flex items-center ${
           isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
@@ -440,6 +481,7 @@ export const AresMartianApp: React.FC = () => {
       <div className="relative flex-1 w-full h-full overflow-hidden">
         {/* Full-width Map Viewport */}
         <AresMapViewer
+          currentSite={currentSite}
           activeLayers={activeLayers}
           selectedWaypoint={selectedWaypoint}
           onSelectWaypoint={handleSelectWaypoint}

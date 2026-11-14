@@ -220,7 +220,16 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
         } p-3 border space-y-2 pointer-events-auto`}>
           <div className={`flex items-center justify-between border-b ${isDark ? "border-amber-900/80" : "border-amber-200"} pb-1 text-[10px]`}>
             <span className="font-bold tracking-wider text-amber-500 uppercase">{t("targetNav")}</span>
-            <span className="text-cyan-500 font-bold">{t("locked")}</span>
+            <div className="flex items-center gap-1.5">
+              <span className={`px-1 py-0.2 border text-[8px] font-bold ${
+                target.id.startsWith("jzr_")
+                  ? "bg-[#4c1d95]/40 text-[#d8b4fe] border-[#a855f7]/60"
+                  : "bg-[#78350f]/40 text-[#fde68a] border-[#f59e0b]/60"
+              }`}>
+                {target.id.startsWith("jzr_") ? "JEZERO // M2020" : "GALE // MSL"}
+              </span>
+              <span className="text-cyan-500 font-bold">{t("locked")}</span>
+            </div>
           </div>
 
           <div>

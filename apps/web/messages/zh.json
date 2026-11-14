@@ -10,6 +10,8 @@
   "nav": {
     "missionControl": "栖息地控制中枢",
     "helmetVisor": "宇航员头盔 HUD 视镜",
+    "siteGale": "站点-01: 盖尔 (MSL)",
+    "siteJezero": "站点-02: 耶泽罗 (M2020)",
     "pitch3D": "2.5D 俯仰",
     "pitch2D": "正视平面",
     "resetNorth": "指北复位",
@@ -197,6 +199,9 @@
     "clearSky": "0.3 (晴空明净)",
     "instrument": "科学仪器:",
     "liveMslRawFeed": "NASA 好奇号火星车实拍原始图集",
+    "m2020RawFeed": "NASA 毅力号火星车实拍原始图集",
+    "panoramas360": "[ 360° 全景 ]",
+    "open360Collection": "探索 360° 十亿像素档案",
     "sol": "火星日 SOL",
     "imageId": "图像编号:",
     "acquired": "拍摄时间:",
@@ -218,6 +223,8 @@
     "planetGlobeTitle": "缩放至火星全球行星地平线 (全球视角)",
     "galeFocus": "盖尔特写",
     "galeFocusTitle": "俯冲至盖尔撞击坑 / 夏普山焦点区域",
+    "jezeroFocus": "耶泽罗特写",
+    "jezeroFocusTitle": "俯冲至耶泽罗撞击坑 / 毅力号三角洲前沿区域",
     "customTarget": "自定义目标点",
     "pin": "图钉"
   },

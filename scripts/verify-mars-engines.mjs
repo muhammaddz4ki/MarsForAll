@@ -5,6 +5,10 @@ import {
   classifySlopeHazard,
   computeTerrainImpedance,
   MOUNT_SHARP_WAYPOINTS,
+  JEZERO_CRATER_WAYPOINTS,
+  ALL_MARTIAN_WAYPOINTS,
+  MISSION_SITES,
+  getWaypointsForSite,
   EARTH_ANALOGUES,
   evaluateProspectorTarget,
   matchMartianTargetToEarthAnalogues,
@@ -124,6 +128,46 @@ boxwork35.sharadSubsurfaceProfile.forEach((l) => {
   console.log(`        - [${l.depthStartM}m - ${l.depthEndM}m] ${l.layerName} (ε' = ${l.dielectricPermittivity}, ${l.densityGPerCm3} g/cm³)`);
 });
 console.log(`    [D7 Nav & Comms] Coordinates: [${boxwork35.coordinates[1]}°, ${boxwork35.coordinates[0]}°] | Sol: ${boxwork35.sol} | Radio LOS: [${boxwork35.radioLineOfSight}]`);
+
+// 9. Multi-Site Mission Infrastructure: Jezero Crater (Mars 2020 Perseverance)
+console.log(`\n[9] Multi-Site Infrastructure: Jezero Crater (Mars 2020 Perseverance):`);
+console.log(`    Configured Mission Sites (${Object.keys(MISSION_SITES).length}):`);
+Object.values(MISSION_SITES).forEach((site) => {
+  console.log(`      - [${site.shortLabel}] ${site.name} (Rover: ${site.roverName}, Center: ${site.center[1]}°N, ${site.center[0]}°E, Elev: ${site.molaCenterElevationM}m)`);
+});
+console.log(`    Jezero Crater Waypoint Registry (${JEZERO_CRATER_WAYPOINTS.length} waypoints):`);
+JEZERO_CRATER_WAYPOINTS.forEach((wp) => {
+  console.log(`      - [${wp.id}] ${wp.name} (Elev: ${wp.elevationM}m, Age: ${wp.stratigraphicAge}, Unit: ${wp.geologicUnit})`);
+});
+console.log(`    Total Planetary Network Waypoints: ${ALL_MARTIAN_WAYPOINTS.length}`);
+
+// Test Prospector ML on Jezero Bright Angel / Cheyava Falls
+const cheyavaWp = JEZERO_CRATER_WAYPOINTS.find((w) => w.id === "jzr_bright_angel_redox");
+const cheyavaProspector = evaluateProspectorTarget({
+  coordinates: cheyavaWp.coordinates,
+  elevationM: cheyavaWp.elevationM,
+  slopeDeg: cheyavaWp.meanSlopeDeg,
+  apparentThermalInertiaTiu: cheyavaWp.apparentThermalInertiaTiu,
+  consistencyIndexCT: cheyavaWp.consistencyIndexCT,
+  mineralProfile: cheyavaWp.mineralogy,
+  surfaceRadiationMSvSol: cheyavaWp.surfaceRadiationMSvSol,
+  crustalMagneticFieldNt: cheyavaWp.crustalMagneticFieldNt,
+  themisNightTempK: cheyavaWp.themisNightTempK,
+});
+console.log(`\n    Prospector ML Evaluation on Cheyava Falls:`);
+console.log(`      Promise Score: ${cheyavaProspector.promiseScore}% | Confidence: ${cheyavaProspector.confidenceLevel} (±${cheyavaProspector.uncertaintyPercent}%)`);
+console.log(`      Hydration: ${cheyavaProspector.subScores.hydrationResourcePotential}/100 | Fracture Trapping: ${cheyavaProspector.subScores.geologicFractureTrapping}/100`);
+
+// Test Jezero Marswalk Route (Octavia Butler -> Three Forks Delta Front)
+const jezeroRoute = planMarswalkRoute({
+  startWaypointId: "jzr_hab_alpha",
+  targetWaypointId: "jzr_three_forks_delta",
+  supportMode: "PAIRED_CREW_MULE_ROVER",
+});
+console.log(`\n    Marswalk Route in Jezero (Octavia Butler -> Delta Front):`);
+console.log(`      Total Distance: ${jezeroRoute.totalDistanceKm} km | Duration: ${jezeroRoute.estimatedDurationHours} hrs`);
+console.log(`      Remaining O2: ${jezeroRoute.remainingO2Percent}% | Battery Reserve: ${jezeroRoute.remainingBatteryPercent}%`);
+console.log(`      Route Segments: ${jezeroRoute.segments.length} segments`);
 
 console.log("\n>>> ALL MARSFORALL FOUNDATIONAL CALCULATION ENGINES VERIFIED SUCCESSFULLY!");
 

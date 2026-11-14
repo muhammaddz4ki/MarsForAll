@@ -10,6 +10,8 @@
   "nav": {
     "missionControl": "KENDALI HABITAT",
     "helmetVisor": "HUD VISOR ASTRONOT",
+    "siteGale": "SITE-01: GALE (MSL)",
+    "siteJezero": "SITE-02: JEZERO (M2020)",
     "pitch3D": "SUDUT 2.5D",
     "pitch2D": "PETA DATAR",
     "resetNorth": "RESET UTARA",
@@ -197,6 +199,9 @@
     "clearSky": "0.3 (CERAH)",
     "instrument": "INSTRUMEN:",
     "liveMslRawFeed": "FEED MENTAH ASLI NASA MSL",
+    "m2020RawFeed": "FEED MENTAH ASLI NASA M2020",
+    "panoramas360": "[ PANORAMA 360° ]",
+    "open360Collection": "JELAJAHI ARSIP 360° GIGAPIKSEL",
     "sol": "SOL",
     "imageId": "ID CITRA:",
     "acquired": "DIAMBIL:",
@@ -218,6 +223,8 @@
     "planetGlobeTitle": "Perkecil ke Cakrawala Planet Mars (Perspektif Bola)",
     "galeFocus": "FOKUS GALE",
     "galeFocusTitle": "Fokus ke Kawah Gale / Mount Sharp",
+    "jezeroFocus": "FOKUS JEZERO",
+    "jezeroFocusTitle": "Fokus ke Kawah Jezero / Delta Front Perseverance",
     "customTarget": "TARGET-KHUSUS",
     "pin": "PIN"
   },

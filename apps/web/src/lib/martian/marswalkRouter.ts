@@ -18,7 +18,7 @@ import {
   SurfaceFirmnessStatus,
   computeCrustalMagneticShielding,
 } from "./scientificParams";
-import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints";
+import { MountSharpWaypoint, ALL_MARTIAN_WAYPOINTS } from "./mountSharpWaypoints";
 import { calculateMartianDistanceKm } from "./prospectorScorer";
 
 export type MissionSupportMode = "SOLO_ASTRONAUT" | "PAIRED_CREW_MULE_ROVER";
@@ -133,6 +133,7 @@ interface NavNode {
  */
 function getTopographicCorridorNodes(): NavNode[] {
   return [
+    // Gale Crater Nav Corridors
     { id: "corr_plains_01", coordinates: [137.4700, -4.6200], elevationM: -4460, radiationMSvSol: 0.63 },
     { id: "corr_plains_02", coordinates: [137.5200, -4.6800], elevationM: -4390, radiationMSvSol: 0.64 },
     { id: "corr_gap_rubin_north", coordinates: [137.4100, -4.7000], elevationM: -4280, radiationMSvSol: 0.65 },
@@ -142,6 +143,11 @@ function getTopographicCorridorNodes(): NavNode[] {
     { id: "corr_gediz_channel", coordinates: [137.4350, -4.8250], elevationM: -4020, radiationMSvSol: 0.70 },
     { id: "corr_boxwork_basin", coordinates: [137.6500, -5.0500], elevationM: -4080, radiationMSvSol: 0.66 },
     { id: "corr_boxwork_approach", coordinates: [137.7800, -5.3200], elevationM: -3980, radiationMSvSol: 0.67 },
+    // Jezero Crater Nav Corridors
+    { id: "corr_jzr_butler_west", coordinates: [77.4380, 18.3900], elevationM: -2560, radiationMSvSol: 0.61 },
+    { id: "corr_jzr_delta_apron", coordinates: [77.4220, 18.4120], elevationM: -2530, radiationMSvSol: 0.60 },
+    { id: "corr_jzr_seitah_pass", coordinates: [77.4410, 18.3720], elevationM: -2550, radiationMSvSol: 0.62 },
+    { id: "corr_jzr_neretva_canyon", coordinates: [77.4300, 18.4480], elevationM: -2495, radiationMSvSol: 0.59 },
   ];
 }
 
@@ -150,8 +156,8 @@ function getTopographicCorridorNodes(): NavNode[] {
  */
 export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteResult {
   const pool = options.customWaypoints && options.customWaypoints.length > 0
-    ? [...MOUNT_SHARP_WAYPOINTS, ...options.customWaypoints]
-    : MOUNT_SHARP_WAYPOINTS;
+    ? [...ALL_MARTIAN_WAYPOINTS, ...options.customWaypoints]
+    : ALL_MARTIAN_WAYPOINTS;
   const startWp = pool.find((w) => w.id === options.startWaypointId) ?? pool[0];
   const targetWp =
     pool.find((w) => w.id === options.targetWaypointId) ??

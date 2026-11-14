@@ -7,6 +7,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MountSharpWaypoint,
   MOUNT_SHARP_WAYPOINTS,
+  ALL_MARTIAN_WAYPOINTS,
+  MissionSiteId,
   CURIOSITY_HISTORICAL_TRAVERSE,
   BRADBURY_LANDING_ELLIPSE,
 } from "@/lib/martian/mountSharpWaypoints";
@@ -19,6 +21,7 @@ import mountSharpGeology from "@/data/mountSharpGeology.json";
 import martianTerrainBase from "@/data/martianTerrainBase.json";
 
 interface AresMapViewerProps {
+  currentSite?: MissionSiteId;
   activeLayers: Record<string, boolean>;
   selectedWaypoint: MountSharpWaypoint | null;
   onSelectWaypoint: (wp: MountSharpWaypoint) => void;
@@ -37,6 +40,8 @@ interface AresMapViewerProps {
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
 const MOUNT_SHARP_DEFAULT_ZOOM = 12.2;
+const JEZERO_CRATER_CENTER: [number, number] = [77.4509, 18.3789];
+const JEZERO_DEFAULT_ZOOM = 12.2;
 
 const WAYPOINT_SHORT_CODES: Record<
   string,
@@ -84,9 +89,35 @@ const WAYPOINT_SHORT_CODES: Record<
     border: "border-[#818cf8]",
     text: "text-[#c7d2fe]",
   },
+  // Mars 2020 Perseverance Jezero Crater Waypoint Badges
+  jzr_hab_alpha: {
+    code: "HAB",
+    color: "bg-[#064e3b]",
+    border: "border-[#10b981]",
+    text: "text-[#34d399]",
+  },
+  jzr_three_forks_delta: {
+    code: "DLT",
+    color: "bg-[#083344]",
+    border: "border-[#06b6d4]",
+    text: "text-[#a5f3fc]",
+  },
+  jzr_seitah_olivine: {
+    code: "STH",
+    color: "bg-[#78350f]",
+    border: "border-[#f59e0b]",
+    text: "text-[#fef3c7]",
+  },
+  jzr_bright_angel_redox: {
+    code: "BRT",
+    color: "bg-[#4c1d95]",
+    border: "border-[#a855f7]",
+    text: "text-[#f3e8ff]",
+  },
 };
 
 export const AresMapViewer: React.FC<AresMapViewerProps> = ({
+  currentSite = "gale_crater",
   activeLayers,
   selectedWaypoint,
   onSelectWaypoint,
@@ -110,6 +141,29 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const t = useTranslations("mapViewer");
 
   const isDark = theme === "dark";
+
+  // Fly to target mission site when switched
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (currentSite === "jezero_crater") {
+      map.flyTo({
+        center: JEZERO_CRATER_CENTER,
+        zoom: JEZERO_DEFAULT_ZOOM,
+        pitch: pitch3D ? 45 : 0,
+        bearing: 0,
+        duration: 1200,
+      });
+    } else if (currentSite === "gale_crater") {
+      map.flyTo({
+        center: MOUNT_SHARP_CENTER,
+        zoom: MOUNT_SHARP_DEFAULT_ZOOM,
+        pitch: pitch3D ? 45 : 0,
+        bearing: -15,
+        duration: 1200,
+      });
+    }
+  }, [currentSite, pitch3D]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -728,7 +782,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    MOUNT_SHARP_WAYPOINTS.forEach((wp) => {
+    ALL_MARTIAN_WAYPOINTS.forEach((wp) => {
       const el = document.createElement("div");
       el.className = "cursor-pointer select-none group";
 
@@ -899,6 +953,28 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           }`}
         >
           <span>{t("galeFocus")}</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            map.flyTo({
+              center: JEZERO_CRATER_CENTER,
+              zoom: JEZERO_DEFAULT_ZOOM,
+              pitch: pitch3D ? 45 : 0,
+              bearing: 0,
+              duration: 1200,
+            });
+          }}
+          title={t("jezeroFocusTitle")}
+          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
+            isDark
+              ? "bg-[#111827] text-purple-400 border-slate-700 hover:text-purple-300 hover:border-purple-500"
+              : "bg-white text-purple-700 border-slate-300 hover:text-purple-900"
+          }`}
+        >
+          <span>{t("jezeroFocus")}</span>
         </button>
       </div>
 

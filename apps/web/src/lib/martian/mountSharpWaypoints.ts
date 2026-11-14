@@ -22,6 +22,54 @@ import {
   ParameterMetadataTag,
 } from "./scientificParams";
 
+export type MissionSiteId = "gale_crater" | "jezero_crater";
+
+export interface MissionSiteInfo {
+  id: MissionSiteId;
+  name: string;
+  shortLabel: string;
+  missionName: string;
+  roverName: string;
+  center: [number, number]; // [lon, lat]
+  defaultZoom: number;
+  landingDateUtc: string;
+  landingSol: number;
+  primaryObjective: string;
+  primaryRockUnits: string;
+  molaCenterElevationM: number;
+}
+
+export const MISSION_SITES: Record<MissionSiteId, MissionSiteInfo> = {
+  gale_crater: {
+    id: "gale_crater",
+    name: "Gale Crater — Mount Sharp (Aeolis Mons)",
+    shortLabel: "SITE-01: GALE (MSL)",
+    missionName: "Mars Science Laboratory (MSL)",
+    roverName: "Curiosity Rover",
+    center: [137.40, -4.74],
+    defaultZoom: 11.8,
+    landingDateUtc: "2012-08-06",
+    landingSol: 0,
+    primaryObjective: "Investigate ancient habitable fluvio-lacustrine environments, phyllosilicate mudstones, and polygonal boxwork fracture veins.",
+    primaryRockUnits: "Glen Torridon Smectite, Sulfate-Bearing Unit, Boxwork Ridge Lattice.",
+    molaCenterElevationM: -4501,
+  },
+  jezero_crater: {
+    id: "jezero_crater",
+    name: "Jezero Crater — Delta Front & Octavia E. Butler Site",
+    shortLabel: "SITE-02: JEZERO (M2020)",
+    missionName: "Mars 2020 Mission",
+    roverName: "Perseverance Rover",
+    center: [77.4509, 18.3789],
+    defaultZoom: 12.2,
+    landingDateUtc: "2021-02-18",
+    landingSol: 0,
+    primaryObjective: "Seek biosignature indicators in deltaic mudstones and collect sealed hermetic core samples for Mars Sample Return (MSR).",
+    primaryRockUnits: "Deltaic Carbonate/Smectite Mudstone, Séítah Olivine Cumulate, Cheyava Falls Redox Veins.",
+    molaCenterElevationM: -2569,
+  },
+};
+
 export type WaypointCategory =
   | "boxwork_formation"
   | "mineral_vein"
@@ -600,6 +648,298 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
 ];
 
 /**
+ * Jezero Crater Waypoint Registry (Mars 2020 Perseverance Mission)
+ *
+ * Coordinates centered at Jezero Crater (Lat: 18.38°N, Lon: 77.45°E).
+ * Features Perseverance rover historical landing site (Octavia E. Butler), Séítah olivine cumulates,
+ * Three Forks ancient delta front mudstones, and the 2024 Cheyava Falls redox leopard spot veins.
+ */
+export const JEZERO_CRATER_WAYPOINTS: MountSharpWaypoint[] = [
+  {
+    id: "jzr_hab_alpha",
+    name: "Octavia E. Butler Landing Site (Jezero Crater Floor)",
+    category: "habitat_landing",
+    coordinates: [77.4509, 18.3789],
+    elevationM: -2569,
+    geologicUnit: "Jezero Crater Floor Fractured Intermediate Unit (Cf-fr)",
+    stratigraphicAge: "Noachian",
+    apparentThermalInertiaTiu: 385,
+    consistencyIndexCT: 0,
+    swimIndicators: {
+      cn: 0.12,
+      ct: 0,
+      cg: -0.15,
+      crs: 0.10,
+      crd: -0.65,
+      epsilonPrime: 6.85,
+      compositeSwimScore: -0.05,
+      materialClassification: "Igneous Pyroxene-Basalt Floor Pavement",
+    },
+    chemCamOxides: {
+      sio2: 48.2,
+      feot: 17.8,
+      mgo: 8.9,
+      cao: 7.2,
+      al2o3: 11.4,
+      so3: 3.9,
+    },
+    roverRawImage: {
+      sol: 3,
+      camera: "MASTCAM-100",
+      targetName: "Octavia Butler Touchdown Site",
+      elevationAngleDeg: -2.1,
+      pointingAzimuthDeg: 270,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA24424.jpg",
+      caption: "Perseverance rover Mastcam-Z first 360-degree panorama of the Jezero crater floor.",
+      sourceCredit: "NASA / JPL-Caltech / ASU / MSSS",
+    },
+    meanSlopeDeg: 1.8,
+    maxSlopeDeg: 3.9,
+    roughnessHapkeThetaDeg: 14.5,
+    craterDensityBeta: 0.18,
+    surfaceRadiationMSvSol: 0.61,
+    windExposureRisk: "low",
+    crustalMagneticFieldNt: 19,
+    themisNightTempK: 189,
+    sandTrapRisk: "LOW",
+    surfaceFirmness: "BEDROCK FIRM",
+    waterEquivalentHydrogenPercent: 3.8,
+    dominantHydratedMineral: "Carbonate-Bearing Basalt Regolith",
+    mineralogy: {
+      sulfatePercent: 8,
+      hematitePercent: 6,
+      phyllosilicateClayPercent: 12,
+      silicaPercent: 48,
+      perchloratePercent: 0.3,
+    },
+    roverGroundTruth: {
+      instrument: "APXS",
+      solInvestigated: 4,
+      targetName: "Octavia Butler Base Pavement",
+      keyFinding: "Flat basaltic floor unit, optimal stability for touchdown and sample depot.",
+    },
+    evaSuitTraversable: true,
+    muleRoverTraversable: true,
+    scientificPriority: 4,
+    briefDescription: "Primary touchdown and initial basecamp zone for Mars 2020 mission. Flat basaltic crater floor unit named in honor of author Octavia E. Butler.",
+  },
+  {
+    id: "jzr_three_forks_delta",
+    name: "Three Forks Ancient River Delta Front (Kodiak Outlier View)",
+    category: "clay_trough",
+    coordinates: [77.4102, 18.4285],
+    elevationM: -2510,
+    geologicUnit: "Deltaic Smectite & Mg-Carbonate Layered Mudstone (Jezero Delta Front)",
+    stratigraphicAge: "Noachian",
+    apparentThermalInertiaTiu: 460,
+    consistencyIndexCT: 1,
+    swimIndicators: {
+      cn: 0.68,
+      ct: 1,
+      cg: 0.72,
+      crs: 0.55,
+      crd: 0.70,
+      epsilonPrime: 3.92,
+      compositeSwimScore: 0.68,
+      materialClassification: "Hydrated Lacustrine Smectite & Delta Bottomsets",
+    },
+    chemCamOxides: {
+      sio2: 41.5,
+      feot: 15.2,
+      mgo: 12.1,
+      cao: 6.8,
+      al2o3: 13.9,
+      so3: 7.4,
+    },
+    roverRawImage: {
+      sol: 750,
+      camera: "MASTCAM-100",
+      targetName: "Three Forks Delta Scarp Exposure",
+      elevationAngleDeg: 1.4,
+      pointingAzimuthDeg: 315,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA25828.jpg",
+      caption: "Prominent layered delta front scarps and topset beds deposited by ancient inflow rivers into Lake Jezero.",
+      sourceCredit: "NASA / JPL-Caltech / ASU / MSSS",
+    },
+    meanSlopeDeg: 8.4,
+    maxSlopeDeg: 18.2,
+    roughnessHapkeThetaDeg: 21.0,
+    craterDensityBeta: 0.12,
+    surfaceRadiationMSvSol: 0.58,
+    windExposureRisk: "moderate",
+    crustalMagneticFieldNt: 22,
+    themisNightTempK: 196,
+    sandTrapRisk: "LOW",
+    surfaceFirmness: "BEDROCK FIRM",
+    waterEquivalentHydrogenPercent: 6.4,
+    dominantHydratedMineral: "Fe/Mg Smectite Clay & Hydrated Carbonates",
+    mineralogy: {
+      sulfatePercent: 18,
+      hematitePercent: 11,
+      phyllosilicateClayPercent: 38,
+      silicaPercent: 32,
+      perchloratePercent: 0.2,
+    },
+    roverGroundTruth: {
+      instrument: "ChemCam",
+      solInvestigated: 752,
+      targetName: "Amalik Outcrop",
+      keyFinding: "Finely laminated delta mudstones exhibiting high aqueous alteration and exceptional biosignature preservation potential.",
+    },
+    evaSuitTraversable: true,
+    muleRoverTraversable: true,
+    scientificPriority: 5,
+    briefDescription: "Ancient river delta front where Neretva Vallis emptied sediment into Lake Jezero 3.7 billion years ago. Premier astrobiological target for fossil biosignatures.",
+  },
+  {
+    id: "jzr_seitah_olivine",
+    name: "Séítah Olivine-Cumulate Outcrop (Bastide Ridge)",
+    category: "ridge_escarpment",
+    coordinates: [77.4325, 18.3650],
+    elevationM: -2555,
+    geologicUnit: "Séítah Layered Mafic Igneous Cumulate Unit (Olivine-Pyroxene rich)",
+    stratigraphicAge: "Noachian",
+    apparentThermalInertiaTiu: 520,
+    consistencyIndexCT: 0,
+    swimIndicators: {
+      cn: -0.22,
+      ct: 0,
+      cg: -0.28,
+      crs: -0.15,
+      crd: -0.40,
+      epsilonPrime: 7.95,
+      compositeSwimScore: -0.18,
+      materialClassification: "Coarse-Grained Olivine Cumulate & Eolian Dunes",
+    },
+    chemCamOxides: {
+      sio2: 43.1,
+      feot: 21.4,
+      mgo: 16.5,
+      cao: 6.1,
+      al2o3: 7.2,
+      so3: 2.1,
+    },
+    roverRawImage: {
+      sol: 300,
+      camera: "MASTCAM-100",
+      targetName: "Bastide Ridge Layered Outcrop",
+      elevationAngleDeg: -3.8,
+      pointingAzimuthDeg: 210,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA25018.jpg",
+      caption: "Perseverance Mastcam-Z mosaic of Séítah layered olivine cumulates and ribbed eolian bedforms.",
+      sourceCredit: "NASA / JPL-Caltech / ASU / MSSS",
+    },
+    meanSlopeDeg: 6.1,
+    maxSlopeDeg: 12.5,
+    roughnessHapkeThetaDeg: 23.4,
+    craterDensityBeta: 0.15,
+    surfaceRadiationMSvSol: 0.63,
+    windExposureRisk: "moderate",
+    crustalMagneticFieldNt: 24,
+    themisNightTempK: 202,
+    sandTrapRisk: "HIGH",
+    surfaceFirmness: "SOFT SAND TRAP RISK",
+    waterEquivalentHydrogenPercent: 2.9,
+    dominantHydratedMineral: "Unaltered Forsteritic Olivine & Magnesite Carbonate",
+    mineralogy: {
+      sulfatePercent: 6,
+      hematitePercent: 14,
+      phyllosilicateClayPercent: 8,
+      silicaPercent: 42,
+      perchloratePercent: 0.3,
+    },
+    roverGroundTruth: {
+      instrument: "APXS",
+      solInvestigated: 298,
+      targetName: "Dourbes Abrasion Patch",
+      keyFinding: "Poikilitic olivine cumulates indicative of thick magma body crystallization or lake magma-water interaction.",
+    },
+    evaSuitTraversable: true,
+    muleRoverTraversable: false,
+    scientificPriority: 4,
+    briefDescription: "Navajo term meaning 'among the sands'. Deep igneous bedrock exposure featuring high-purity olivine grains surrounded by active ripples and eolian sand traps.",
+  },
+  {
+    id: "jzr_bright_angel_redox",
+    name: "Bright Angel / Cheyava Falls Redox Vein (Neretva Vallis Channel)",
+    category: "mineral_vein",
+    coordinates: [77.4420, 18.4610],
+    elevationM: -2480,
+    geologicUnit: "Neretva Vallis Inflow Channel Margin & Altered Sulfate Vein Network",
+    stratigraphicAge: "Noachian",
+    apparentThermalInertiaTiu: 495,
+    consistencyIndexCT: 1,
+    estimatedBuriedIceDepthM: 0.60,
+    swimIndicators: {
+      cn: 0.75,
+      ct: 1,
+      cg: 0.82,
+      crs: 0.65,
+      crd: 0.74,
+      epsilonPrime: 3.65,
+      compositeSwimScore: 0.76,
+      materialClassification: "Polyhydrated Calcium Sulfate & Reduced Iron Ring Halos",
+    },
+    chemCamOxides: {
+      sio2: 39.8,
+      feot: 16.9,
+      mgo: 9.8,
+      cao: 14.5,
+      al2o3: 9.2,
+      so3: 16.4,
+    },
+    roverRawImage: {
+      sol: 1220,
+      camera: "MASTCAM-100",
+      targetName: "Cheyava Falls Leopard Spots Outcrop",
+      elevationAngleDeg: -5.0,
+      pointingAzimuthDeg: 25,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA26369.jpg",
+      caption: "Detail of Cheyava Falls rock showing vivianite/iron-phosphate leopard spots and white calcium sulfate veins.",
+      sourceCredit: "NASA / JPL-Caltech / ASU / MSSS",
+    },
+    meanSlopeDeg: 4.2,
+    maxSlopeDeg: 9.8,
+    roughnessHapkeThetaDeg: 18.7,
+    craterDensityBeta: 0.16,
+    surfaceRadiationMSvSol: 0.59,
+    windExposureRisk: "low",
+    crustalMagneticFieldNt: 20,
+    themisNightTempK: 194,
+    sandTrapRisk: "LOW",
+    surfaceFirmness: "BEDROCK FIRM",
+    waterEquivalentHydrogenPercent: 5.8,
+    dominantHydratedMineral: "Hydrated Calcium Sulfate & Iron Phosphate Reaction Rings",
+    mineralogy: {
+      sulfatePercent: 36,
+      hematitePercent: 12,
+      phyllosilicateClayPercent: 22,
+      silicaPercent: 28,
+      perchloratePercent: 0.5,
+    },
+    roverGroundTruth: {
+      instrument: "ChemCam",
+      solInvestigated: 1218,
+      targetName: "Cheyava Falls Abrasion",
+      keyFinding: "Distinctive millimeter-sized reaction rims ('leopard spots') containing iron and phosphate; evidence of chemical redox reactions that could support microbial metabolisms.",
+    },
+    evaSuitTraversable: true,
+    muleRoverTraversable: true,
+    scientificPriority: 5,
+    briefDescription: "July 2024 discovery site of Cheyava Falls rock displaying millimeter-scale leopard spots and iron-phosphate halos along Neretva Vallis ancient inflow channel.",
+  },
+];
+
+export const ALL_MARTIAN_WAYPOINTS: MountSharpWaypoint[] = [
+  ...MOUNT_SHARP_WAYPOINTS,
+  ...JEZERO_CRATER_WAYPOINTS,
+];
+
+export function getWaypointsForSite(siteId: MissionSiteId): MountSharpWaypoint[] {
+  return siteId === "jezero_crater" ? JEZERO_CRATER_WAYPOINTS : MOUNT_SHARP_WAYPOINTS;
+}
+
+/**
  * Historical Traverse of NASA MSL Curiosity Rover across Gale Crater & Mount Sharp
  * Spanning Bradbury Landing (Sol 0) to 2025 Boxwork Formations (Sol 4180+)
  */
@@ -783,6 +1123,70 @@ export function getFull35Parameters(wp: MountSharpWaypoint): Martian35Parameters
   const weh = wp.waterEquivalentHydrogenPercent ?? 4.2;
   const los = computeRadioLineOfSight(wp.coordinates[0], wp.coordinates[1], wp.elevationM);
 
+  const isJezero = wp.id.startsWith("jzr_") || wp.coordinates[0] < 100;
+  const baseLon = isJezero ? 77.4509 : 137.4417;
+  const baseLat = isJezero ? 18.3789 : -4.5895;
+
+  const sharadProfile = isJezero
+    ? [
+        {
+          depthStartM: 0,
+          depthEndM: 10,
+          layerName: "Desiccated Jezero Eolian Sand Mantle",
+          dielectricPermittivity: 3.10,
+          materialComposition: "Basaltic fine sand & indurated dust crust",
+          densityGPerCm3: 1.58,
+        },
+        {
+          depthStartM: 10,
+          depthEndM: 120,
+          layerName: wp.id === "jzr_three_forks_delta"
+            ? "Deltaic Bottomset Smectite & Carbonate Strata"
+            : wp.id === "jzr_bright_angel_redox"
+            ? "Neretva Fluvial Conglomerate & Sulfate Vein Complex"
+            : "Séítah Olivine-Cumulate Bedrock & Eolian Formations",
+          dielectricPermittivity: 4.85,
+          materialComposition: "Layered lacustrine sediments, smectite clay & olivine intrusions",
+          densityGPerCm3: 2.45,
+        },
+        {
+          depthStartM: 120,
+          depthEndM: 450,
+          layerName: "Noachian Impact Crater Basement Pavement",
+          dielectricPermittivity: 7.10,
+          materialComposition: "Fractured impact breccia and indurated crater floor basement",
+          densityGPerCm3: 2.92,
+        },
+      ]
+    : [
+        {
+          depthStartM: 0,
+          depthEndM: 12,
+          layerName: "Desiccated Regolith Mantle",
+          dielectricPermittivity: 3.15,
+          materialComposition: "Eolian basaltic sand & fine iron dust",
+          densityGPerCm3: 1.62,
+        },
+        {
+          depthStartM: 12,
+          depthEndM: 140,
+          layerName: wp.id === "curiosity_boxwork_2025"
+            ? "Polygonal Sulfate Vein Lattice"
+            : "Hydrated Bedrock / Clay-Sulfate Complex",
+          dielectricPermittivity: 4.35,
+          materialComposition: "Polyhydrated Ca-sulfate & smectite strata",
+          densityGPerCm3: 2.35,
+        },
+        {
+          depthStartM: 140,
+          depthEndM: 500,
+          layerName: "Basal Lacustrine Mudstone & Basalt Basement",
+          dielectricPermittivity: 6.80,
+          materialComposition: "Indurated Gale lacustrine mudstone bedrock",
+          densityGPerCm3: 2.85,
+        },
+      ];
+
   return {
     elevationM: wp.elevationM,
     slopeDeg: slope,
@@ -815,8 +1219,8 @@ export function getFull35Parameters(wp: MountSharpWaypoint): Martian35Parameters
     crismSpectralIndices: {
       phyllosilicatesClays: Math.min(1.0, (wp.mineralogy.phyllosilicateClayPercent ?? 20) / 100),
       sulfatesGypsumJarosite: Math.min(1.0, (wp.mineralogy.sulfatePercent ?? 30) / 100),
-      carbonates: 0.08,
-      olivinePyroxene: 0.35,
+      carbonates: isJezero ? 0.28 : 0.08,
+      olivinePyroxene: isJezero && wp.id === "jzr_seitah_olivine" ? 0.82 : 0.35,
       hematiteFerricOxidePct: wp.mineralogy.hematitePercent ?? 12,
     },
     waterEquivalentHydrogenWtPct: weh,
@@ -829,42 +1233,15 @@ export function getFull35Parameters(wp: MountSharpWaypoint): Martian35Parameters
       kPct: 0.52,
       thPpm: 1.85,
     },
-    sharadSubsurfaceProfile: [
-      {
-        depthStartM: 0,
-        depthEndM: 12,
-        layerName: "Desiccated Regolith Mantle",
-        dielectricPermittivity: 3.15,
-        materialComposition: "Eolian basaltic sand & fine iron dust",
-        densityGPerCm3: 1.62,
-      },
-      {
-        depthStartM: 12,
-        depthEndM: 140,
-        layerName: wp.id === "curiosity_boxwork_2025"
-          ? "Polygonal Sulfate Vein Lattice"
-          : "Hydrated Bedrock / Clay-Sulfate Complex",
-        dielectricPermittivity: 4.35,
-        materialComposition: "Polyhydrated Ca-sulfate & smectite strata",
-        densityGPerCm3: 2.35,
-      },
-      {
-        depthStartM: 140,
-        depthEndM: 500,
-        layerName: "Basal Lacustrine Mudstone & Basalt Basement",
-        dielectricPermittivity: 6.80,
-        materialComposition: "Indurated Gale lacustrine mudstone bedrock",
-        densityGPerCm3: 2.85,
-      },
-    ],
+    sharadSubsurfaceProfile: sharadProfile,
     geologicUnit: wp.geologicUnit,
     geologicEpoch: wp.stratigraphicAge,
-    gravityAnomalyMgal: -122,
+    gravityAnomalyMgal: isJezero ? -48 : -122,
     surfacePovImageUrl: wp.roverRawImage?.imageUrl ?? "/images/marsforall-badge.svg",
     coordinates: wp.coordinates,
-    sol: wp.roverRawImage?.sol ?? 4180,
+    sol: wp.roverRawImage?.sol ?? (isJezero ? 1220 : 4180),
     routeMetrics: {
-      routeDistanceKm: Math.round(Math.sqrt(Math.pow((wp.coordinates[0] - 137.4417) * 59.2, 2) + Math.pow((wp.coordinates[1] - -4.5895) * 59.2, 2)) * 10) / 10,
+      routeDistanceKm: Math.round(Math.sqrt(Math.pow((wp.coordinates[0] - baseLon) * 59.2, 2) + Math.pow((wp.coordinates[1] - baseLat) * 59.2, 2)) * 10) / 10,
       evaDurationMin: 180,
       oxygenRemainingPct: 82,
       batteryRemainingPct: 76,

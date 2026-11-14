@@ -10,6 +10,8 @@
   "nav": {
     "missionControl": "CONTRÔLE DU MODULE HABITAT",
     "helmetVisor": "HUD VISIÈRE ASTRONAUTE",
+    "siteGale": "SITE-01: GALE (MSL)",
+    "siteJezero": "SITE-02: JEZERO (M2020)",
     "pitch3D": "ANGLE 2.5D",
     "pitch2D": "VUE ZÉNITHALE",
     "resetNorth": "RÉINITIALISER NORD",
@@ -197,6 +199,9 @@
     "clearSky": "0.3 (DÉGAGÉ)",
     "instrument": "INSTRUMENT:",
     "liveMslRawFeed": "FLUX BRUT EN DIRECT NASA MSL",
+    "m2020RawFeed": "FLUX BRUT EN DIRECT NASA M2020",
+    "panoramas360": "[ PANORAMA 360° ]",
+    "open360Collection": "EXPLORER L'ARCHIVE 360° GIGAPIXEL",
     "sol": "SOL",
     "imageId": "IDENTIFIANT IMAGE:",
     "acquired": "ACQUIS LE:",
@@ -218,6 +223,8 @@
     "planetGlobeTitle": "Dézoomer vers l'horizon planétaire de Mars (Perspective Globe)",
     "galeFocus": "FOCUS GALE",
     "galeFocusTitle": "Zoomer sur le cratère Gale / Mount Sharp",
+    "jezeroFocus": "FOCUS JEZERO",
+    "jezeroFocusTitle": "Zoomer sur le cratère Jezero / Front du delta Perseverance",
     "customTarget": "CIBLE-PERSONNALISÉE",
     "pin": "PIN"
   },

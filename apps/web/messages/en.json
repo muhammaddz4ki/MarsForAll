@@ -10,6 +10,8 @@
   "nav": {
     "missionControl": "HABITAT CONTROL",
     "helmetVisor": "ASTRONAUT VISOR HUD",
+    "siteGale": "SITE-01: GALE (MSL)",
+    "siteJezero": "SITE-02: JEZERO (M2020)",
     "pitch3D": "2.5D PITCH",
     "pitch2D": "TOP-DOWN",
     "resetNorth": "RESET N",
@@ -197,6 +199,9 @@
     "clearSky": "0.3 (CLEAR)",
     "instrument": "INSTRUMENT:",
     "liveMslRawFeed": "LIVE NASA MSL RAW FEED",
+    "m2020RawFeed": "LIVE NASA M2020 RAW FEED",
+    "panoramas360": "[ 360° PANORAMA ]",
+    "open360Collection": "EXPLORE 360° GIGAPIXEL ARCHIVE",
     "sol": "SOL",
     "imageId": "IMAGE ID:",
     "acquired": "ACQUIRED:",
@@ -218,6 +223,8 @@
     "planetGlobeTitle": "Zoom out to Planetary Mars Horizon (Globe Perspective)",
     "galeFocus": "GALE FOCUS",
     "galeFocusTitle": "Dive into Gale Crater / Mount Sharp Focus",
+    "jezeroFocus": "JEZERO FOCUS",
+    "jezeroFocusTitle": "Dive into Jezero Crater / Perseverance Delta Front Focus",
     "customTarget": "CUSTOM-TARGET",
     "pin": "PIN"
   },
