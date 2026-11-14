@@ -9,6 +9,9 @@ import type { MultiPolygon, Point, Polygon } from "geojson";
 // US EPA PM2.5 → AQI conversion, derived by us from a cited concentration.
 export * from "./aqi.js";
 
+// Core Martian Planetary GIS & Science Exploration Models
+export * from "./mars/index.js";
+
 export interface SourceMeta {
   sourceId: string;
   sourceUrl: string;
