@@ -3,15 +3,16 @@
  *
  * Inspired by petrophysical and seismic exploration multi-attribute fusion workflows (e.g. SLB / oil & gas).
  * Synthesizes orbital spectroscopy, apparent thermal inertia (ATI & CT), high-resolution DEM slope gradients,
- * and in-situ rover ground-truth calibration into:
- *   1. Scientific & Resource Promise Score (0 - 100%)
- *   2. Model Uncertainty Index (±%)
+ * the complete 5-term SWIM subsurface water-ice mapping model (Morgan et al. 2020), and in-situ rover calibration.
  */
 
 import {
   THERMAL_INERTIA_DEFAULTS,
   classifySlopeHazard,
   ConsistencyIndexCT,
+  Swim5TermConsistency,
+  computeCompositeSwimScore,
+  evaluateDielectricConsistency,
 } from "./scientificParams.js";
 import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
 
@@ -29,12 +30,13 @@ export interface ProspectorInputQuery {
     perchloratePercent: number;
   };
   surfaceRadiationMSvSol: number;
-  dustCoverIndexTau?: number; // 0.0 - 1.0 (higher = more obscured by atmospheric/airfall dust)
+  dustCoverIndexTau?: number;
+  swimOverride?: Swim5TermConsistency;
 }
 
 export interface ProspectorEvaluationResult {
   promiseScore: number; // 0 - 100%
-  uncertaintyPercent: number; // ±% (e.g., ± 14.5%)
+  uncertaintyPercent: number; // ±% (e.g., ± 13.7%)
   confidenceLevel: "HIGH" | "MODERATE" | "RECONNAISSANCE_ONLY";
   subScores: {
     hydrationResourcePotential: number; // 0 - 100
@@ -42,6 +44,7 @@ export interface ProspectorEvaluationResult {
     evaTerrainAccessibility: number; // 0 - 100
     inSituCalibrationScore: number; // 0 - 100
   };
+  swimModel: Swim5TermConsistency;
   nearestRoverGroundTruth: {
     waypointId: string;
     waypointName: string;
@@ -74,22 +77,18 @@ export function calculateMartianDistanceKm(coordA: [number, number], coordB: [nu
 }
 
 /**
- * Executes the Prospector Multi-Layer Fusion assessment.
+ * Executes the Prospector Multi-Layer Fusion assessment with full 5-term SWIM integration.
  */
 export function evaluateProspectorTarget(query: ProspectorInputQuery): ProspectorEvaluationResult {
   const dustTau = query.dustCoverIndexTau ?? 0.35;
 
   // 1. Hydration & Resource Potential (40% weight)
-  // Higher sulfate + clay indicates hydrated mineral salts / polyhydrated sulfates
   const hydrationRaw =
     query.mineralProfile.sulfatePercent * 1.1 +
     query.mineralProfile.phyllosilicateClayPercent * 1.3 +
     query.mineralProfile.hematitePercent * 0.4;
   const hydrationClamped = Math.min(100, Math.max(0, hydrationRaw));
 
-  // Thermal Inertia Consistency adjustment (Morgan et al. 2020)
-  // CT = +1 boosts hydration probability (indicates low-TI mantle over high-density cement/ice)
-  // CT = -1 penalizes (indicates desiccated porous underlayer)
   let thermalMultiplier = 1.0;
   if (query.consistencyIndexCT === 1) {
     thermalMultiplier = 1.25;
@@ -99,11 +98,10 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   const hydrationScore = Math.min(100, Math.round(hydrationClamped * thermalMultiplier));
 
   // 2. Geologic Fracture Trapping & Boxwork Likelihood (30% weight)
-  // Boxwork requires hard fracture-cementing minerals (high TI > 400 tiu, moderate-to-high sulfates)
   const tiNormalized = Math.min(1.0, Math.max(0.0, (query.apparentThermalInertiaTiu - 100) / 500));
   const fractureTrappingScore = Math.min(
     100,
-    Math.round((tiNormalized * 55 + (query.mineralProfile.sulfatePercent / 50) * 45))
+    Math.round(tiNormalized * 55 + (query.mineralProfile.sulfatePercent / 50) * 45)
   );
 
   // 3. EVA Terrain Accessibility Score (20% weight)
@@ -116,7 +114,6 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   }
 
   // 4. In-Situ Calibration & Distance Penalty
-  // Find closest ground-truth waypoint from Curiosity MSL
   let closestWp = MOUNT_SHARP_WAYPOINTS[0];
   let minDistanceKm = Infinity;
 
@@ -128,8 +125,40 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     }
   }
 
-  // Calibration score drops with distance from ground-truth rover calibration
   const calibrationScore = Math.max(15, Math.min(100, Math.round(100 * Math.exp(-minDistanceKm / 4.5))));
+
+  // 5. Full 5-Term SWIM Subsurface Water Ice Mapping Model (Morgan et al. 2020)
+  let swimModel: Swim5TermConsistency;
+  if (query.swimOverride) {
+    swimModel = query.swimOverride;
+  } else if (closestWp && closestWp.swimIndicators && minDistanceKm < 0.5) {
+    swimModel = closestWp.swimIndicators;
+  } else {
+    // Dynamic synthesis based on local parameters:
+    const cnEst = Number((query.mineralProfile.phyllosilicateClayPercent * 0.012 + (query.consistencyIndexCT === 1 ? 0.35 : 0.0) - 0.2).toFixed(2));
+    const ctEst = query.consistencyIndexCT;
+    const cgEst = Number((tiNormalized * 0.8 - 0.4).toFixed(2));
+    const crsEst = Number((tiNormalized * 0.6 - 0.1).toFixed(2));
+    const epsPrime = query.consistencyIndexCT === 1 ? 3.65 : query.consistencyIndexCT === -1 ? 7.60 : 5.80;
+    const dielectricEval = evaluateDielectricConsistency(epsPrime);
+    const compositeRes = computeCompositeSwimScore({
+      cn: Math.max(-1, Math.min(1, cnEst)),
+      ct: ctEst,
+      cg: Math.max(-1, Math.min(1, cgEst)),
+      crs: Math.max(-1, Math.min(1, crsEst)),
+      crd: dielectricEval.crd,
+    });
+    swimModel = {
+      cn: Math.max(-1, Math.min(1, cnEst)),
+      ct: ctEst,
+      cg: Math.max(-1, Math.min(1, cgEst)),
+      crs: Math.max(-1, Math.min(1, crsEst)),
+      crd: dielectricEval.crd,
+      epsilonPrime: epsPrime,
+      compositeSwimScore: compositeRes.compositeScore,
+      materialClassification: dielectricEval.materialCategory,
+    };
+  }
 
   // Overall Composite Promise Score (0 - 100%)
   const rawComposite =
@@ -141,9 +170,7 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
   const promiseScore = Math.max(0, Math.min(100, Math.round(rawComposite)));
 
   // Model Uncertainty Index (±%)
-  // Quantifies resolution gap between orbital telemetry (THEMIS 100m, CRISM 18m) and rover in-situ (0.01m)
-  // Distance from ground truth + dust obscuration penalty + slope shadowing
-  const baseResolutionGap = 8.0; // 8% baseline sensor footprint variance
+  const baseResolutionGap = 8.0;
   const distanceUncertainty = Math.min(22.0, (minDistanceKm / 10.0) * 15.0);
   const dustUncertainty = dustTau * 12.0;
   const slopeUncertainty = query.slopeDeg > 18.0 ? 5.5 : 1.5;
@@ -164,6 +191,10 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     rationale.push("Thermal stratification shows negative consistency (CT=-1), indicating desiccated porous sub-regolith with depleted near-surface volatiles.");
   }
 
+  rationale.push(
+    `SWIM 5-Term Model: CN=${swimModel.cn > 0 ? "+" : ""}${swimModel.cn}, CT=${swimModel.ct > 0 ? "+" : ""}${swimModel.ct}, CG=${swimModel.cg > 0 ? "+" : ""}${swimModel.cg}, CRS=${swimModel.crs > 0 ? "+" : ""}${swimModel.crs}, CRD=${swimModel.crd > 0 ? "+" : ""}${swimModel.crd} (eps'=${swimModel.epsilonPrime}) -> Composite SWIM: ${swimModel.compositeSwimScore > 0 ? "+" : ""}${swimModel.compositeSwimScore} [${swimModel.materialClassification}].`
+  );
+
   if (query.mineralProfile.sulfatePercent > 35) {
     rationale.push(`Enriched sulfate signature (${query.mineralProfile.sulfatePercent}%) mirrors 2025 Curiosity Boxwork vein formation.`);
   }
@@ -180,13 +211,13 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
     `Sensor resolution gap: Target is ${minDistanceKm.toFixed(2)} km from nearest in-situ ground truth (${closestWp.name}), yielding ±${totalUncertainty}% model uncertainty.`
   );
 
-  let recommendation: "PRIORITY_SAMPLING_SITE" | "SECONDARY_EXPLORATION" | "HAZARD_BYPASS_REQUIRED";
+  let operationalRecommendation: "PRIORITY_SAMPLING_SITE" | "SECONDARY_EXPLORATION" | "HAZARD_BYPASS_REQUIRED";
   if (slopeHazard.classification === "IMPASSABLE_CLIFF_HAZARD") {
-    recommendation = "HAZARD_BYPASS_REQUIRED";
-  } else if (promiseScore >= 70 && totalUncertainty <= 22) {
-    recommendation = "PRIORITY_SAMPLING_SITE";
+    operationalRecommendation = "HAZARD_BYPASS_REQUIRED";
+  } else if (promiseScore >= 70 && confidenceLevel !== "RECONNAISSANCE_ONLY") {
+    operationalRecommendation = "PRIORITY_SAMPLING_SITE";
   } else {
-    recommendation = "SECONDARY_EXPLORATION";
+    operationalRecommendation = "SECONDARY_EXPLORATION";
   }
 
   return {
@@ -199,16 +230,16 @@ export function evaluateProspectorTarget(query: ProspectorInputQuery): Prospecto
       evaTerrainAccessibility: accessibilityScore,
       inSituCalibrationScore: calibrationScore,
     },
+    swimModel,
     nearestRoverGroundTruth: {
       waypointId: closestWp.id,
       waypointName: closestWp.name,
       distanceKm: parseFloat(minDistanceKm.toFixed(2)),
-      instrument: closestWp.roverGroundTruth?.instrument ?? "APXS",
-      targetName: closestWp.roverGroundTruth?.targetName ?? "Unknown",
-      keyFinding: closestWp.roverGroundTruth?.keyFinding ?? "Calibrated baseline point",
+      instrument: closestWp.roverGroundTruth?.instrument ?? "MSL Payload",
+      targetName: closestWp.roverGroundTruth?.targetName ?? "Regional Bedrock",
+      keyFinding: closestWp.roverGroundTruth?.keyFinding ?? "Calibrated Gale Crater stratigraphy.",
     },
     scientificRationale: rationale,
-    operationalRecommendation: recommendation,
+    operationalRecommendation,
   };
 }
-

@@ -3,9 +3,11 @@
  *
  * Coordinates centered at Gale Crater (Lat: -5.4453°, Lon: 137.8414°).
  * Features Curiosity rover traverses, 2025 Boxwork discoveries, and candidate astronaut traverses.
+ * Includes full 5-term SWIM subsurface water-ice indicators, ChemCam major oxide compositions,
+ * and authenticated Curiosity rover raw imagery links.
  */
 
-import { ConsistencyIndexCT } from "./scientificParams.js";
+import { ConsistencyIndexCT, Swim5TermConsistency } from "./scientificParams.js";
 
 export type WaypointCategory =
   | "boxwork_formation"
@@ -14,6 +16,26 @@ export type WaypointCategory =
   | "ridge_escarpment"
   | "habitat_landing"
   | "hazard_zone";
+
+export interface ChemCamOxides {
+  sio2: number; // Silicon Dioxide
+  feot: number; // Total Iron as FeO
+  mgo: number; // Magnesium Oxide
+  cao: number; // Calcium Oxide
+  al2o3: number; // Aluminum Oxide
+  so3: number; // Sulfur Trioxide
+}
+
+export interface RoverRawImageData {
+  sol: number;
+  camera: "MASTCAM-100" | "MASTCAM-34" | "NAVCAM_LEFT" | "HAZCAM_FRONT";
+  targetName: string;
+  elevationAngleDeg: number;
+  pointingAzimuthDeg: number;
+  imageUrl: string;
+  caption: string;
+  sourceCredit: string;
+}
 
 export interface MountSharpWaypoint {
   id: string;
@@ -28,6 +50,15 @@ export interface MountSharpWaypoint {
   apparentThermalInertiaTiu: number; // MGS TES / Odyssey THEMIS
   consistencyIndexCT: ConsistencyIndexCT;
   estimatedBuriedIceDepthM?: number;
+
+  // 5-Term Subsurface Water Ice Mapping (SWIM) Indicators
+  swimIndicators?: Swim5TermConsistency;
+
+  // ChemCam Major Oxide Rock Chemistry (NASA AMMOS MMGIS Paper 2541, Fig. 2)
+  chemCamOxides?: ChemCamOxides;
+
+  // Real NASA/JPL Rover Surface Imagery
+  roverRawImage?: RoverRawImageData;
 
   // Topographic & Mobility Hazards
   meanSlopeDeg: number;
@@ -72,6 +103,34 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     stratigraphicAge: "Hesperian",
     apparentThermalInertiaTiu: 310,
     consistencyIndexCT: 0,
+    swimIndicators: {
+      cn: 0.10,
+      ct: 0,
+      cg: -0.10,
+      crs: 0.15,
+      crd: -0.70,
+      epsilonPrime: 7.10,
+      compositeSwimScore: -0.12,
+      materialClassification: "Basaltic Regolith Alluvial Floor",
+    },
+    chemCamOxides: {
+      sio2: 44.5,
+      feot: 19.2,
+      mgo: 11.2,
+      cao: 8.8,
+      al2o3: 10.5,
+      so3: 5.8,
+    },
+    roverRawImage: {
+      sol: 2,
+      camera: "MASTCAM-34",
+      targetName: "Bradbury Landing Touchdown Panorama",
+      elevationAngleDeg: -4.2,
+      pointingAzimuthDeg: 135,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA16051.jpg",
+      caption: "Curiosity first high-resolution Mastcam panorama of Bradbury Landing alluvial gravels.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 2.1,
     maxSlopeDeg: 4.8,
     roughnessHapkeThetaDeg: 16.2,
@@ -105,8 +164,36 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     geologicUnit: "Sulfate-Bearing Boxwork Network Unit (Fracture-fill cementation)",
     stratigraphicAge: "Hesperian",
     apparentThermalInertiaTiu: 485,
-    consistencyIndexCT: 1, // +1: low-TI mantling over dense cemented veins
+    consistencyIndexCT: 1,
     estimatedBuriedIceDepthM: 0.45,
+    swimIndicators: {
+      cn: 0.72,
+      ct: 1,
+      cg: 0.85,
+      crs: 0.60,
+      crd: 0.78,
+      epsilonPrime: 3.48,
+      compositeSwimScore: 0.73,
+      materialClassification: "Polyhydrated Sulfate Lattice & Subsurface Hydration",
+    },
+    chemCamOxides: {
+      sio2: 36.2,
+      feot: 11.5,
+      mgo: 6.8,
+      cao: 12.1,
+      al2o3: 5.0,
+      so3: 28.4,
+    },
+    roverRawImage: {
+      sol: 4180,
+      camera: "MASTCAM-100",
+      targetName: "Aeolis Boxwork Web Ridge Mosaic",
+      elevationAngleDeg: 8.5,
+      pointingAzimuthDeg: 162,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA26377.jpg",
+      caption: "Intricate polygonal mineral ridges where subsurface groundwater crystallized minerals into ancient bedrock fissures.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 11.4,
     maxSlopeDeg: 19.8,
     roughnessHapkeThetaDeg: 28.5,
@@ -141,6 +228,34 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     stratigraphicAge: "Hesperian",
     apparentThermalInertiaTiu: 560,
     consistencyIndexCT: 0,
+    swimIndicators: {
+      cn: 0.12,
+      ct: 0,
+      cg: -0.20,
+      crs: 0.45,
+      crd: -0.65,
+      epsilonPrime: 6.85,
+      compositeSwimScore: -0.05,
+      materialClassification: "Crystalline Hematite Dense Mudstone",
+    },
+    chemCamOxides: {
+      sio2: 38.0,
+      feot: 34.8,
+      mgo: 9.2,
+      cao: 8.0,
+      al2o3: 6.5,
+      so3: 3.5,
+    },
+    roverRawImage: {
+      sol: 1812,
+      camera: "MASTCAM-100",
+      targetName: "Puchilibu Scarp Outcrop",
+      elevationAngleDeg: 14.1,
+      pointingAzimuthDeg: 205,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA22207.jpg",
+      caption: "Vera Rubin Ridge high-standing scarp displaying grey crystalline hematite laminations.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 17.5,
     maxSlopeDeg: 27.2,
     roughnessHapkeThetaDeg: 26.0,
@@ -160,7 +275,7 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
       targetName: "Puchilibu Scarp",
       keyFinding: "Grey crystalline hematite laminations. High structural hardness; severe slope hazard on northern scarp.",
     },
-    evaSuitTraversable: false, // slope caution > 25° sections
+    evaSuitTraversable: false,
     muleRoverTraversable: false,
     scientificPriority: 4,
     briefDescription: "High-standing bedrock ridge composed of erosion-resistant hematite cement, offering key markers of acidic oxidation transitions.",
@@ -176,6 +291,34 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     apparentThermalInertiaTiu: 230,
     consistencyIndexCT: 1,
     estimatedBuriedIceDepthM: 0.85,
+    swimIndicators: {
+      cn: 0.65,
+      ct: 1,
+      cg: 0.40,
+      crs: 0.30,
+      crd: 0.55,
+      epsilonPrime: 4.12,
+      compositeSwimScore: 0.58,
+      materialClassification: "Hydrated Smectite Phyllosilicates",
+    },
+    chemCamOxides: {
+      sio2: 48.5,
+      feot: 18.1,
+      mgo: 8.4,
+      cao: 7.2,
+      al2o3: 14.2,
+      so3: 3.6,
+    },
+    roverRawImage: {
+      sol: 2380,
+      camera: "MASTCAM-100",
+      targetName: "Kilmarie Mudstone Trough",
+      elevationAngleDeg: -2.1,
+      pointingAzimuthDeg: 180,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA23623.jpg",
+      caption: "Expansive clay trough rich in smectite phyllosilicates preserving ancient lacustrine habitability markers.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 6.2,
     maxSlopeDeg: 12.1,
     roughnessHapkeThetaDeg: 17.8,
@@ -209,7 +352,35 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     geologicUnit: "Stimson Sandstone (Aeolian dune cross-bedding capping unit)",
     stratigraphicAge: "Amazonian",
     apparentThermalInertiaTiu: 420,
-    consistencyIndexCT: -1, // -1: dense sandstone cap overlying softer clay mudstone
+    consistencyIndexCT: -1,
+    swimIndicators: {
+      cn: -0.45,
+      ct: -1,
+      cg: -0.60,
+      crs: 0.20,
+      crd: -0.90,
+      epsilonPrime: 7.42,
+      compositeSwimScore: -0.62,
+      materialClassification: "Desiccated Aeolian Sandstone Capping",
+    },
+    chemCamOxides: {
+      sio2: 58.4,
+      feot: 15.2,
+      mgo: 7.1,
+      cao: 5.5,
+      al2o3: 9.8,
+      so3: 4.0,
+    },
+    roverRawImage: {
+      sol: 2704,
+      camera: "MASTCAM-34",
+      targetName: "Edinburgh Escarpment Scramble",
+      elevationAngleDeg: 18.2,
+      pointingAzimuthDeg: 240,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA23838.jpg",
+      caption: "Steep pediment sandstone cap where high rover wheel-slip on loose dunes demanded tactical detour.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 23.5,
     maxSlopeDeg: 32.0,
     roughnessHapkeThetaDeg: 31.2,
@@ -244,6 +415,34 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     stratigraphicAge: "Amazonian",
     apparentThermalInertiaTiu: 510,
     consistencyIndexCT: 0,
+    swimIndicators: {
+      cn: 0.25,
+      ct: 0,
+      cg: 0.15,
+      crs: 0.35,
+      crd: -0.40,
+      epsilonPrime: 6.20,
+      compositeSwimScore: 0.05,
+      materialClassification: "Fluvial Debris Conglomerates",
+    },
+    chemCamOxides: {
+      sio2: 42.0,
+      feot: 22.5,
+      mgo: 9.5,
+      cao: 7.6,
+      al2o3: 6.0,
+      so3: 12.4,
+    },
+    roverRawImage: {
+      sol: 3920,
+      camera: "MASTCAM-100",
+      targetName: "Gediz Vallis Boulder Channel",
+      elevationAngleDeg: 12.0,
+      pointingAzimuthDeg: 195,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA26184.jpg",
+      caption: "Gigantic boulders carried down Mount Sharp by violent wet debris flows in Mars late aqueous history.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 19.8,
     maxSlopeDeg: 28.5,
     roughnessHapkeThetaDeg: 29.8,
@@ -279,6 +478,34 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     apparentThermalInertiaTiu: 430,
     consistencyIndexCT: 1,
     estimatedBuriedIceDepthM: 0.6,
+    swimIndicators: {
+      cn: 0.48,
+      ct: 1,
+      cg: 0.35,
+      crs: 0.40,
+      crd: 0.30,
+      epsilonPrime: 4.65,
+      compositeSwimScore: 0.41,
+      materialClassification: "Rippled Sulfate Bedrock Transition",
+    },
+    chemCamOxides: {
+      sio2: 39.5,
+      feot: 16.8,
+      mgo: 6.5,
+      cao: 10.2,
+      al2o3: 5.0,
+      so3: 22.0,
+    },
+    roverRawImage: {
+      sol: 3724,
+      camera: "MASTCAM-100",
+      targetName: "Marker Band Ripple Rocks",
+      elevationAngleDeg: -6.0,
+      pointingAzimuthDeg: 170,
+      imageUrl: "https://photojournal.jpl.nasa.gov/jpeg/PIA25740.jpg",
+      caption: "Rippled rock textures formed billions of years ago as waves in a shallow lake stirred up sediment on the lake floor.",
+      sourceCredit: "NASA / JPL-Caltech / MSSS",
+    },
     meanSlopeDeg: 8.5,
     maxSlopeDeg: 14.2,
     roughnessHapkeThetaDeg: 20.4,
@@ -293,15 +520,14 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
       perchloratePercent: 0.4,
     },
     roverGroundTruth: {
-      instrument: "Mastcam",
-      solInvestigated: 3600,
-      targetName: "Canaima Ripples",
-      keyFinding: "Distinct rippled rock textures created by waves in a shallow lake billions of years ago.",
+      instrument: "ChemCam",
+      solInvestigated: 3724,
+      targetName: "Marker Band Wave Ripples",
+      keyFinding: "Rippled rock textures created within shallow ancient lake waves; high sulfate transition phase.",
     },
     evaSuitTraversable: true,
     muleRoverTraversable: true,
-    scientificPriority: 5,
-    briefDescription: "Wave-rippled strata indicating prolonged surface water interactions; prime terrain for sampling and safe traversals.",
+    scientificPriority: 4,
+    briefDescription: "Extremely hard, resistant dark layer featuring unmistakable wave-ripple marks formed under an ancient lake.",
   },
 ];
-

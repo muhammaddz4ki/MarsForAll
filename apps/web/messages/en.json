@@ -8,18 +8,32 @@
     "boxworkFocus": "Curiosity Rover 2025 Boxwork Crystalline Fracture Ridge"
   },
   "nav": {
-    "missionControl": "Habitat Mission Control",
-    "helmetVisor": "Astronaut Visor HUD",
-    "layers": "Scientific Layers",
-    "prospector": "Prospector ML",
-    "earthAnalogue": "Earth Analogues",
-    "marswalk": "Marswalk Planner",
-    "info": "Mission Brief & Attributions"
+    "missionControl": "HABITAT CONTROL",
+    "helmetVisor": "ASTRONAUT VISOR HUD",
+    "pitch3D": "2.5D PITCH",
+    "pitch2D": "TOP-DOWN",
+    "resetNorth": "RESET N",
+    "exportEva": "EXPORT EVA",
+    "info": "INFO",
+    "themeDark": "DARK",
+    "themeLight": "LIGHT"
+  },
+  "docks": {
+    "layers": "LAYERS (4)",
+    "marswalk": "MARSWALK TRAVERSE",
+    "prospector": "PROSPECTOR ML",
+    "earthAnalogues": "EARTH ANALOGUES"
+  },
+  "scrubber": {
+    "solClock": "SOL CLOCK",
+    "clearSky": "CLEAR SKY (TAU 0.3)",
+    "dustStorm": "DUST STORM (TAU 2.4)"
   },
   "status": {
     "safe": "[SAFE <15 DEG]",
     "caution": "[CAUTION 15-25 DEG]",
     "hazard": "[HAZARD >25 DEG]",
-    "telemetryNominal": "TELEMETRY NOMINAL"
+    "nominal": "[NOMINAL]",
+    "locked": "[LOCKED]"
   }
 }

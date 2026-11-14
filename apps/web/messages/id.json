@@ -8,18 +8,32 @@
     "boxworkFocus": "Punggung Rekahan Kristal Boxwork Penjelajahan Curiosity 2025"
   },
   "nav": {
-    "missionControl": "Pusat Kendali Habitat",
-    "helmetVisor": "HUD Visor Astronot",
-    "layers": "Lapisan Ilmiah",
-    "prospector": "Prospector ML",
-    "earthAnalogue": "Analogi Bumi",
-    "marswalk": "Perencana Marswalk",
-    "info": "Ringkasan Misi & Atribusi"
+    "missionControl": "KENDALI HABITAT",
+    "helmetVisor": "HUD VISOR ASTRONOT",
+    "pitch3D": "SUDUT 2.5D",
+    "pitch2D": "PETA DATAR",
+    "resetNorth": "RESET UTARA",
+    "exportEva": "EKSPOR EVA",
+    "info": "INFO",
+    "themeDark": "GELAP",
+    "themeLight": "TERANG"
+  },
+  "docks": {
+    "layers": "LAPISAN ILMIAH (4)",
+    "marswalk": "LINTASAN MARSWALK",
+    "prospector": "PROSPECTOR ML",
+    "earthAnalogues": "ANALOGI BUMI"
+  },
+  "scrubber": {
+    "solClock": "JAM SOL",
+    "clearSky": "LANGIT CERAH (TAU 0.3)",
+    "dustStorm": "BADAI DEBU (TAU 2.4)"
   },
   "status": {
     "safe": "[AMAN <15 DGR]",
     "caution": "[WASPADA 15-25 DGR]",
     "hazard": "[BAHAYA >25 DGR]",
-    "telemetryNominal": "TELEMETRI NOMINAL"
+    "nominal": "[NOMINAL]",
+    "locked": "[TERKUNCI]"
   }
 }

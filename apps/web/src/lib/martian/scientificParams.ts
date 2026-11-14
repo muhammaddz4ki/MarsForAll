@@ -2,8 +2,8 @@
  * Scientific Parameters and Formulations for Gale Crater / Mount Sharp Exploration
  *
  * Derived from peer-reviewed planetary literature:
- * 1. Morgan et al. (2020) - Subsurface water-ice & thermal inertia modeling (TES/THEMIS)
- * 2. Papers 2909 & 2132 - Impact morphology degradation scaling & Hapke photometric roughness
+ * 1. Morgan et al. (2020) - Subsurface water-ice & thermal inertia modeling (SWIM 5-Term Model)
+ * 2. Papers 2909 & 2132 - Impact morphology degradation scaling, Lambertian & Hapke photometric roughness
  * 3. NASA AMMOS MMGIS Architecture (Paper 2541) - Hyperlocalized spatial overlays & instrument telemetry
  */
 
@@ -81,8 +81,57 @@ export function evaluateSubsurfaceConsistency(
 }
 
 /**
- * Terrain mobility hazard classification based on slope gradient.
+ * 5-Term Subsurface Water Ice Mapping (SWIM) Model (Morgan et al. 2020)
  */
+export interface Swim5TermConsistency {
+  cn: number; // Neutron (-1 to +1)
+  ct: ConsistencyIndexCT; // Thermal (-1, 0, +1)
+  cg: number; // Geomorphology (-1 to +1)
+  crs: number; // Radar Surface (-1 to +1)
+  crd: number; // Radar Dielectric (-1 to +1)
+  epsilonPrime: number; // Dielectric permittivity (3.15 = pure ice, 5.0 = mixture, 7.5 = basalt)
+  compositeSwimScore: number; // Weighted composite (-1.0 to +1.0)
+  materialClassification: string;
+}
+
+export function computeDielectricPermittivity(twoWayDelayNs: number, layerDepthMeters: number): number {
+  if (layerDepthMeters <= 0) return 7.5;
+  const c = 0.299792;
+  const ratio = (c * twoWayDelayNs) / (2 * layerDepthMeters);
+  return Number(Math.pow(ratio, 2).toFixed(2));
+}
+
+export function evaluateDielectricConsistency(epsilonPrime: number): { crd: number; materialCategory: string } {
+  if (epsilonPrime <= 3.15) {
+    return { crd: 1.0, materialCategory: "Pure Water Ice (epsilon' <= 3.15)" };
+  } else if (epsilonPrime <= 5.0) {
+    const score = 1.0 - ((epsilonPrime - 3.15) / (5.0 - 3.15));
+    return { crd: Number(score.toFixed(2)), materialCategory: "Hydrated Regolith / Ice Mixture (3.15 < epsilon' <= 5.0)" };
+  } else if (epsilonPrime <= 7.0) {
+    const score = 0.0 - ((epsilonPrime - 5.0) / (7.0 - 5.0));
+    return { crd: Number(score.toFixed(2)), materialCategory: "Indurated Sulfate / Dense Soil (5.0 < epsilon' <= 7.0)" };
+  } else {
+    return { crd: -1.0, materialCategory: "Dry Basaltic Rock / Dense Bedrock (epsilon' >= 7.0)" };
+  }
+}
+
+export function computeCompositeSwimScore(params: {
+  cn: number;
+  ct: ConsistencyIndexCT;
+  cg: number;
+  crs: number;
+  crd: number;
+}): { compositeScore: number; classification: "HIGH_CONFIDENCE_ICE" | "POTENTIAL_HYDRATED_UNIT" | "INCONCLUSIVE" | "ICE_FREE_BEDROCK" } {
+  const score = 0.25 * params.cn + 0.25 * params.ct + 0.20 * params.cg + 0.10 * params.crs + 0.20 * params.crd;
+  const compositeScore = Number(score.toFixed(2));
+  let classification: "HIGH_CONFIDENCE_ICE" | "POTENTIAL_HYDRATED_UNIT" | "INCONCLUSIVE" | "ICE_FREE_BEDROCK";
+  if (compositeScore >= 0.45) classification = "HIGH_CONFIDENCE_ICE";
+  else if (compositeScore >= 0.15) classification = "POTENTIAL_HYDRATED_UNIT";
+  else if (compositeScore >= -0.15) classification = "INCONCLUSIVE";
+  else classification = "ICE_FREE_BEDROCK";
+  return { compositeScore, classification };
+}
+
 export type SlopeMobilityClass = "SAFE_WALK" | "SUIT_EXERTION_CAUTION" | "IMPASSABLE_CLIFF_HAZARD";
 
 export function classifySlopeHazard(slopeDegrees: number): {
@@ -96,36 +145,29 @@ export function classifySlopeHazard(slopeDegrees: number): {
       classification: "SAFE_WALK",
       penaltyMultiplier: 1.0 + (slopeDegrees / 15.0) * 0.25,
       label: "Safe Walk (<15°)",
-      color: "#22c55e", // green-500
+      color: "#22c55e",
     };
   }
   if (slopeDegrees <= 25.0) {
-    // Non-linear physiological suit exertion curve
     const excess = slopeDegrees - 15.0;
     return {
       classification: "SUIT_EXERTION_CAUTION",
       penaltyMultiplier: 2.2 * Math.exp(0.085 * excess),
       label: "Suit Exertion Caution (15°-25°)",
-      color: "#eab308", // yellow-500
+      color: "#eab308",
     };
   }
   return {
     classification: "IMPASSABLE_CLIFF_HAZARD",
     penaltyMultiplier: Infinity,
     label: "Impassable Cliff / Boulder Hazard (>25°)",
-    color: "#ef4444", // red-500
+    color: "#ef4444",
   };
 }
 
-/**
- * Impact crater degradation scaling and photometric terrain roughness (Papers 2909 & 2132)
- */
 export interface PhotometricRoughnessParams {
-  /** Hapke mean macroscopic tilt angle in degrees (bar_theta) */
   hapkeRoughnessDeg: number;
-  /** Normal albedo (omega_0 single-scattering albedo proxy) */
   geometricAlbedo: number;
-  /** Crater degradation scaling exponent (beta ~ 0.32) */
   craterBetaExponent: number;
 }
 
@@ -135,10 +177,35 @@ export const PHOTOMETRIC_DEFAULTS: PhotometricRoughnessParams = {
   craterBetaExponent: 0.32,
 };
 
-/**
- * Computes terrain impedance factoring in slope, micro-roughness (Hapke bar_theta)
- * and photometric shadow-obscuration risk.
- */
+export interface LambertianPhotometryMetrics {
+  solarElevationDeg: number;
+  solarIncidenceDeg: number;
+  mu0CosIncidence: number;
+  terrainContrastIndex: number;
+  glareObstacleIndex: number;
+  shadowLengthMultiplier: number;
+}
+
+export function computeLambertianPhotometry(solarElevationDeg: number): LambertianPhotometryMetrics {
+  const clampedElev = Math.max(1, Math.min(89, solarElevationDeg));
+  const incidence = 90 - clampedElev;
+  const radIncidence = (incidence * Math.PI) / 180.0;
+  const mu0 = Math.cos(radIncidence);
+  const shadowMultiplier = 1.0 / Math.tan((clampedElev * Math.PI) / 180.0);
+  const contrast = Math.round((1 - mu0) * 100);
+  const glare = clampedElev < 25
+    ? Math.round((1 - clampedElev / 25) * 85 + 15)
+    : Math.round(Math.max(5, (1 - clampedElev / 90) * 40));
+  return {
+    solarElevationDeg: clampedElev,
+    solarIncidenceDeg: incidence,
+    mu0CosIncidence: Number(mu0.toFixed(3)),
+    terrainContrastIndex: contrast,
+    glareObstacleIndex: glare,
+    shadowLengthMultiplier: Number(shadowMultiplier.toFixed(2)),
+  };
+}
+
 export function computeTerrainImpedance(
   slopeDegrees: number,
   roughness: PhotometricRoughnessParams = PHOTOMETRIC_DEFAULTS
@@ -152,9 +219,6 @@ export function computeTerrainImpedance(
   return slopeHazard.penaltyMultiplier * roughnessFactor * shadowPenalty;
 }
 
-/**
- * NASA AMMOS MMGIS Instrument Telemetry Definitions (Paper 2541)
- */
 export interface InstrumentQuicklook {
   instrument: "Mastcam" | "ChemCam" | "APXS" | "REMS" | "RAD";
   status: "nominal" | "active_scan" | "standby" | "alert";
@@ -169,7 +233,7 @@ export interface InstrumentQuicklook {
 
 export interface GaleAtmosphericTelemetry {
   sol: number;
-  lsDegrees: number; // Solar longitude (Martian season)
+  lsDegrees: number;
   remsAirTempMinC: number;
   remsAirTempMaxC: number;
   remsGroundTempMinC: number;

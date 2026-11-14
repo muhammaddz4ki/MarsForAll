@@ -9,7 +9,12 @@
  *   - Paired Crew + Cargo Mule Rover
  */
 
-import { classifySlopeHazard, computeTerrainImpedance } from "./scientificParams.js";
+import {
+  classifySlopeHazard,
+  computeTerrainImpedance,
+  computeLambertianPhotometry,
+  LambertianPhotometryMetrics,
+} from "./scientificParams.js";
 import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
 import { calculateMartianDistanceKm } from "./prospectorScorer.js";
 
@@ -21,6 +26,8 @@ export interface MarswalkRouteOptions {
   supportMode: MissionSupportMode;
   avoidHighRadiationRidges?: boolean;
   maxExcursionDurationHours?: number; // default 6.0 hours (EVA rule of thumb)
+  customWaypoints?: MountSharpWaypoint[];
+  solarElevationDeg?: number;
 }
 
 export interface RouteSegment {
@@ -59,6 +66,7 @@ export interface MarswalkRouteResult {
   pathCoordinates: [number, number, number][]; // [lon, lat, elevation]
   hazardAlerts: string[];
   operationalChecklist: string[];
+  photometry?: LambertianPhotometryMetrics;
 }
 
 interface MissionModeProfile {
@@ -132,10 +140,13 @@ function getTopographicCorridorNodes(): NavNode[] {
  * Plan a terrain-aware Marswalk route.
  */
 export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteResult {
-  const startWp = MOUNT_SHARP_WAYPOINTS.find((w) => w.id === options.startWaypointId) ?? MOUNT_SHARP_WAYPOINTS[0];
+  const pool = options.customWaypoints && options.customWaypoints.length > 0
+    ? [...MOUNT_SHARP_WAYPOINTS, ...options.customWaypoints]
+    : MOUNT_SHARP_WAYPOINTS;
+  const startWp = pool.find((w) => w.id === options.startWaypointId) ?? pool[0];
   const targetWp =
-    MOUNT_SHARP_WAYPOINTS.find((w) => w.id === options.targetWaypointId) ??
-    MOUNT_SHARP_WAYPOINTS[1]; // default curiosity_boxwork_2025
+    pool.find((w) => w.id === options.targetWaypointId) ??
+    pool[1]; // default curiosity_boxwork_2025
 
   const profile = MODE_PROFILES[options.supportMode];
   const corridors = getTopographicCorridorNodes();
@@ -339,6 +350,11 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     `Emergency beacon active on 401.5 MHz UHF planetary emergency frequency.`,
   ];
 
+  const photometry = computeLambertianPhotometry(options.solarElevationDeg ?? 35.0);
+  if (photometry.glareObstacleIndex > 60) {
+    hazardAlerts.push("High Lambertian photometric glare & shadow contrast: low sun angle generates severe blind zones behind terrain crests.");
+  }
+
   return {
     routeId: `MARSWALK-${Date.now().toString().slice(-6)}`,
     supportMode: options.supportMode,
@@ -358,6 +374,7 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     pathCoordinates: pathCoords,
     hazardAlerts: Array.from(new Set(hazardAlerts)),
     operationalChecklist: checklist,
+    photometry,
   };
 }
 

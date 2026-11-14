@@ -22,6 +22,7 @@ interface AresMapViewerProps {
   onTogglePitch?: () => void;
   resetNorthTrigger: number;
   customPinCoords: [number, number] | null;
+  theme?: "dark" | "light";
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -85,6 +86,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   pitch3D,
   resetNorthTrigger,
   customPinCoords,
+  theme = "dark",
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -92,6 +94,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const customMarkerRef = useRef<Marker | null>(null);
   const [pitch, setPitch] = useState<number>(45);
   const [bearing, setBearing] = useState<number>(-15);
+  const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
+
+  const isDark = theme === "dark";
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -118,7 +123,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           {
             id: "background-mars-space",
             type: "background",
-            paint: { "background-color": "#07090e" },
+            paint: { "background-color": isDark ? "#07090e" : "#e2e8f0" },
           },
           // Official Mars Basemap Raster
           {
@@ -301,6 +306,32 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     };
   }, []);
 
+  // Sync background color with theme
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    if (map.getLayer("background-mars-space")) {
+      map.setPaintProperty(
+        "background-mars-space",
+        "background-color",
+        isDark ? "#07090e" : "#f1f5f9"
+      );
+    }
+  }, [isDark]);
+
+  // Sync tile mode (Live JPL Mars Trek vs Offline Procedural Canvas)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    if (map.getLayer("mars-planetary-basemap")) {
+      map.setLayoutProperty(
+        "mars-planetary-basemap",
+        "visibility",
+        tileMode === "live_trek" ? "visible" : "none"
+      );
+    }
+  }, [tileMode]);
+
   // Update pitch when pitch3D prop changes
   useEffect(() => {
     const map = mapRef.current;
@@ -407,7 +438,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
             isSelected
               ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-              : "bg-[#0b0f17] text-slate-300 border border-slate-700"
+              : isDark
+              ? "bg-[#0b0f17] text-slate-300 border border-slate-700"
+              : "bg-white text-slate-800 border border-slate-300 shadow-sm"
           }">
             ${wp.name.split(" ")[0]}
           </div>
@@ -426,7 +459,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [selectedWaypoint, onSelectWaypoint]);
+  }, [selectedWaypoint, onSelectWaypoint, isDark]);
 
   // Render Custom Click Pin Marker
   useEffect(() => {
@@ -446,7 +479,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           <div class="flex items-center justify-center w-7 h-7 bg-[#b45309] border border-[#fbbf24] text-white text-[10px] font-mono font-black shadow-none animate-pulse">
             PIN
           </div>
-          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 bg-[#111827] text-amber-300 border border-amber-400 text-[8px] font-mono font-bold tracking-wider">
+          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 ${
+            isDark ? "bg-[#111827] text-amber-300 border-amber-400" : "bg-white text-amber-700 border-amber-500"
+          } border text-[8px] font-mono font-bold tracking-wider">
             CUSTOM-TARGET
           </div>
         </div>
@@ -456,20 +491,53 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         .addTo(map);
       customMarkerRef.current = marker;
     }
-  }, [customPinCoords]);
+  }, [customPinCoords, isDark]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-[#07090e]">
+    <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Real-time Bearing & Coordinate Bar (Flat Solid, Tabular Nums) */}
-      <div className="absolute bottom-2 left-4 z-10 px-2.5 py-1 bg-[#0b0f17] border border-slate-800 text-[10px] font-mono text-slate-400 flex items-center gap-3">
-        <span className="text-amber-400 font-bold">GALE CRATER // AEOLIS MONS</span>
-        <span className="text-slate-700">|</span>
-        <span className="text-slate-300 font-medium tabular-nums">PITCH: {pitch}°</span>
-        <span className="text-cyan-400 font-medium tabular-nums">AZ: {bearing}°</span>
-        <span className="text-slate-700">|</span>
+      {/* Real-time Bearing & Coordinate Bar + Live WMTS / Procedural Toggle (Flat Solid, Tabular Nums) */}
+      <div className={`absolute bottom-2 left-4 z-10 px-2.5 py-1 ${
+        isDark ? "bg-[#0b0f17] border-slate-800 text-slate-400" : "bg-white border-slate-300 text-slate-600 shadow-sm"
+      } border text-[10px] font-mono flex items-center gap-3`}>
+        <span className="text-amber-500 font-bold">GALE CRATER // AEOLIS MONS</span>
+        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+        <span className={`${isDark ? "text-slate-300" : "text-slate-800"} font-medium tabular-nums`}>
+          PITCH: {pitch}°
+        </span>
+        <span className="text-cyan-500 font-medium tabular-nums">AZ: {bearing}°</span>
+        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
         <span className="tabular-nums">DATUM: -4500m TO -3500m</span>
+        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+
+        {/* Tile Source Toggle */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setTileMode("live_trek")}
+            className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase transition-colors ${
+              tileMode === "live_trek"
+                ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                : isDark
+                ? "bg-[#111827] text-slate-400 border-slate-800"
+                : "bg-slate-100 text-slate-600 border-slate-300"
+            }`}
+          >
+            [JPL TREK LIVE]
+          </button>
+          <button
+            onClick={() => setTileMode("offline_procedural")}
+            className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase transition-colors ${
+              tileMode === "offline_procedural"
+                ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                : isDark
+                ? "bg-[#111827] text-slate-400 border-slate-800"
+                : "bg-slate-100 text-slate-600 border-slate-300"
+            }`}
+          >
+            [OFFLINE PROCEDURAL]
+          </button>
+        </div>
       </div>
     </div>
   );
