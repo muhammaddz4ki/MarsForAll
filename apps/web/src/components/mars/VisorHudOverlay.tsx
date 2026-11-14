@@ -163,9 +163,9 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
         </div>
       </div>
 
-      {/* BOTTOM-RIGHT (w-80, margin 16px): Card ACTIVE TARGET NAVIGATION */}
+      {/* BOTTOM-RIGHT (w-80, bottom-16 with clearance above unified bottom bar): Card ACTIVE TARGET NAVIGATION */}
       {target && (
-        <div className={`absolute bottom-4 right-4 w-80 ${
+        <div className={`absolute bottom-16 right-4 w-80 ${
           isDark ? "bg-[#0b0f17] border-amber-600/90 text-amber-300" : "bg-white border-amber-600 text-amber-900 shadow-md"
         } p-3 border space-y-2 pointer-events-auto`}>
           <div className={`flex items-center justify-between border-b ${isDark ? "border-amber-900/80" : "border-amber-200"} pb-1 text-[10px]`}>
@@ -208,22 +208,6 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
           </button>
         </div>
       )}
-
-      {/* BOTTOM-LEFT (margin 16px): Tactical Traverse Status Ribbon */}
-      <div className={`absolute bottom-4 left-4 ${
-        isDark ? "bg-[#0b0f17] border-cyan-600/90 text-cyan-400" : "bg-white border-cyan-600 text-cyan-700 shadow-sm"
-      } px-3.5 py-2 border text-[10px] flex items-center gap-3 pointer-events-auto`}>
-        <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 ${dustStormActive ? "bg-amber-400" : "bg-emerald-400"}`} />
-          <span className="font-bold">{dustStormActive ? "[TRAVERSE CAUTION: DUST]" : "[SAFE CORRIDOR]"}</span>
-        </span>
-        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-        <span className={isDark ? "text-slate-300" : "text-slate-700"}>
-          {activeRoute?.supportMode === "SOLO_ASTRONAUT" ? "SOLO WALK" : "PAIRED + CARGO MULE"}
-        </span>
-        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-        <span className={`${isDark ? "text-slate-400" : "text-slate-500"} tabular-nums`}>EVA-01 // MRO LOCKED</span>
-      </div>
     </div>
   );
 };

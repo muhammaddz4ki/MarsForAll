@@ -41,6 +41,7 @@ export const AresMartianApp: React.FC = () => {
   // Sol & Atmospheric Simulation State
   const [currentSol, setCurrentSol] = useState<number>(4180);
   const [dustStormActive, setDustStormActive] = useState<boolean>(false);
+  const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
 
   // Camera & Map Controls
   const [pitch3D, setPitch3D] = useState<boolean>(true);
@@ -391,6 +392,7 @@ export const AresMartianApp: React.FC = () => {
           resetNorthTrigger={resetNorthTrigger}
           customPinCoords={customPin ? customPin.coordinates : null}
           theme={theme}
+          tileMode={tileMode}
         />
 
         {/* MODE: ASTRONAUT VISOR HUD (Simetris 4 Sudut, 16px Margin) */}
@@ -408,8 +410,8 @@ export const AresMartianApp: React.FC = () => {
         {/* MODE: HABITAT MISSION CONTROL (Symmetrical Dual Dock Layout) */}
         {viewMode === "mission_control" && (
           <>
-            {/* PANEL KIRI (w-[340px], left-4 top-18 bottom-20): Scientific Layers & Marswalk Planner */}
-            <aside className={`absolute left-4 top-18 bottom-20 w-[340px] ${
+            {/* PANEL KIRI (w-[340px], left-4 top-16 bottom-16): Scientific Layers & Marswalk Planner */}
+            <aside className={`absolute left-4 top-16 bottom-16 w-[340px] ${
               isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-md"
             } border flex flex-col z-10 pointer-events-auto`}>
               {/* Tab Header */}
@@ -465,8 +467,8 @@ export const AresMartianApp: React.FC = () => {
               </div>
             </aside>
 
-            {/* PANEL KANAN (w-[360px], right-4 top-18 bottom-20): Prospector ML Fusion & Earth Analogues */}
-            <aside className={`absolute right-4 top-18 bottom-20 w-[360px] ${
+            {/* PANEL KANAN (w-[360px], right-4 top-16 bottom-16): Prospector ML Fusion & Earth Analogues */}
+            <aside className={`absolute right-4 top-16 bottom-16 w-[360px] ${
               isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-md"
             } border flex flex-col z-10 pointer-events-auto`}>
               {/* Tab Header */}
@@ -524,60 +526,120 @@ export const AresMartianApp: React.FC = () => {
           </>
         )}
 
-        {/* 3. INTERACTIVE "SOL & DUST STORM" TELEMETRY SCRUBBER (Bar Bawah Simetris) */}
-        <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center ${
-          isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-md"
-        } border px-3 py-1.5 font-mono text-[11px] gap-3 pointer-events-auto`}>
-          {/* Sol Clock Selector */}
-          <div className="flex items-center gap-1.5">
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase`}>
-              SOL CLOCK:
-            </span>
-            {[4180, 4181, 4182, 4183, 4184, 4185].map((sol) => (
+        {/* 3. UNIFIED BOTTOM TELEMETRY BAR (Simetris h-9, bottom-4 left-4 right-4, zero overlap) */}
+        <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-center gap-3 pointer-events-none select-none">
+          {/* Slot Kiri Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums) */}
+          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
+            isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+          } gap-2.5 max-w-[45%]`}>
+            {viewMode === "mission_control" ? (
+              <>
+                <span className="text-amber-500 font-bold">GALE CRATER</span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
+                <span className="text-slate-400">DATUM -4500m TO -3500m</span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setTileMode("live_trek")}
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
+                      tileMode === "live_trek"
+                        ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                        : isDark
+                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                        : "bg-slate-100 text-slate-600 border-slate-300"
+                    }`}
+                  >
+                    [JPL TREK]
+                  </button>
+                  <button
+                    onClick={() => setTileMode("offline_procedural")}
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
+                      tileMode === "offline_procedural"
+                        ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                        : isDark
+                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                        : "bg-slate-100 text-slate-600 border-slate-300"
+                    }`}
+                  >
+                    [OFFLINE]
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 ${dustStormActive ? "bg-amber-400" : "bg-emerald-400"}`} />
+                  <span className={`font-bold ${dustStormActive ? "text-amber-400" : "text-emerald-400"}`}>
+                    {dustStormActive ? "[TRAVERSE CAUTION]" : "[SAFE CORRIDOR]"}
+                  </span>
+                </span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span className={isDark ? "text-slate-300" : "text-slate-700"}>
+                  {activeRoute?.supportMode === "SOLO_ASTRONAUT" ? "SOLO WALK" : "PAIRED + MULE"}
+                </span>
+                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                <span className="text-cyan-400">EVA-01 // MRO LOCKED</span>
+              </>
+            )}
+          </div>
+
+          {/* Slot Kanan Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums): Sol Clock & Weather Scrubber */}
+          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
+            isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+          } gap-3`}>
+            {/* Sol Clock Selector */}
+            <div className="flex items-center gap-1">
+              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
+                SOL CLOCK:
+              </span>
+              {[4180, 4181, 4182, 4183, 4184, 4185].map((sol) => (
+                <button
+                  key={sol}
+                  onClick={() => setCurrentSol(sol)}
+                  className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${
+                    currentSol === sol
+                      ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                      : isDark
+                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                      : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
+                  }`}
+                >
+                  {sol}
+                </button>
+              ))}
+            </div>
+
+            <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+
+            {/* Atmospheric Condition Scrubber */}
+            <div className="flex items-center gap-1">
               <button
-                key={sol}
-                onClick={() => setCurrentSol(sol)}
-                className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${
-                  currentSol === sol
-                    ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                onClick={() => setDustStormActive(false)}
+                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
+                  !dustStormActive
+                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
                     : isDark
                     ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                     : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
                 }`}
               >
-                {sol}
+                CLEAR SKY (TAU 0.3)
               </button>
-            ))}
-          </div>
-
-          <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-
-          {/* Atmospheric Condition Scrubber */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setDustStormActive(false)}
-              className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
-                !dustStormActive
-                  ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                  : isDark
-                  ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                  : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-              }`}
-            >
-              CLEAR SKY (TAU 0.3)
-            </button>
-            <button
-              onClick={() => setDustStormActive(true)}
-              className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
-                dustStormActive
-                  ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
-                  : isDark
-                  ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                  : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-              }`}
-            >
-              DUST STORM (TAU 2.4)
-            </button>
+              <button
+                onClick={() => setDustStormActive(true)}
+                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
+                  dustStormActive
+                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                    : isDark
+                    ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                    : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
+                }`}
+              >
+                DUST STORM (TAU 2.4)
+              </button>
+            </div>
           </div>
         </div>
       </div>

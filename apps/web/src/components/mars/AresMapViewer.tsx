@@ -23,6 +23,7 @@ interface AresMapViewerProps {
   resetNorthTrigger: number;
   customPinCoords: [number, number] | null;
   theme?: "dark" | "light";
+  tileMode?: "live_trek" | "offline_procedural";
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -87,14 +88,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   resetNorthTrigger,
   customPinCoords,
   theme = "dark",
+  tileMode = "live_trek",
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const customMarkerRef = useRef<Marker | null>(null);
-  const [pitch, setPitch] = useState<number>(45);
-  const [bearing, setBearing] = useState<number>(-15);
-  const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
 
   const isDark = theme === "dark";
 
@@ -281,9 +280,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
     });
-
-    map.on("rotate", () => setBearing(Math.round(map.getBearing())));
-    map.on("pitch", () => setPitch(Math.round(map.getPitch())));
 
     // Click anywhere to drop custom pin and interpolate elevation & slope
     map.on("click", (e) => {
@@ -496,49 +492,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* Real-time Bearing & Coordinate Bar + Live WMTS / Procedural Toggle (Flat Solid, Tabular Nums) */}
-      <div className={`absolute bottom-2 left-4 z-10 px-2.5 py-1 ${
-        isDark ? "bg-[#0b0f17] border-slate-800 text-slate-400" : "bg-white border-slate-300 text-slate-600 shadow-sm"
-      } border text-[10px] font-mono flex items-center gap-3`}>
-        <span className="text-amber-500 font-bold">GALE CRATER // AEOLIS MONS</span>
-        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-        <span className={`${isDark ? "text-slate-300" : "text-slate-800"} font-medium tabular-nums`}>
-          PITCH: {pitch}°
-        </span>
-        <span className="text-cyan-500 font-medium tabular-nums">AZ: {bearing}°</span>
-        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-        <span className="tabular-nums">DATUM: -4500m TO -3500m</span>
-        <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-
-        {/* Tile Source Toggle */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setTileMode("live_trek")}
-            className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase transition-colors ${
-              tileMode === "live_trek"
-                ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                : isDark
-                ? "bg-[#111827] text-slate-400 border-slate-800"
-                : "bg-slate-100 text-slate-600 border-slate-300"
-            }`}
-          >
-            [JPL TREK LIVE]
-          </button>
-          <button
-            onClick={() => setTileMode("offline_procedural")}
-            className={`px-1.5 py-0.2 border text-[9px] font-bold uppercase transition-colors ${
-              tileMode === "offline_procedural"
-                ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                : isDark
-                ? "bg-[#111827] text-slate-400 border-slate-800"
-                : "bg-slate-100 text-slate-600 border-slate-300"
-            }`}
-          >
-            [OFFLINE PROCEDURAL]
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
