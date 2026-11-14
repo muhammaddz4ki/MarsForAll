@@ -35,14 +35,12 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   const [supportMode, setSupportMode] = useState<MissionSupportMode>("PAIRED_CREW_MULE_ROVER");
   const [avoidRadiation, setAvoidRadiation] = useState<boolean>(true);
 
-  // If user clicked a waypoint on the map, update target
   React.useEffect(() => {
     if (selectedWaypoint && selectedWaypoint.id !== startId) {
       setTargetId(selectedWaypoint.id);
     }
   }, [selectedWaypoint, startId]);
 
-  // Compute Route
   const routeResult: MarswalkRouteResult = useMemo(() => {
     const res = planMarswalkRoute({
       startWaypointId: startId,
@@ -54,7 +52,6 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
     return res;
   }, [startId, targetId, supportMode, avoidRadiation]);
 
-  // Chart data from segments
   const chartData = useMemo(() => {
     let runningDist = 0;
     const points = [
@@ -80,38 +77,38 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   }, [routeResult]);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto text-slate-200 text-xs p-4 space-y-4">
+    <div className="flex flex-col h-full overflow-y-auto text-slate-200 text-xs p-3 space-y-3 font-sans">
       {/* Header */}
-      <div className="border-b border-slate-800 pb-2.5">
+      <div className="border-b border-slate-800 pb-2">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[10px] tracking-widest uppercase text-cyan-400">
             MARSWALK A* ROUTE PLANNER
           </span>
           <span
-            className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold ${
+            className={`px-1.5 py-0.5 font-mono text-[9px] font-bold border ${
               routeResult.overallSafetyIndex >= 75
-                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
                 : routeResult.overallSafetyIndex >= 50
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                : "bg-red-500/20 text-red-300 border border-red-500/40"
+                ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                : "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
             }`}
           >
-            SAFETY INDEX: {routeResult.overallSafetyIndex}/100
+            SAFETY: <span className="tabular-nums">{routeResult.overallSafetyIndex}</span> / 100
           </span>
         </div>
-        <p className="text-[11px] text-slate-400 mt-1">
+        <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
           Terrain-aware least cost trajectory avoiding &gt;25° cliff hazards and ionizing radiation ridges.
         </p>
       </div>
 
-      {/* Origin & Destination Selectors */}
-      <div className="grid grid-cols-2 gap-3 bg-slate-900/70 p-3 rounded-lg border border-slate-800">
+      {/* Origin & Destination Selectors (Flat Solid) */}
+      <div className="grid grid-cols-2 gap-2 bg-[#111827] p-2.5 border border-slate-800">
         <div>
-          <label className="font-mono text-[10px] text-slate-400 block mb-1">START HABITAT / BASE</label>
+          <label className="font-mono text-[9px] text-slate-400 block mb-1 uppercase tracking-wider">START BASE</label>
           <select
             value={startId}
             onChange={(e) => setStartId(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400"
+            className="w-full bg-[#0b0f17] border border-slate-700 px-2 py-1 text-[11px] font-mono text-white focus:outline-none focus:border-amber-400"
           >
             {MOUNT_SHARP_WAYPOINTS.map((wp) => (
               <option key={wp.id} value={wp.id}>
@@ -122,11 +119,11 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
         </div>
 
         <div>
-          <label className="font-mono text-[10px] text-slate-400 block mb-1">SCIENCE TARGET</label>
+          <label className="font-mono text-[9px] text-slate-400 block mb-1 uppercase tracking-wider">SCIENCE TARGET</label>
           <select
             value={targetId}
             onChange={(e) => setTargetId(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400"
+            className="w-full bg-[#0b0f17] border border-slate-700 px-2 py-1 text-[11px] font-mono text-white focus:outline-none focus:border-amber-400"
           >
             {MOUNT_SHARP_WAYPOINTS.map((wp) => (
               <option key={wp.id} value={wp.id}>
@@ -137,100 +134,103 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
         </div>
       </div>
 
-      {/* Mission Support Mode Toggle */}
-      <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-        <span className="font-mono text-[10px] text-slate-400 uppercase block mb-2">
-          Mission Support Configuration
+      {/* Mission Support Mode Toggle (Flat Solid Buttons, Sharp 1px Border) */}
+      <div className="bg-[#111827] p-2.5 border border-slate-800">
+        <span className="font-mono text-[9px] text-slate-400 uppercase tracking-wider block mb-1.5">
+          MISSION SUPPORT CONFIGURATION
         </span>
-        <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+        <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
           <button
             onClick={() => setSupportMode("SOLO_ASTRONAUT")}
-            className={`p-2.5 rounded-lg border transition-all text-left flex flex-col justify-between ${
+            className={`p-2 border transition-colors text-left flex flex-col justify-between ${
               supportMode === "SOLO_ASTRONAUT"
-                ? "bg-amber-500/20 border-amber-400 text-white shadow-md ring-1 ring-amber-400/30"
-                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-[#161e2e] border-amber-500 text-white"
+                : "bg-[#0b0f17] border-slate-800 text-slate-400 hover:text-slate-200"
             }`}
           >
-            <span className="font-bold flex items-center gap-1.5">
-              <span>🚶</span> Solo Astronaut
-            </span>
-            <span className="text-[10px] text-slate-400 mt-1">25 kg Max Pack • 15° Slope Limit</span>
+            <div className="flex items-center gap-1.5 font-bold">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="7" r="4" />
+                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+              </svg>
+              <span>SOLO ASTRONAUT</span>
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1">25 kg Max Pack • 15° Slope Limit</span>
           </button>
 
           <button
             onClick={() => setSupportMode("PAIRED_CREW_MULE_ROVER")}
-            className={`p-2.5 rounded-lg border transition-all text-left flex flex-col justify-between ${
+            className={`p-2 border transition-colors text-left flex flex-col justify-between ${
               supportMode === "PAIRED_CREW_MULE_ROVER"
-                ? "bg-cyan-500/20 border-cyan-400 text-white shadow-md ring-1 ring-cyan-400/30"
-                : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-[#161e2e] border-cyan-500 text-white"
+                : "bg-[#0b0f17] border-slate-800 text-slate-400 hover:text-slate-200"
             }`}
           >
-            <span className="font-bold flex items-center gap-1.5">
-              <span>🚜</span> Paired + Mule Rover
-            </span>
-            <span className="text-[10px] text-slate-400 mt-1">250 kg Payload • Umbilical Life Support</span>
+            <div className="flex items-center gap-1.5 font-bold">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="7" width="20" height="10" rx="1" />
+                <circle cx="6" cy="18" r="2" />
+                <circle cx="18" cy="18" r="2" />
+              </svg>
+              <span>PAIRED + MULE</span>
+            </div>
+            <span className="text-[9px] text-slate-400 mt-1">250 kg Payload • Umbilical Life Support</span>
           </button>
         </div>
       </div>
 
-      {/* Trajectory Key Metrics Grid */}
-      <div className="grid grid-cols-4 gap-2 text-center font-mono">
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-          <span className="text-[9px] text-slate-400 block">TOTAL DIST</span>
-          <span className="text-sm font-black text-amber-400">{routeResult.totalDistanceKm} km</span>
+      {/* Trajectory Key Metrics Grid (Flat Solid, Tabular Nums) */}
+      <div className="grid grid-cols-4 gap-1.5 text-center font-mono">
+        <div className="bg-[#111827] p-2 border border-slate-800">
+          <span className="text-[8px] text-slate-400 block uppercase">DISTANCE</span>
+          <span className="text-xs font-bold text-amber-400 tabular-nums">{routeResult.totalDistanceKm} km</span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-          <span className="text-[9px] text-slate-400 block">EST. DURATION</span>
-          <span className="text-sm font-black text-cyan-400">{routeResult.estimatedDurationHours} h</span>
-          <span className="text-[8px] text-slate-400 block">({routeResult.solFraction} sol)</span>
+        <div className="bg-[#111827] p-2 border border-slate-800">
+          <span className="text-[8px] text-slate-400 block uppercase">DURATION</span>
+          <span className="text-xs font-bold text-cyan-400 tabular-nums">{routeResult.estimatedDurationHours} h</span>
+          <span className="text-[8px] text-slate-500 block tabular-nums">({routeResult.solFraction} sol)</span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-          <span className="text-[9px] text-slate-400 block">O2 RESERVE</span>
+        <div className="bg-[#111827] p-2 border border-slate-800">
+          <span className="text-[8px] text-slate-400 block uppercase">O2 RESERVE</span>
           <span
-            className={`text-sm font-black ${
+            className={`text-xs font-bold tabular-nums ${
               routeResult.remainingO2Percent > 35 ? "text-emerald-400" : "text-red-400"
             }`}
           >
             {routeResult.remainingO2Percent}%
           </span>
-          <span className="text-[8px] text-slate-400 block">{routeResult.totalO2ConsumedLiters}L drain</span>
+          <span className="text-[8px] text-slate-500 block tabular-nums">{routeResult.totalO2ConsumedLiters}L</span>
         </div>
 
-        <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-          <span className="text-[9px] text-slate-400 block">BATTERY</span>
+        <div className="bg-[#111827] p-2 border border-slate-800">
+          <span className="text-[8px] text-slate-400 block uppercase">BATTERY</span>
           <span
-            className={`text-sm font-black ${
+            className={`text-xs font-bold tabular-nums ${
               routeResult.remainingBatteryPercent > 30 ? "text-emerald-400" : "text-red-400"
             }`}
           >
             {routeResult.remainingBatteryPercent}%
           </span>
-          <span className="text-[8px] text-slate-400 block">{routeResult.totalBatteryWh}Wh</span>
+          <span className="text-[8px] text-slate-500 block tabular-nums">{routeResult.totalBatteryWh}Wh</span>
         </div>
       </div>
 
-      {/* Elevation & Slope Profile Chart (Recharts) */}
-      <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-mono text-[10px] text-slate-400 uppercase">
-            Elevation &amp; Slope Cross-Section Profile
+      {/* Elevation & Slope Profile Chart (NO GRADIENTS, SOLID FILL) */}
+      <div className="bg-[#111827] p-2.5 border border-slate-800 font-mono">
+        <div className="flex items-center justify-between mb-1.5 text-[10px]">
+          <span className="text-slate-300 uppercase font-bold">
+            ELEVATION &amp; SLOPE PROFILE
           </span>
-          <span className="font-mono text-[9px] text-cyan-400">
-            Ascent: +{routeResult.cumulativeAscentM}m / Descent: -{routeResult.cumulativeDescentM}m
+          <span className="text-cyan-400 tabular-nums">
+            +{routeResult.cumulativeAscentM}m / -{routeResult.cumulativeDescentM}m
           </span>
         </div>
 
-        <div className="w-full h-44">
+        <div className="w-full h-40">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stop-color="#f59e0b" stop-opacity={0.4} />
-                  <stop offset="95%" stop-color="#f59e0b" stop-opacity={0.0} />
-                </linearGradient>
-              </defs>
               <XAxis dataKey="distanceKm" unit="km" tick={{ fill: "#64748b", fontSize: 9 }} />
               <YAxis
                 domain={[-4600, -3800]}
@@ -238,18 +238,20 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 tick={{ fill: "#64748b", fontSize: 9 }}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#334155", fontSize: 11 }}
+                contentStyle={{ backgroundColor: "#0b0f17", borderColor: "#334155", fontSize: 10, borderRadius: 0 }}
                 formatter={(value: any, name: string) => [
                   name === "elevationM" ? `${value} m` : `${value}°`,
                   name === "elevationM" ? "Elevation" : "Slope",
                 ]}
               />
+              {/* Solid fill, zero gradients */}
               <Area
                 type="monotone"
                 dataKey="elevationM"
-                stroke="#f59e0b"
-                fillOpacity={1}
-                fill="url(#elevGrad)"
+                stroke="#d97706"
+                strokeWidth={1.5}
+                fill="#1e293b"
+                fillOpacity={0.6}
                 name="elevationM"
               />
               <Line
@@ -260,17 +262,17 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 dot={false}
                 name="slopeDeg"
               />
-              <ReferenceLine y={-4000} stroke="#475569" strokeDasharray="3 3" />
+              <ReferenceLine y={-4000} stroke="#334155" strokeDasharray="2 2" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Hazard Warning Banners */}
+      {/* Hazard Warning Banners (Flat Solid, Structured Tags) */}
       {routeResult.hazardAlerts.length > 0 && (
-        <div className="p-3 bg-red-950/40 border border-red-500/40 rounded-lg text-[10px] space-y-1">
-          <span className="font-mono text-red-400 font-bold block uppercase flex items-center gap-1.5">
-            <span>⚠️</span> Active Hazard Corridors Detected:
+        <div className="p-2.5 bg-[#170a08] border border-red-700 text-[10px] space-y-1 font-mono">
+          <span className="text-red-400 font-bold block uppercase">
+            [HAZARD DETECTED: EXCEEDING NOMINAL SLOPE ENVELOPE]
           </span>
           {routeResult.hazardAlerts.map((alert, i) => (
             <p key={i} className="text-red-200">
@@ -281,13 +283,13 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
       )}
 
       {/* Operational Checklist */}
-      <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800 space-y-1">
-        <span className="font-mono text-[10px] text-slate-400 uppercase block mb-1">
-          EVA Protocol Checklist
+      <div className="bg-[#0b0f17] p-2.5 border border-slate-800 space-y-1 font-mono text-[10px]">
+        <span className="text-slate-400 uppercase tracking-wider block mb-1">
+          EVA PROTOCOL CHECKLIST
         </span>
         {routeResult.operationalChecklist.map((c, idx) => (
-          <p key={idx} className="text-[10px] text-slate-300">
-            ✓ {c}
+          <p key={idx} className="text-slate-300">
+            [OK] {c}
           </p>
         ))}
       </div>

@@ -21,7 +21,6 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   const [heartRate, setHeartRate] = useState<number>(84);
   const [o2Level, setO2Level] = useState<number>(activeRoute?.remainingO2Percent ?? 92);
 
-  // Subtle live fluctuation for realism
   useEffect(() => {
     const interval = setInterval(() => {
       setHeartRate(Math.round(82 + Math.random() * 6));
@@ -33,87 +32,95 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   const target = selectedWaypoint ?? activeRoute?.targetWaypoint;
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-4 sm:p-6 overflow-hidden">
-      {/* Curved Visor Vignette Frame */}
-      <div className="absolute inset-0 rounded-[40px] border-[14px] border-slate-900/60 shadow-[inset_0_0_80px_rgba(6,182,212,0.15)] pointer-events-none" />
+    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-3 sm:p-5 overflow-hidden font-mono">
+      {/* Tactical HUD Corner Crosshair Brackets (NO VIGNETTE, NO GRADIENT) */}
+      <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-cyan-500/80 pointer-events-none" />
+      <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-cyan-500/80 pointer-events-none" />
+      <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-cyan-500/80 pointer-events-none" />
+      <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-cyan-500/80 pointer-events-none" />
 
       {/* TOP HUD BAR: Tactical Telemetry & Compass Tape */}
       <div className="relative z-10 flex items-center justify-between pointer-events-auto">
         {/* Left: EVA Mission Time & Comm Status */}
-        <div className="bg-slate-950/85 backdrop-blur-md px-3.5 py-2 rounded-lg border border-cyan-500/40 text-cyan-400 font-mono text-[11px] flex items-center gap-3 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+        <div className="bg-[#0b0f17] px-3 py-1.5 border border-cyan-600 text-cyan-400 text-[10px] flex items-center gap-2.5">
+          <span className="w-1.5 h-1.5 bg-cyan-400" />
           <div>
             <div className="font-bold tracking-widest">EVA-01 // SOL 4180</div>
-            <div className="text-[9px] text-slate-400">MRO RELAY: LOCKED (401.5 MHz)</div>
+            <div className="text-[9px] text-slate-400">MRO RELAY: LOCKED 401.5 MHz</div>
           </div>
         </div>
 
-        {/* Center: Dynamic Heading Compass Tape */}
-        <div className="hidden md:flex flex-col items-center bg-slate-950/85 backdrop-blur-md px-6 py-1.5 rounded-lg border border-amber-500/40 text-amber-400 font-mono shadow-lg">
-          <div className="text-[9px] text-slate-400 tracking-widest uppercase">ASTRONAUT BEARING</div>
-          <div className="flex items-center gap-4 text-xs font-black">
-            <span className="text-slate-500">120°</span>
-            <span className="text-slate-400">130°</span>
-            <span className="text-amber-300 text-sm border-b-2 border-amber-400 px-1.5">
+        {/* Center: Dynamic Heading Compass Tape (Tabular Nums) */}
+        <div className="hidden md:flex flex-col items-center bg-[#0b0f17] px-5 py-1 border border-amber-600 text-amber-400">
+          <div className="text-[8px] text-slate-400 tracking-widest uppercase">ASTRONAUT BEARING</div>
+          <div className="flex items-center gap-3 text-xs font-bold tabular-nums">
+            <span className="text-slate-600">120°</span>
+            <span className="text-slate-500">130°</span>
+            <span className="text-amber-300 text-xs border-b border-amber-400 px-1 font-bold">
               {heading}° SE
             </span>
-            <span className="text-slate-400">150°</span>
-            <span className="text-slate-500">160°</span>
+            <span className="text-slate-500">150°</span>
+            <span className="text-slate-600">160°</span>
           </div>
         </div>
 
-        {/* Right: Mode Switcher & Return to Habitat */}
+        {/* Right: Mode Switcher */}
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleViewMode}
-            className="bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/50 px-3 py-1.5 rounded-lg font-mono text-xs font-bold shadow-lg transition-colors flex items-center gap-1.5"
+            className="bg-[#111827] hover:bg-[#1f2937] text-cyan-300 border border-cyan-600 px-2.5 py-1 text-[11px] font-bold transition-colors flex items-center gap-1.5"
           >
-            <span>🌐</span> Return to Habitat Control
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            <span>HABITAT CONTROL</span>
           </button>
         </div>
       </div>
 
       {/* LEFT TELEMETRY RIBBON: Astronaut Life Support System */}
-      <div className="relative z-10 self-start w-64 bg-slate-950/85 backdrop-blur-md p-3.5 rounded-xl border border-cyan-500/40 text-cyan-300 font-mono space-y-2.5 shadow-xl pointer-events-auto">
-        <div className="flex items-center justify-between border-b border-cyan-900/50 pb-1.5 text-[10px]">
-          <span className="font-bold tracking-wider text-cyan-400 uppercase">LIFE SUPPORT (PLSS)</span>
-          <span className="text-emerald-400 font-bold">NOMINAL</span>
+      <div className="relative z-10 self-start w-60 bg-[#0b0f17] p-2.5 border border-cyan-600 text-cyan-300 space-y-2 pointer-events-auto">
+        <div className="flex items-center justify-between border-b border-cyan-900 pb-1 text-[9px]">
+          <span className="font-bold tracking-wider text-cyan-400 uppercase">PLSS LIFE SUPPORT</span>
+          <span className="text-emerald-400 font-bold">[NOMINAL]</span>
         </div>
 
         {/* Oxygen */}
         <div>
-          <div className="flex justify-between text-[11px] mb-0.5">
+          <div className="flex justify-between text-[10px] mb-0.5">
             <span className="text-slate-400">O2 TANK:</span>
-            <span className="font-bold text-cyan-200">{o2Level}% (3.8h)</span>
+            <span className="font-bold text-cyan-200 tabular-nums">{o2Level}% (3.8h)</span>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-cyan-900">
-            <div className="bg-cyan-400 h-1.5 rounded-full" style={{ width: `${o2Level}%` }} />
+          <div className="w-full bg-[#1e293b] h-1 border border-cyan-900">
+            <div className="bg-cyan-400 h-1" style={{ width: `${o2Level}%` }} />
           </div>
         </div>
 
         {/* Suit Pressure & Heat */}
-        <div className="grid grid-cols-2 gap-2 text-[10px]">
-          <div className="bg-slate-900/80 p-1.5 rounded border border-cyan-950">
+        <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+          <div className="bg-[#111827] p-1 border border-slate-800">
             <span className="text-slate-400 block">SUIT PRESS</span>
-            <span className="font-bold text-white">29.6 kPa</span>
+            <span className="font-bold text-white tabular-nums">29.6 kPa</span>
           </div>
-          <div className="bg-slate-900/80 p-1.5 rounded border border-cyan-950">
+          <div className="bg-[#111827] p-1 border border-slate-800">
             <span className="text-slate-400 block">HEART RATE</span>
-            <span className="font-bold text-emerald-400">{heartRate} BPM</span>
+            <span className="font-bold text-emerald-400 tabular-nums">{heartRate} BPM</span>
           </div>
         </div>
 
         {/* Radiation & Battery */}
-        <div className="grid grid-cols-2 gap-2 text-[10px]">
-          <div className="bg-slate-900/80 p-1.5 rounded border border-cyan-950">
+        <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+          <div className="bg-[#111827] p-1 border border-slate-800">
             <span className="text-slate-400 block">RAD DOSE</span>
-            <span className="font-bold text-amber-300">
+            <span className="font-bold text-amber-300 tabular-nums">
               {target?.surfaceRadiationMSvSol ?? 0.68} mSv/d
             </span>
           </div>
-          <div className="bg-slate-900/80 p-1.5 rounded border border-cyan-950">
+          <div className="bg-[#111827] p-1 border border-slate-800">
             <span className="text-slate-400 block">BATTERY</span>
-            <span className="font-bold text-cyan-300">
+            <span className="font-bold text-cyan-300 tabular-nums">
               {activeRoute?.remainingBatteryPercent ?? 88}%
             </span>
           </div>
@@ -122,51 +129,55 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
 
       {/* RIGHT TELEMETRY RIBBON: Target Range & Terrain Hazard */}
       {target && (
-        <div className="relative z-10 self-end w-64 bg-slate-950/85 backdrop-blur-md p-3.5 rounded-xl border border-amber-500/40 text-amber-300 font-mono space-y-2 shadow-xl pointer-events-auto">
-          <div className="flex items-center justify-between border-b border-amber-900/50 pb-1 text-[10px]">
-            <span className="font-bold tracking-wider text-amber-400 uppercase">NAVIGATION HUD</span>
-            <span className="text-cyan-400 font-bold">LOCKED</span>
+        <div className="relative z-10 self-end w-60 bg-[#0b0f17] p-2.5 border border-amber-600 text-amber-300 space-y-1.5 pointer-events-auto">
+          <div className="flex items-center justify-between border-b border-amber-900 pb-1 text-[9px]">
+            <span className="font-bold tracking-wider text-amber-400 uppercase">TARGET NAVIGATION</span>
+            <span className="text-cyan-400 font-bold">[LOCKED]</span>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold text-white leading-tight">{target.name}</h4>
-            <span className="text-[10px] text-slate-400">{target.geologicUnit.split("(")[0]}</span>
+            <h4 className="text-[11px] font-bold text-white uppercase truncate">{target.name}</h4>
+            <span className="text-[9px] text-slate-400 truncate block">{target.geologicUnit.split("(")[0]}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-[10px]">
-            <div className="bg-slate-900/80 p-1.5 rounded border border-amber-950">
+          <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+            <div className="bg-[#111827] p-1 border border-slate-800">
               <span className="text-slate-400 block">DISTANCE</span>
-              <span className="font-bold text-amber-300">
+              <span className="font-bold text-amber-300 tabular-nums">
                 {activeRoute?.totalDistanceKm ?? 4.2} km
               </span>
             </div>
-            <div className="bg-slate-900/80 p-1.5 rounded border border-amber-950">
-              <span className="text-slate-400 block">TERRAIN SLOPE</span>
-              <span className="font-bold text-emerald-400">{target.meanSlopeDeg}°</span>
+            <div className="bg-[#111827] p-1 border border-slate-800">
+              <span className="text-slate-400 block">SLOPE</span>
+              <span className="font-bold text-emerald-400 tabular-nums">{target.meanSlopeDeg}°</span>
             </div>
           </div>
 
           <button
             onClick={() => onOpenPovModal(target)}
-            className="w-full mt-1 py-1.5 px-2 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono text-[10px] font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-1 bg-amber-600 hover:bg-amber-500 text-slate-950 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
           >
-            <span>👁️</span> Open Surface POV
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span>SURFACE POV</span>
           </button>
         </div>
       )}
 
-      {/* BOTTOM TACTICAL STATUS BAR */}
-      <div className="relative z-10 self-center bg-slate-950/90 backdrop-blur-md px-6 py-2 rounded-full border border-cyan-500/30 text-cyan-400 font-mono text-xs flex items-center gap-6 shadow-2xl pointer-events-auto">
-        <span className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span>TERRAIN SAFETY: SAFE CORRIDOR</span>
+      {/* BOTTOM TACTICAL STATUS BAR (Flat Solid, Tabular Nums) */}
+      <div className="relative z-10 self-center bg-[#0b0f17] px-4 py-1.5 border border-cyan-600 text-cyan-400 text-[10px] flex items-center gap-4 pointer-events-auto">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 bg-emerald-400" />
+          <span>SAFETY: [SAFE CORRIDOR]</span>
         </span>
-        <span className="text-slate-600">|</span>
+        <span className="text-slate-700">|</span>
         <span className="text-slate-300">
           MODE: {activeRoute?.supportMode === "SOLO_ASTRONAUT" ? "SOLO WALK" : "PAIRED + CARGO MULE"}
         </span>
-        <span className="text-slate-600">|</span>
-        <span className="text-amber-400 font-bold">TARGET: {target?.name.split(" ")[0]}</span>
+        <span className="text-slate-700">|</span>
+        <span className="text-amber-400 font-bold uppercase">TARGET: {target?.name.split(" ")[0]}</span>
       </div>
     </div>
   );
