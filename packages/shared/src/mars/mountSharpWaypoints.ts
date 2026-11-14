@@ -304,3 +304,4 @@ export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [
     briefDescription: "Wave-rippled strata indicating prolonged surface water interactions; prime terrain for sampling and safe traversals.",
   },
 ];
+

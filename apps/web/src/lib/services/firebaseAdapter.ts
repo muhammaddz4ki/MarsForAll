@@ -48,3 +48,4 @@ export async function pushVisorTelemetry(
     syncLatencyMs: Math.round(18 + Math.random() * 15),
   };
 }
+

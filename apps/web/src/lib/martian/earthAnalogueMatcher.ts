@@ -11,8 +11,8 @@
  *   - Aridity & Surface Radiation Proxy
  */
 
-import { EarthAnalogueSite, EARTH_ANALOGUES } from "./earthAnalogues.js";
-import { MountSharpWaypoint } from "./mountSharpWaypoints.js";
+import { EarthAnalogueSite, EARTH_ANALOGUES } from "./earthAnalogues";
+import { MountSharpWaypoint } from "./mountSharpWaypoints";
 
 export interface AnalogueWeightSliders {
   thermalInertiaWeight: number; // 0 - 100

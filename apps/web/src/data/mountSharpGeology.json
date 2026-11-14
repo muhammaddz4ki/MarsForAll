@@ -1,0 +1,155 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "boxwork_zone",
+      "properties": {
+        "name": "Boxwork Mineral Vein Lattice",
+        "unit": "sulfate_boxwork",
+        "mineral": "Polyhydrated Sulfates & Gypsum Veins",
+        "hazard": "safe",
+        "slope": 11.4,
+        "ct": 1,
+        "color": "#f59e0b"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.8100, -5.4200],
+            [137.8650, -5.4300],
+            [137.8800, -5.4700],
+            [137.8250, -5.4850],
+            [137.8100, -5.4200]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "torridon_clay_zone",
+      "properties": {
+        "name": "Glen Torridon Smectite Clay Trough",
+        "unit": "clay_trough",
+        "mineral": "Smectite Phyllosilicates",
+        "hazard": "safe",
+        "slope": 6.2,
+        "ct": 1,
+        "color": "#10b981"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3800, -4.7300],
+            [137.4250, -4.7400],
+            [137.4350, -4.7800],
+            [137.3900, -4.7750],
+            [137.3800, -4.7300]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vera_rubin_hematite_zone",
+      "properties": {
+        "name": "Vera Rubin Hematite Ridge",
+        "unit": "hematite_ridge",
+        "mineral": "Crystalline Grey Hematite",
+        "hazard": "caution",
+        "slope": 18.5,
+        "ct": 0,
+        "color": "#ec4899"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3650, -4.7050],
+            [137.4050, -4.7150],
+            [137.3950, -4.7350],
+            [137.3550, -4.7250],
+            [137.3650, -4.7050]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "greenheugh_sandstone_zone",
+      "properties": {
+        "name": "Greenheugh Pediment Capping Sandstone",
+        "unit": "capping_sandstone",
+        "mineral": "Stimson Aeolian Sandstone",
+        "hazard": "cliff_hazard",
+        "slope": 26.5,
+        "ct": -1,
+        "color": "#ef4444"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.3400, -4.7500],
+            [137.3850, -4.7600],
+            [137.3750, -4.7900],
+            [137.3300, -4.7800],
+            [137.3400, -4.7500]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "bradbury_alluvial_zone",
+      "properties": {
+        "name": "Bradbury Plains Touchdown Floor",
+        "unit": "alluvial_floor",
+        "mineral": "Basaltic Regolith Pavement",
+        "hazard": "safe",
+        "slope": 2.1,
+        "ct": 0,
+        "color": "#64748b"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.4100, -4.5600],
+            [137.4800, -4.5700],
+            [137.4900, -4.6200],
+            [137.4200, -4.6150],
+            [137.4100, -4.5600]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "gediz_vallis_channel",
+      "properties": {
+        "name": "Gediz Vallis Debris Boulder Channel",
+        "unit": "boulder_chute",
+        "mineral": "Late-Stage Conglomerates",
+        "hazard": "cliff_hazard",
+        "slope": 24.2,
+        "ct": 0,
+        "color": "#ef4444"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [137.4100, -4.8000],
+            [137.4400, -4.8100],
+            [137.4550, -4.8450],
+            [137.4250, -4.8350],
+            [137.4100, -4.8000]
+          ]
+        ]
+      }
+    }
+  ]
+}

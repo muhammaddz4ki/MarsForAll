@@ -9,9 +9,9 @@
  *   - Paired Crew + Cargo Mule Rover
  */
 
-import { classifySlopeHazard, computeTerrainImpedance } from "./scientificParams.js";
-import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
-import { calculateMartianDistanceKm } from "./prospectorScorer.js";
+import { classifySlopeHazard, computeTerrainImpedance } from "./scientificParams";
+import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints";
+import { calculateMartianDistanceKm } from "./prospectorScorer";
 
 export type MissionSupportMode = "SOLO_ASTRONAUT" | "PAIRED_CREW_MULE_ROVER";
 

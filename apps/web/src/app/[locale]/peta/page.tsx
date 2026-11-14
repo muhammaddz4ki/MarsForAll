@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import MapView from "@/components/map/MapView";
+import AresMartianApp from "@/components/mars/AresMartianApp";
 
-export async function generateMetadata({
-  params: { locale },
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
-  const t = await getTranslations({ locale, namespace: "map" });
-  return { title: t("title") };
-}
+export const metadata: Metadata = {
+  title: "ARES-PATH // GALE-01 | Mount Sharp Martian Map",
+  description: "Interplanetary Survival Guide & Rover Traverse Planning for NASA Space Apps Challenge 2026",
+};
 
 export default function MapPage() {
-  return <MapView />;
+  return <AresMartianApp />;
 }

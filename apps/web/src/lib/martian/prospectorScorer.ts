@@ -12,8 +12,8 @@ import {
   THERMAL_INERTIA_DEFAULTS,
   classifySlopeHazard,
   ConsistencyIndexCT,
-} from "./scientificParams.js";
-import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints.js";
+} from "./scientificParams";
+import { MountSharpWaypoint, MOUNT_SHARP_WAYPOINTS } from "./mountSharpWaypoints";
 
 export interface ProspectorInputQuery {
   coordinates: [number, number]; // [lon, lat]

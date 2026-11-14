@@ -178,3 +178,4 @@ export const EARTH_ANALOGUES: EarthAnalogueSite[] = [
     fieldCampaignReference: "MARTE (Mars Astrobiology Research and Technology Experiment) / NASA Ames",
   },
 ];
+

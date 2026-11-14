@@ -41,3 +41,4 @@ export const MARS_CESIUM_LAYERS: MarsCesiumLayer[] = [
     description: "Sub-meter orbital imagery of the polygonal mineral ridge fracture network.",
   },
 ];
+

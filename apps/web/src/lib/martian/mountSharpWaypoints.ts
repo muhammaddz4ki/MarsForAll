@@ -5,7 +5,7 @@
  * Features Curiosity rover traverses, 2025 Boxwork discoveries, and candidate astronaut traverses.
  */
 
-import { ConsistencyIndexCT } from "./scientificParams.js";
+import { ConsistencyIndexCT } from "./scientificParams";
 
 export type WaypointCategory =
   | "boxwork_formation"

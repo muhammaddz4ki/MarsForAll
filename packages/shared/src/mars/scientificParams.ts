@@ -180,3 +180,4 @@ export interface GaleAtmosphericTelemetry {
   radSurfaceDoseMSvPerSol: number;
   sepRadiationWarning: boolean;
 }
+

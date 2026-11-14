@@ -42,3 +42,4 @@ export const AresMissionBadge: React.FC<AresMissionBadgeProps> = ({
 };
 
 export default AresMissionBadge;
+

@@ -10,7 +10,9 @@
     "analysis": "Analysis",
     "ssdm": "System Dynamics Methodology (SSDM)",
     "sources": "Data Sources",
-    "support": "Support"
+    "support": "Support",
+    "credits": "Credits",
+    "biodiversity": "Biodiversity"
   },
   "about": {
     "title": "About MineForAll",

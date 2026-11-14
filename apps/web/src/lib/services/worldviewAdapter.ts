@@ -32,3 +32,4 @@ export const RECOMMENDED_ANALOGUE_GIBS_LAYERS = {
   AIRS_SURFACE_TEMP_DAY: "AIRS_L3_Surface_Air_Temperature_Daily_Day",
   SMAP_SOIL_MOISTURE: "SMAP_L4_Analyzed_Surface_Soil_Moisture",
 };
+
