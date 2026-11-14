@@ -943,7 +943,7 @@ export function getWaypointsForSite(siteId: MissionSiteId): MountSharpWaypoint[]
  * Historical Traverse of NASA MSL Curiosity Rover across Gale Crater & Mount Sharp
  * Spanning Bradbury Landing (Sol 0) to 2025 Boxwork Formations (Sol 4180+)
  */
-export interface CuriosityTraversePoint {
+export interface RoverTraversePoint {
   id: string;
   name: string;
   sol: number;
@@ -953,7 +953,9 @@ export interface CuriosityTraversePoint {
   keyFinding: string;
 }
 
-export const CURIOSITY_HISTORICAL_TRAVERSE: CuriosityTraversePoint[] = [
+export type CuriosityTraversePoint = RoverTraversePoint;
+
+export const CURIOSITY_HISTORICAL_TRAVERSE: RoverTraversePoint[] = [
   {
     id: "sol_0_touchdown",
     name: "Bradbury Landing Touchdown",
@@ -1018,6 +1020,62 @@ export const CURIOSITY_HISTORICAL_TRAVERSE: CuriosityTraversePoint[] = [
     keyFinding: "Intricate polygonal calcium-sulfate fracture ridges from deep hydrothermal circulation.",
   },
 ];
+
+/**
+ * Historical Traverse of NASA Mars 2020 Perseverance Rover across Jezero Crater
+ * Spanning Octavia E. Butler Landing (Sol 0) to Bright Angel / Cheyava Falls (Sol 1220+)
+ */
+export const PERSEVERANCE_HISTORICAL_TRAVERSE: RoverTraversePoint[] = [
+  {
+    id: "sol_0_octavia_butler",
+    name: "Octavia E. Butler Landing",
+    sol: 0,
+    coordinates: [77.4509, 18.3789],
+    elevationM: -2569,
+    milestone: "Touchdown in Jezero Crater floor via Terrain-Relative Navigation.",
+    keyFinding: "Smooth intermediate olivine-bearing basaltic regolith of crater floor.",
+  },
+  {
+    id: "sol_53_van_zyl",
+    name: "Van Zyl Overlook & Wright Brothers Field",
+    sol: 53,
+    coordinates: [77.4475, 18.3812],
+    elevationM: -2565,
+    milestone: "Deployment airfield for Ingenuity Mars Helicopter first flight.",
+    keyFinding: "Atmospheric flight verification in 1% Earth air density.",
+  },
+  {
+    id: "sol_74_seitah",
+    name: "Séítah / Bastide Ridge Outcrop",
+    sol: 74,
+    coordinates: [77.4320, 18.3680],
+    elevationM: -2555,
+    milestone: "Exploration of heavily fractured cumulate olivine-pyroxene bedrock.",
+    keyFinding: "Igneous cumulate rock altered repeatedly by ancient hydrothermal fluids.",
+  },
+  {
+    id: "sol_750_three_forks",
+    name: "Three Forks Ancient River Delta Front",
+    sol: 750,
+    coordinates: [77.4120, 18.3950],
+    elevationM: -2510,
+    milestone: "Arrival at base of 40m high river delta scarp (Kodiak Outlier view).",
+    keyFinding: "Mudstone and fine sandstones rich in carbonates and smectite clay.",
+  },
+  {
+    id: "sol_1220_cheyava_falls",
+    name: "Bright Angel / Cheyava Falls Redox Vein",
+    sol: 1220,
+    coordinates: [77.3850, 18.4280],
+    elevationM: -2480,
+    milestone: "Discovery of 'leopard spot' chemical reaction halos in Neretva Vallis.",
+    keyFinding: "Millimeter-sized iron and phosphate vivianite reduction halos indicating potential ancient microbial energy signatures.",
+  },
+];
+
+export function getRoverTraverseForSite(site: MissionSiteId): RoverTraversePoint[] {
+  return site === "jezero_crater" ? PERSEVERANCE_HISTORICAL_TRAVERSE : CURIOSITY_HISTORICAL_TRAVERSE;
+}
 
 /**
  * Bradbury Landing Ellipse Coordinates (20 km x 7 km Ellipse)

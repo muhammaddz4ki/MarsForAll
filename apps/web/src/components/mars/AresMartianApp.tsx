@@ -406,60 +406,62 @@ export const AresMartianApp: React.FC = () => {
         </div>
 
         {/* SLOT TENGAH: Symmetrical Segmented Mode Control [ 2D MAP | 3D GLOBE | VISOR HUD ] */}
-        <div className={`flex items-center ${
-          isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-        } border p-0.5 font-mono text-[11px] shrink-0`}>
-          <button
-            onClick={() => setViewMode("mission_control")}
-            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-              viewMode === "mission_control"
-                ? "bg-amber-600 text-slate-950 font-bold"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <span>{tNav("missionControl")}</span>
-          </button>
+        <div className="flex-1 flex justify-center">
+          <div className={`flex items-center ${
+            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+          } border p-0.5 font-mono text-[11px] shrink-0`}>
+            <button
+              onClick={() => setViewMode("mission_control")}
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
+                viewMode === "mission_control"
+                  ? "bg-amber-600 text-slate-950 font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              <span>{tNav("missionControl")}</span>
+            </button>
 
-          <button
-            onClick={() => setViewMode("planet_globe")}
-            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-              viewMode === "planet_globe"
-                ? "bg-purple-700 text-slate-100 font-bold"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-              <path d="M2 12h20" />
-            </svg>
-            <span>{tNav("planetGlobe")}</span>
-          </button>
+            <button
+              onClick={() => setViewMode("planet_globe")}
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
+                viewMode === "planet_globe"
+                  ? "bg-purple-700 text-slate-100 font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                <path d="M2 12h20" />
+              </svg>
+              <span>{tNav("planetGlobe")}</span>
+            </button>
 
-          <button
-            onClick={() => setViewMode("visor_hud")}
-            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-              viewMode === "visor_hud"
-                ? "bg-cyan-600 text-slate-950 font-bold"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
-            </svg>
-            <span>{tNav("helmetVisor")}</span>
-          </button>
+            <button
+              onClick={() => setViewMode("visor_hud")}
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
+                viewMode === "visor_hud"
+                  ? "bg-cyan-600 text-slate-950 font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
+              </svg>
+              <span>{tNav("helmetVisor")}</span>
+            </button>
+          </div>
         </div>
 
         {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
@@ -645,42 +647,6 @@ export const AresMartianApp: React.FC = () => {
               <circle cx="12" cy="13" r="3" />
             </svg>
           </button>
-
-          {/* Action 6: 3D Planet Globe */}
-          <button
-            onClick={() => setViewMode("planet_globe")}
-            title="3D Planet Globe View (Three.js 2048px Sphere)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              viewMode === "planet_globe"
-                ? "bg-purple-700 text-slate-100 font-bold border-purple-400"
-                : isDark
-                ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-transparent"
-                : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-transparent"
-            }`}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-              <path d="M2 12h20" />
-            </svg>
-          </button>
-
-          {/* Action 7: Astronaut Visor HUD */}
-          <button
-            onClick={() => setViewMode("visor_hud")}
-            title="Astronaut Helmet Visor HUD"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              viewMode === "visor_hud"
-                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                : isDark
-                ? "text-cyan-400 hover:text-cyan-300 hover:bg-[#161e2e] border-transparent"
-                : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
-            }`}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
-            </svg>
-          </button>
         </nav>
 
         {/* MMGIS SINGLE CLEAN DRAWER PANEL (w-[350px], left-11) */}
@@ -780,6 +746,7 @@ export const AresMartianApp: React.FC = () => {
           onAddZoi={handleAddZoi}
           onExportGeoJson={handleExportGeoJson}
           onOpenPlanetGlobe={() => setViewMode("planet_globe")}
+          isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
         />
 
         {/* 3D PLANET GLOBE ENGINE (MMGIS Architecture) */}

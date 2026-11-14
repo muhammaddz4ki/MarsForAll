@@ -9,6 +9,8 @@ import {
   ALL_MARTIAN_WAYPOINTS,
   MissionSiteId,
   CURIOSITY_HISTORICAL_TRAVERSE,
+  PERSEVERANCE_HISTORICAL_TRAVERSE,
+  getRoverTraverseForSite,
   BRADBURY_LANDING_ELLIPSE,
 } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
@@ -57,6 +59,7 @@ interface AresMapViewerProps {
   onAddZoi?: (zoi: ZoiFeature) => void;
   onExportGeoJson?: () => void;
   onOpenPlanetGlobe?: () => void;
+  isLeftDrawerOpen?: boolean;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -171,6 +174,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onAddZoi,
   onExportGeoJson,
   onOpenPlanetGlobe,
+  isLeftDrawerOpen = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -186,7 +190,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const zoiMarkersRef = useRef<Marker[]>([]);
   const viewshedMarkerRef = useRef<Marker | null>(null);
 
-  const [showCuriosityTraverse, setShowCuriosityTraverse] = useState<boolean>(true);
+  const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
   const [swipePosition, setSwipePosition] = useState<number>(50); // percentage 0 - 100
   const isDraggingDivider = useRef<boolean>(false);
 
@@ -544,16 +548,28 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
-      // Curiosity Historical Traverse Line
+      // Rover Historical Traverse (Dual-Layer Line Casing ala MMGIS)
+      const initialTraverse = getRoverTraverseForSite(currentSite);
       map.addSource("curiosity_traverse_source", {
         type: "geojson",
         data: {
           type: "Feature",
-          properties: { name: "MSL Curiosity Historical Traverse" },
+          properties: { name: "Martian Rover Historical Traverse" },
           geometry: {
             type: "LineString",
-            coordinates: CURIOSITY_HISTORICAL_TRAVERSE.map((p) => p.coordinates),
+            coordinates: initialTraverse.map((p) => p.coordinates),
           },
+        },
+      });
+
+      map.addLayer({
+        id: "curiosity_traverse_casing",
+        type: "line",
+        source: "curiosity_traverse_source",
+        paint: {
+          "line-color": "#07090e",
+          "line-width": 4,
+          "line-opacity": 0.95,
         },
       });
 
@@ -562,13 +578,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "line",
         source: "curiosity_traverse_source",
         paint: {
-          "line-color": "#06b6d4",
+          "line-color": "#facc15",
           "line-width": 2,
-          "line-dasharray": [3, 2],
         },
       });
 
-      // Marswalk Route Line
+      // Marswalk Route Line (Dual-Layer Line Casing ala MMGIS)
       map.addSource("marswalk_route_source", {
         type: "geojson",
         data: {
@@ -578,13 +593,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       });
 
       map.addLayer({
+        id: "marswalk_route_casing",
+        type: "line",
+        source: "marswalk_route_source",
+        paint: {
+          "line-color": "#07090e",
+          "line-width": 4.5,
+          "line-opacity": 0.95,
+        },
+      });
+
+      map.addLayer({
         id: "marswalk_route_core",
         type: "line",
         source: "marswalk_route_source",
         paint: {
-          "line-color": "#06b6d4",
-          "line-width": 2.5,
-          "line-dasharray": [4, 2],
+          "line-color": "#22d3ee",
+          "line-width": 2.2,
         },
       });
 
@@ -1095,17 +1120,37 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [orbitalSource, tileMode, currentSite]);
 
-  // Sync Curiosity Historical Traverse Visibility
+  // Sync Rover Historical Traverse (Curiosity vs Perseverance) Visibility & Coordinates
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const vis = showCuriosityTraverse ? "visible" : "none";
+    const vis = showRoverTraverse ? "visible" : "none";
+    const isGale = currentSite === "gale_crater";
+
+    // Update rover traverse GeoJSON data based on active mission site
+    const source = map.getSource("curiosity_traverse_source") as maplibregl.GeoJSONSource | undefined;
+    if (source) {
+      const activeTraverse = getRoverTraverseForSite(currentSite);
+      source.setData({
+        type: "Feature",
+        properties: { name: `${currentSite} Rover Historical Traverse` },
+        geometry: {
+          type: "LineString",
+          coordinates: activeTraverse.map((p) => p.coordinates),
+        },
+      });
+    }
+
+    // Landing ellipse only displayed for Gale Crater (Bradbury Landing)
     if (map.getLayer("curiosity_ellipse_fill")) {
-      map.setLayoutProperty("curiosity_ellipse_fill", "visibility", vis);
+      map.setLayoutProperty("curiosity_ellipse_fill", "visibility", isGale && showRoverTraverse ? "visible" : "none");
     }
     if (map.getLayer("curiosity_ellipse_line")) {
-      map.setLayoutProperty("curiosity_ellipse_line", "visibility", vis);
+      map.setLayoutProperty("curiosity_ellipse_line", "visibility", isGale && showRoverTraverse ? "visible" : "none");
+    }
+    if (map.getLayer("curiosity_traverse_casing")) {
+      map.setLayoutProperty("curiosity_traverse_casing", "visibility", vis);
     }
     if (map.getLayer("curiosity_traverse_line")) {
       map.setLayoutProperty("curiosity_traverse_line", "visibility", vis);
@@ -1113,9 +1158,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     curiosityMarkersRef.current.forEach((m) => {
       const el = m.getElement();
-      if (el) el.style.display = showCuriosityTraverse ? "block" : "none";
+      if (el) el.style.display = showRoverTraverse ? "block" : "none";
     });
-  }, [showCuriosityTraverse]);
+  }, [showRoverTraverse, currentSite]);
 
   // Render Marswalk Path on Route Calculation
   useEffect(() => {
@@ -1229,7 +1274,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [customPinCoords, isDark, t]);
 
-  // Render Curiosity Historical Sol Checkpoints
+  // Render Rover Historical Sol Checkpoints (Curiosity & Perseverance ala MMGIS)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -1237,16 +1282,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     curiosityMarkersRef.current.forEach((m) => m.remove());
     curiosityMarkersRef.current = [];
 
-    CURIOSITY_HISTORICAL_TRAVERSE.forEach((pt) => {
+    const activeTraverse = getRoverTraverseForSite(currentSite);
+
+    activeTraverse.forEach((pt) => {
       const el = document.createElement("div");
       el.className = "cursor-pointer select-none group";
-      el.style.display = showCuriosityTraverse ? "block" : "none";
+      el.style.display = showRoverTraverse ? "block" : "none";
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
-          <div class="w-3.5 h-3.5 bg-[#083344] border border-[#06b6d4] flex items-center justify-center text-[8px] text-[#a5f3fc] font-mono font-bold transition-transform group-hover:scale-125">
-            •
-          </div>
-          <div class="absolute -bottom-3.5 whitespace-nowrap px-1 bg-[#07090e]/95 text-[#a5f3fc] border border-[#0891b2] text-[7px] font-mono font-bold tracking-tight">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#facc15] border-[1.5px] border-[#07090e] shadow-sm transition-transform group-hover:scale-125"></div>
+          <div class="absolute -bottom-3.5 whitespace-nowrap text-[#facc15] font-mono font-bold text-[8px] tracking-tight drop-shadow-[0_1px_2px_rgba(7,9,14,0.95)]">
             SOL ${pt.sol}
           </div>
         </div>
@@ -1254,7 +1299,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
-        map.flyTo({ center: pt.coordinates, zoom: 12.8, duration: 600 });
+        map.flyTo({ center: pt.coordinates, zoom: 13, duration: 600 });
       });
 
       const marker = new maplibregl.Marker({ element: el })
@@ -1263,7 +1308,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       curiosityMarkersRef.current.push(marker);
     });
-  }, [showCuriosityTraverse, isDark]);
+  }, [showRoverTraverse, currentSite, isDark]);
 
   // Dragging divider handler for Swipe Curtain
   const handlePointerDownDivider = (e: React.PointerEvent) => {
@@ -1288,184 +1333,137 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
-      {/* 1. Tactical Navigation Bar (Top-Left) */}
-      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-        {/* Traverse Toggle */}
-        <button
-          onClick={() => setShowCuriosityTraverse((prev) => !prev)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 border transition-colors ${
-            showCuriosityTraverse
-              ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4] font-bold"
-              : isDark
-              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
-              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900"
-          }`}
-        >
-          <span className={`w-2 h-2 ${showCuriosityTraverse ? "bg-[#06b6d4]" : "bg-slate-500"}`} />
-          <span>{t("curiosityTraverse")} {showCuriosityTraverse ? t("on") : t("off")}</span>
-        </button>
-
-        {/* Global Mars Globe Focus */}
-        <button
-          onClick={() => {
-            if (onOpenPlanetGlobe) {
-              onOpenPlanetGlobe();
-            } else {
-              const map = mapRef.current;
-              if (!map) return;
-              map.flyTo({
-                center: [137.4, -4.74],
-                zoom: 1.8,
-                pitch: 62,
-                bearing: -12,
-                duration: 1200,
-              });
-            }
-          }}
-          title={t("planetGlobeTitle")}
-          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
-            isDark
-              ? "bg-[#111827] text-amber-400 border-slate-700 hover:text-amber-300 hover:border-amber-500"
-              : "bg-white text-amber-700 border-slate-300 hover:text-amber-900"
-          }`}
-        >
-          <span>{t("planetGlobe")}</span>
-        </button>
-
-        {/* Gale Focus */}
+      {/* MMGIS Spatial Analysis Toolbar (Single Unified Horizontal Row with Dynamic Offset) */}
+      <div
+        className={`absolute top-3 z-20 flex flex-nowrap items-center gap-1.5 font-mono text-[10px] transition-all duration-200 select-none ${
+          isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
+        }`}
+      >
+        {/* Re-Center Active Mission Site Button */}
         <button
           onClick={() => {
             const map = mapRef.current;
             if (!map) return;
-            map.flyTo({
-              center: MOUNT_SHARP_CENTER,
-              zoom: MOUNT_SHARP_DEFAULT_ZOOM,
-              pitch: pitch3D ? 55 : 0,
-              bearing: -15,
-              duration: 1200,
-            });
+            const center = currentSite === "jezero_crater" ? JEZERO_CRATER_CENTER : MOUNT_SHARP_CENTER;
+            const zoom = currentSite === "jezero_crater" ? JEZERO_DEFAULT_ZOOM : MOUNT_SHARP_DEFAULT_ZOOM;
+            map.flyTo({ center, zoom, duration: 1000 });
           }}
-          title={t("galeFocusTitle")}
-          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
+          title={currentSite === "jezero_crater" ? "Re-center Jezero Crater" : "Re-center Gale Crater"}
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
             isDark
-              ? "bg-[#111827] text-cyan-400 border-slate-700 hover:text-cyan-300 hover:border-cyan-500"
-              : "bg-white text-cyan-700 border-slate-300 hover:text-cyan-900"
+              ? "bg-[#0b0f17] text-amber-400 border-slate-700 hover:text-amber-300 hover:border-amber-500"
+              : "bg-white text-amber-700 border-slate-300 hover:text-amber-900 shadow-sm"
           }`}
         >
-          <span>{t("galeFocus")}</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+          </svg>
+          <span>RE-CENTER</span>
         </button>
 
-        {/* Jezero Focus */}
-        <button
-          onClick={() => {
-            const map = mapRef.current;
-            if (!map) return;
-            map.flyTo({
-              center: JEZERO_CRATER_CENTER,
-              zoom: JEZERO_DEFAULT_ZOOM,
-              pitch: pitch3D ? 45 : 0,
-              bearing: 0,
-              duration: 1200,
-            });
-          }}
-          title={t("jezeroFocusTitle")}
-          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
-            isDark
-              ? "bg-[#111827] text-purple-400 border-slate-700 hover:text-purple-300 hover:border-purple-500"
-              : "bg-white text-purple-700 border-slate-300 hover:text-purple-900"
-          }`}
-        >
-          <span>{t("jezeroFocus")}</span>
-        </button>
-      </div>
-
-      {/* 2. MMGIS Spatial Analysis Toolbar (Top Left Row 2) */}
-      <div className="absolute top-11 left-3 z-20 flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
-        {/* Tool 1: Measure / Elevation Profile */}
+        {/* Measure / Elevation Profile */}
         <button
           onClick={() => {
             const nextTool = activeMmgisTool === "measure" ? "none" : "measure";
             onSelectMmgisTool?.(nextTool);
           }}
-          className={`px-2.5 py-1 border transition-colors flex items-center gap-1.5 ${
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
             activeMmgisTool === "measure"
               ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4] font-bold"
               : isDark
               ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-cyan-500 hover:text-cyan-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-cyan-800"
+              : "bg-white text-slate-700 border-slate-300 hover:text-cyan-800 shadow-sm"
           }`}
         >
           <span className={`w-1.5 h-1.5 ${activeMmgisTool === "measure" ? "bg-cyan-400" : "bg-slate-500"}`} />
           <span>{activeMmgisTool === "measure" ? tMmgis("measureActive") : tMmgis("measureTool")}</span>
         </button>
 
-        {/* Tool 2: Swipe Compare Curtain */}
+        {/* Swipe Compare Curtain */}
         <button
           onClick={() => onToggleSwipeCurtain?.()}
-          className={`px-2.5 py-1 border transition-colors flex items-center gap-1.5 ${
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
             swipeCurtainActive
               ? "bg-[#78350f] text-[#fef3c7] border-[#f59e0b] font-bold"
               : isDark
               ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-amber-800"
+              : "bg-white text-slate-700 border-slate-300 hover:text-amber-800 shadow-sm"
           }`}
         >
           <span className={`w-1.5 h-1.5 ${swipeCurtainActive ? "bg-amber-400" : "bg-slate-500"}`} />
           <span>{swipeCurtainActive ? tMmgis("swipeActive") : tMmgis("swipeTool")}</span>
         </button>
 
-        {/* Tool 3: Viewshed 360° */}
+        {/* Viewshed 360° */}
         <button
           onClick={() => {
             const nextTool = activeMmgisTool === "viewshed" ? "none" : "viewshed";
             onSelectMmgisTool?.(nextTool);
           }}
-          className={`px-2.5 py-1 border transition-colors flex items-center gap-1.5 ${
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
             activeMmgisTool === "viewshed"
               ? "bg-[#064e3b] text-[#34d399] border-[#10b981] font-bold"
               : isDark
               ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-emerald-500 hover:text-emerald-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-emerald-800"
+              : "bg-white text-slate-700 border-slate-300 hover:text-emerald-800 shadow-sm"
           }`}
         >
           <span className={`w-1.5 h-1.5 ${activeMmgisTool === "viewshed" ? "bg-emerald-400" : "bg-slate-500"}`} />
           <span>{activeMmgisTool === "viewshed" ? tMmgis("viewshedActive") : tMmgis("viewshedTool")}</span>
         </button>
 
-        {/* Tool 4: + Mark Zone of Interest (ZOI) */}
+        {/* + Mark Zone of Interest (ZOI) */}
         <button
           onClick={() => {
             const nextTool = activeMmgisTool === "zoi" ? "none" : "zoi";
             onSelectMmgisTool?.(nextTool);
           }}
-          className={`px-2.5 py-1 border transition-colors flex items-center gap-1.5 ${
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
             activeMmgisTool === "zoi"
               ? "bg-[#451a03] text-[#fed7aa] border-[#ea580c] font-bold"
               : isDark
               ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-orange-500 hover:text-orange-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-orange-800"
+              : "bg-white text-slate-700 border-slate-300 hover:text-orange-800 shadow-sm"
           }`}
         >
           <span className={`w-1.5 h-1.5 ${activeMmgisTool === "zoi" ? "bg-orange-400" : "bg-slate-500"}`} />
           <span>{activeMmgisTool === "zoi" ? tMmgis("zoiActive") : tMmgis("markZoi")}</span>
         </button>
 
-        {/* Tool 5: Export .GeoJSON */}
+        {/* Export .GeoJSON */}
         <button
           onClick={() => onExportGeoJson?.()}
-          className={`px-2.5 py-1 border transition-colors font-bold ${
+          className={`h-7 px-2.5 border transition-colors font-bold ${
             isDark
               ? "bg-[#111827] text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-white"
-              : "bg-white text-slate-800 border-slate-300 hover:bg-slate-50"
+              : "bg-white text-slate-800 border-slate-300 hover:bg-slate-50 shadow-sm"
           }`}
         >
           {tMmgis("exportGeoJson")}
         </button>
+
+        {/* Rover Traverse Toggle */}
+        <button
+          onClick={() => setShowRoverTraverse((prev) => !prev)}
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
+            showRoverTraverse
+              ? "bg-[#713f12] text-[#fef08a] border-[#eab308]"
+              : isDark
+              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
+              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full ${showRoverTraverse ? "bg-[#facc15]" : "bg-slate-500"}`} />
+          <span>{currentSite === "jezero_crater" ? "PERSEVERANCE" : "CURIOSITY"} {showRoverTraverse ? t("on") : t("off")}</span>
+        </button>
       </div>
 
-      {/* Interactive Tool Banner Helper */}
+      {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (
-        <div className="absolute top-20 left-3 z-20 px-2 py-1 bg-[#0b0f17]/95 border border-cyan-500/80 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none">
+        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17]/95 border border-cyan-500/80 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${
+          isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
+        }`}>
           <span className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
           <span>
             {activeMmgisTool === "measure" && tMmgis("measureInstruction")}
