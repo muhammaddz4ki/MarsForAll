@@ -1,0 +1,631 @@
+"use client";
+
+import { useTranslations, useLocale } from "next-intl";
+import type { LayerDef } from "@/lib/layers";
+import SpeciesThumb from "./SpeciesThumb";
+import speciesNamesRaw from "@/data/species-names.json";
+import floraSpeciesRaw from "@/data/flora-species.json";
+import faunaSpeciesRaw from "@/data/fauna-species.json";
+
+// scientific name -> common name (Indonesian / English), from GBIF vernaculars
+const SPECIES_NAMES = speciesNamesRaw as Record<
+  string,
+  { id?: string; en?: string }
+>;
+
+// curated, sourced profiles for the iconic flora taxa (POWO/IUCN/CITES). Keyed
+// by the `taxon` label the flora-distribution polygons carry.
+type Bi = { id: string; en: string };
+interface SpeciesProfile {
+  sci: string;
+  en: string;
+  id: string;
+  type: Bi;
+  endemic: Bi;
+  range: Bi;
+  habitat: Bi;
+  iucn: string;
+  iucnNote: Bi;
+  cites: string;
+  protected: Bi;
+  desc: Bi;
+  ref: { name: string; url: string };
+}
+// (each JSON carries a leading `_note` string key for maintainers; it is never
+// looked up, so cast through unknown). Same profile shape is used for the flora
+// (/biodiversitas flora layer) and fauna (endemic-wildlife layer) catalogs.
+const FLORA_SPECIES = floraSpeciesRaw as unknown as Record<string, SpeciesProfile>;
+const FAUNA_SPECIES = faunaSpeciesRaw as unknown as Record<string, SpeciesProfile>;
+
+export interface SelectedFeature {
+  layer: LayerDef;
+  properties: Record<string, unknown>;
+}
+
+/** keys we render with friendlier ordering; everything else follows */
+const PRIORITY_KEYS = [
+  "name",
+  "nameEn",
+  "nameAlt",
+  "sci",
+  "cat",
+  "desig",
+  "status",
+  "company",
+  "type",
+  "commodity",
+  "areaHa",
+  "year",
+  "iucn",
+  "basis",
+  "date",
+  "system",
+  "confidence",
+  "deaths",
+  "affected",
+];
+
+// internal/duplicate fields never shown in the popup
+const HIDDEN_KEYS = new Set(["id", "kind", "companySlug", "source", "species"]);
+
+// friendly labels for the keys that have a translation; others show raw
+const FIELD_LABELS: Record<string, string> = {
+  name: "fieldName",
+  nameEn: "fieldName",
+  nameAlt: "fieldNameAlt",
+  sci: "fieldSci",
+  status: "fieldStatus",
+  cat: "fieldCategory",
+  desig: "fieldDesignation",
+  areaHa: "fieldArea",
+  year: "fieldYear",
+  iucn: "fieldIucn",
+  basis: "fieldBasis",
+};
+
+export default function DetailDrawer({
+  feature,
+  onClose,
+}: {
+  feature: SelectedFeature;
+  onClose: () => void;
+}) {
+  const t = useTranslations("map");
+  const locale = useLocale();
+  const { layer, properties } = feature;
+
+  // small ghost chip, matching the layer panel's control buttons
+  const closeBtn =
+    "float-right cursor-pointer rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.7rem] py-[0.2rem] text-[0.78rem] text-muted transition-[color,border-color] hover:border-[var(--text-dim)] hover:text-foreground hover:no-underline";
+
+  // Titik api (NASA FIRMS): a single active-fire detection. Confidence, when it
+  // was seen (UTC), which satellite, and fire radiative power (intensity).
+  if (layer.id === "fires") {
+    const confKey = String(properties.conf ?? "nominal");
+    const confColor =
+      confKey === "high" ? "#e53935" : confKey === "low" ? "#ffb300" : "#ff7043";
+    const rawTime = String(properties.time ?? "");
+    const hhmm =
+      rawTime.length === 4 ? `${rawTime.slice(0, 2)}:${rawTime.slice(2)}` : rawTime;
+    const when = [String(properties.date ?? ""), hhmm && `${hhmm} UTC`]
+      .filter(Boolean)
+      .join(" · ");
+    const satRaw = String(properties.sat ?? "");
+    const sat =
+      satRaw === "N"
+        ? "Suomi-NPP (VIIRS)"
+        : satRaw === "1" || satRaw === "N20"
+          ? "NOAA-20 (VIIRS)"
+          : satRaw || "VIIRS";
+    const frp =
+      properties.frp != null && properties.frp !== ""
+        ? Number(properties.frp)
+        : null;
+    const dn = String(properties.daynight ?? "");
+    const stat = (label: string, val: string) => (
+      <div key={label}>
+        <dt className="text-[0.66rem] uppercase tracking-[0.04em] text-muted">
+          {label}
+        </dt>
+        <dd className="m-0 text-[0.9rem] font-semibold">{val}</dd>
+      </div>
+    );
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[300px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1.5 flex items-center gap-2 text-base">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ background: confColor }}
+          />
+          {t("fireTitle")}
+        </h2>
+        <p className="m-0 mb-2.5 text-[0.78rem]" style={{ color: confColor }}>
+          {t("fireConfidenceLabel")}: {t(`filterValues.${confKey}`)}
+        </p>
+        <dl className="m-0 grid grid-cols-2 gap-x-2 gap-y-2.5">
+          {when && stat(t("fireWhen"), when)}
+          {sat && stat(t("fireSatellite"), sat)}
+          {frp != null && stat(t("fireFrp"), `${frp} MW`)}
+          {dn && stat(t("fireDayNight"), t(dn === "D" ? "fireDay" : "fireNight"))}
+        </dl>
+        <p className="m-0 mt-3 border-t border-[var(--glass-border)] pt-2 text-[0.66rem] italic leading-snug text-muted">
+          {t("fireNote")}
+        </p>
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    );
+  }
+
+  // Peta Sebaran Satwa: the click handler aggregates every class-area under the
+  // point into { byClass, date }. Render the recorded species grouped by class
+  // ("what birds / mammals / reptiles / amphibians are here").
+  if (layer.id === "species-dist") {
+    const byClass = (properties.byClass ?? {}) as Record<
+      string,
+      { sci: string; cat: string; doc: boolean }[]
+    >;
+    const ORDER = ["aves", "mammalia", "reptilia", "amphibia"];
+    const present = ORDER.filter((c) => (byClass[c]?.length ?? 0) > 0);
+    // the period the SOURCE records span (e.g. "1990-2026"), shown verbatim,
+    // not the date this app processed them
+    const dataPeriod = properties.date ? String(properties.date) : "";
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[320px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[50%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1 text-base">{t("layerNames.species-dist")}</h2>
+        {present.length === 0 ? (
+          <p className="m-0 mt-2 text-muted">{t("speciesNone")}</p>
+        ) : (
+          <>
+            <p className="m-0 mb-2 text-[0.78rem] text-muted">
+              {t("speciesHere")}
+            </p>
+            <div className="m-0 flex flex-col gap-3">
+              {present.map((c) => (
+                <section key={c}>
+                  <h3 className="m-0 mb-1.5 flex items-center gap-1.5 text-[0.78rem] font-semibold text-accent">
+                    {t(`filterValues.${c}`)}
+                    <span className="font-normal text-muted">
+                      · {byClass[c].length}
+                    </span>
+                  </h3>
+                  <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                    {byClass[c].map(({ sci, cat, doc }) => {
+                      const cn = SPECIES_NAMES[sci];
+                      const common =
+                        locale === "en"
+                          ? (cn?.en ?? cn?.id)
+                          : (cn?.id ?? cn?.en);
+                      return (
+                        <li
+                          key={sci}
+                          className="flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--glass-highlight)] p-1.5 pr-2.5"
+                        >
+                          <SpeciesThumb
+                            sci={sci}
+                            cls={c}
+                            label={common || undefined}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                              <span className="text-[0.82rem] font-medium leading-tight">
+                                {common || sci}
+                              </span>
+                              {["NT", "VU", "EN", "CR", "EW", "EX"].includes(
+                                cat,
+                              ) ? (
+                                <span
+                                  className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+                                  title={t(`iucn.${cat}`)}
+                                >
+                                  {cat}
+                                </span>
+                              ) : null}
+                              {doc ? (
+                                <span
+                                  className="cursor-help text-[0.7rem] font-semibold text-accent"
+                                  title={t("docRange")}
+                                >
+                                  *
+                                </span>
+                              ) : null}
+                            </div>
+                            {common && (
+                              <i className="block text-[0.72rem] leading-tight text-muted [overflow-wrap:anywhere]">
+                                {sci}
+                              </i>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+            <p className="m-0 mt-2 text-[0.68rem] italic text-muted">
+              {t("photoCredit")}
+            </p>
+            {present.some((c) => byClass[c].some((s) => s.doc)) && (
+              <p className="m-0 mt-2 text-[0.72rem] italic text-muted">
+                {t("docFootnote")}
+              </p>
+            )}
+          </>
+        )}
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          {dataPeriod && (
+            <div>
+              <dt>{t("fieldDataPeriod")}</dt>
+              <dd>{dataPeriod}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    );
+  }
+
+  // Endemic-fauna / flora DISTRIBUTION AREAS: each polygon carries the taxa
+  // recorded inside it + the biogeographic zone (fauna). For flora, each taxon
+  // has a curated, sourced profile (FLORA_SPECIES) rendered as a rich card;
+  // fauna (no catalog yet) falls back to a plain name list.
+  if (layer.id === "endemic" || layer.id === "flora") {
+    const L = locale === "en" ? "en" : "id";
+    // MapLibre serialises array/object feature properties to JSON strings, so
+    // `taxa` arrives as a string (e.g. '["Rafflesia","Meranti"]'), not an array.
+    let taxa: string[] = [];
+    if (Array.isArray(properties.taxa)) {
+      taxa = properties.taxa as string[];
+    } else if (typeof properties.taxa === "string" && properties.taxa) {
+      try {
+        const parsed = JSON.parse(properties.taxa);
+        if (Array.isArray(parsed)) taxa = parsed as string[];
+      } catch {
+        /* ignore malformed */
+      }
+    }
+    const zone =
+      typeof properties.grp === "string" && properties.grp
+        ? properties.grp.charAt(0).toUpperCase() + properties.grp.slice(1)
+        : "";
+    const iucnBadge = (code: string) =>
+      ["NT", "VU", "EN", "CR", "EW", "EX"].includes(code) ? (
+        <span
+          className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+          title={t.has(`iucn.${code}`) ? t(`iucn.${code}`) : code}
+        >
+          {code}
+        </span>
+      ) : null;
+    const catalog = layer.id === "flora" ? FLORA_SPECIES : FAUNA_SPECIES;
+    const profiles = taxa
+      .map((name) => [name, catalog[name]] as const)
+      .filter(([, p]) => p);
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[340px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1 text-base">{t(`layerNames.${layer.id}`)}</h2>
+        {zone && <p className="m-0 mb-1 text-[0.78rem] text-accent">{zone}</p>}
+        {taxa.length === 0 ? (
+          <p className="m-0 mt-2 text-muted">{t("speciesNone")}</p>
+        ) : profiles.length > 0 ? (
+          <>
+            <p className="m-0 mb-2 text-[0.78rem] text-muted">{t("taxaHere")}</p>
+            <div className="flex flex-col gap-3">
+              {profiles.map(([name, p]) => (
+                <div
+                  key={name}
+                  className="rounded-[12px] border border-[var(--glass-border)] bg-[var(--glass-highlight)] p-3"
+                >
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <strong className="text-[0.92rem]">{p[L]}</strong>
+                    {iucnBadge(p.iucn)}
+                    {p.cites && (
+                      <span
+                        className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+                        title={t("citesTitle")}
+                      >
+                        CITES {p.cites}
+                      </span>
+                    )}
+                  </div>
+                  <p className="m-0 text-[0.74rem] italic text-muted">{p.sci}</p>
+                  <p className="m-0 mt-1 text-[0.8rem]">{p.desc[L]}</p>
+                  <dl className="m-0 mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-[0.2rem] text-[0.76rem] [&_dt]:text-muted">
+                    <dt>{t("floraType")}</dt>
+                    <dd className="m-0">{p.type[L]}</dd>
+                    <dt>{t("floraEndemic")}</dt>
+                    <dd className="m-0">{p.endemic[L]}</dd>
+                    <dt>{t("floraRange")}</dt>
+                    <dd className="m-0">{p.range[L]}</dd>
+                    <dt>{t("floraHabitat")}</dt>
+                    <dd className="m-0">{p.habitat[L]}</dd>
+                    {p.iucnNote[L] && (
+                      <>
+                        <dt>{t("floraStatus")}</dt>
+                        <dd className="m-0">{p.iucnNote[L]}</dd>
+                      </>
+                    )}
+                    {p.protected[L] && p.protected[L] !== "-" && (
+                      <>
+                        <dt>{t("floraProtected")}</dt>
+                        <dd className="m-0">{p.protected[L]}</dd>
+                      </>
+                    )}
+                  </dl>
+                  <a
+                    className="mt-2 inline-block text-[0.74rem]"
+                    href={p.ref.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("source")}: {p.ref.name}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="m-0 mb-1 text-[0.78rem] text-muted">{t("taxaHere")}</p>
+            <p className="m-0">{taxa.join(", ")}</p>
+            <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+              <div>
+                <dt>{t("source")}</dt>
+                <dd>
+                  <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                    {layer.sourceName}, {t("viewEvidence")}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
+      </aside>
+    );
+  }
+
+  // Wetland habitat (mangrove / peatland): raw tiles carry no useful per-feature
+  // data, so the click handler hands us a clean { areaHa, areaExact }. Show what
+  // the habitat is + why it matters, plus the polygon's area (exact from the
+  // source for peatland, an on-map estimate for mangrove).
+  if (layer.id === "mangrove" || layer.id === "peatland") {
+    // dataset vintage (year of the underlying mapping, not when we ingested it):
+    // GMW v3 baseline extent = 2020; GFW "Indonesia peat lands" is the Wetlands
+    // International / Wahyunto et al. 1:250k peat maps (2003–2006).
+    const WETLAND_YEAR: Record<string, string> = {
+      mangrove: "2020",
+      peatland: "2003–2006",
+    };
+    const dataYear = WETLAND_YEAR[layer.id];
+    const ha = Number(properties.areaHa) || 0;
+    const exact = Boolean(properties.areaExact);
+    const haText =
+      ha > 0
+        ? `${exact ? "" : "~"}${Math.round(ha).toLocaleString("id-ID")} ha`
+        : null;
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[320px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1.5 text-base">{t(`layerNames.${layer.id}`)}</h2>
+        <p className="m-0 mb-1 text-[0.82rem] leading-snug text-muted">
+          {t(`wetlandInfo.${layer.id}`)}
+        </p>
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          {haText && (
+            <div>
+              <dt>{t("fieldArea")}</dt>
+              <dd>
+                {haText}
+                {!exact && (
+                  <span className="ml-1 text-[0.72rem] italic text-muted">
+                    ({t("areaEstimated")})
+                  </span>
+                )}
+              </dd>
+            </div>
+          )}
+          {dataYear && (
+            <div>
+              <dt>{t("dataYear")}</dt>
+              <dd>{dataYear}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+        <p className="m-0 mt-2.5 border-t border-[var(--glass-border)] pt-2 text-[0.68rem] italic leading-snug text-muted">
+          {t("popupDisclaimer")}
+        </p>
+      </aside>
+    );
+  }
+
+  // WIUP polygons (KSP BIG)
+  if (layer.id === "momi-wiup") {
+    const p = properties;
+    const company = (p.name !== "-" ? p.name : p.issuer) as string | undefined;
+    const type = p.permitType as string | undefined;
+    const commodity = p.commodity as string | undefined;
+    const sk = p.permitNumber as string | undefined;
+    const haText = p.areaHa
+      ? `${Number(p.areaHa).toLocaleString("id-ID")} ha`
+      : null;
+
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[320px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1.5 text-base">{t(`layerNames.${layer.id}`)}</h2>
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          {Boolean(company && company !== "-") && (
+            <div>
+              <dt>{t("fieldCompany")}</dt>
+              <dd className="font-medium">{String(company)}</dd>
+            </div>
+          )}
+          {Boolean(type && type !== "-") && (
+            <div>
+              <dt>{t("fieldPermitType")}</dt>
+              <dd>{String(type)}</dd>
+            </div>
+          )}
+          {Boolean(commodity && commodity !== "-") && (
+            <div>
+              <dt>{t("fieldCommodity")}</dt>
+              <dd>{String(commodity)}</dd>
+            </div>
+          )}
+          {haText && (
+            <div>
+              <dt>{t("fieldArea")}</dt>
+              <dd>{haText}</dd>
+            </div>
+          )}
+          {Boolean(sk && sk !== "-") && (
+            <div>
+              <dt>{t("fieldPermitNumber")}</dt>
+              <dd className="text-[0.82rem] leading-snug">{String(sk)}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+        <p className="m-0 mt-2.5 border-t border-[var(--glass-border)] pt-2 text-[0.68rem] italic leading-snug text-muted">
+          {t("popupConcessionNote")}
+        </p>
+      </aside>
+    );
+  }
+
+
+  // for bilingual common-name pairs (species), keep only the active locale's
+  const hidden = new Set(HIDDEN_KEYS);
+  if (properties.name !== undefined && properties.nameEn !== undefined) {
+    hidden.add(locale === "en" ? "name" : "nameEn");
+  }
+
+  // drop hidden keys and "empty" optional fields (0 year, blank desig/iucn)
+  const isEmpty = (k: string, v: unknown) =>
+    v === undefined ||
+    v === "" ||
+    ((k === "year" || k === "areaHa") && Number(v) === 0);
+
+  const visible = (k: string) => !hidden.has(k) && !isEmpty(k, properties[k]);
+
+  const keys = [
+    ...PRIORITY_KEYS.filter((k) => properties[k] !== undefined && visible(k)),
+    ...Object.keys(properties).filter(
+      (k) => !PRIORITY_KEYS.includes(k) && visible(k),
+    ),
+  ];
+
+  const labelFor = (k: string): string => {
+    // "year" means different things per layer (designated vs recorded)
+    if (k === "year")
+      return t(layer.id === "species" ? "fieldYearRecorded" : "fieldYear");
+    return FIELD_LABELS[k] ? t(FIELD_LABELS[k]) : k;
+  };
+
+  const valueFor = (k: string): string => {
+    const v = properties[k];
+    if (k === "cat" || k === "status") return t(`filterValues.${String(v)}`);
+    if (k === "areaHa") return `${Number(v).toLocaleString("id-ID")} ha`;
+    if (k === "basis") {
+      const key = `basisValues.${String(v)}`;
+      return t.has(key) ? t(key) : String(v);
+    }
+    return String(v);
+  };
+
+  return (
+    <aside
+      className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[320px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[50%] max-[720px]:w-auto"
+      aria-label={t("detail")}
+    >
+      <button
+        className="float-right cursor-pointer rounded border border-border bg-transparent text-muted"
+        onClick={onClose}
+      >
+        {t("close")}
+      </button>
+      <h2 className="m-0 mb-2 text-base">{t(`layerNames.${layer.id}`)}</h2>
+      <dl className="m-0 [&_dd]:m-0 [&_dd]:[overflow-wrap:anywhere] [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+        {keys.map((k) => (
+          <div key={k}>
+            <dt>{labelFor(k)}</dt>
+            <dd>{valueFor(k)}</dd>
+          </div>
+        ))}
+        <div>
+          <dt>{t("source")}</dt>
+          <dd>
+            <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+              {layer.sourceName}, {t("viewEvidence")}
+            </a>
+          </dd>
+        </div>
+      </dl>
+      {/* UU ITE safety: this data is third-party and shown as-is, not an
+          accusation. Concession/mining features (which name companies) get the
+          stronger note. */}
+      <p className="m-0 mt-2.5 border-t border-[var(--glass-border)] pt-2 text-[0.68rem] italic leading-snug text-muted">
+        {t(layer.id === "concessions" ? "popupConcessionNote" : "popupDisclaimer")}
+      </p>
+    </aside>
+  );
+}

@@ -1,0 +1,22 @@
+{
+  "name": "mineforall",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Mine For All, Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
+  "license": "AGPL-3.0-or-later",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "seed:regions": "pnpm --filter @mineforall/api seed:regions"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

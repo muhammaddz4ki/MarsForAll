@@ -1,0 +1,33 @@
+import { Module } from "@nestjs/common";
+import { StatusModule } from "../status/status.module";
+import { RegionsController } from "./regions.controller";
+import { ConcessionsController } from "./concessions.controller";
+import { DisastersController } from "./disasters.controller";
+import { FiresController } from "./fires.controller";
+import { AreaReportController } from "./area-report.controller";
+import { ShareController } from "./share.controller";
+import { ProtectedController } from "./protected.controller";
+import { SocialController } from "./social.controller";
+import { CompaniesController } from "./companies.controller";
+import { StoriesController } from "./stories.controller";
+import { ExportController } from "./export.controller";
+import { AdminController } from "./admin.controller";
+
+@Module({
+  imports: [StatusModule],
+  controllers: [
+    RegionsController,
+    ConcessionsController,
+    DisastersController,
+    FiresController,
+    AreaReportController,
+    ShareController,
+    ProtectedController,
+    SocialController,
+    CompaniesController,
+    StoriesController,
+    ExportController,
+    AdminController,
+  ],
+})
+export class PublicApiModule {}
