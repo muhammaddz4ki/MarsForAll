@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useDeferredValue } from "react";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 import {
   matchMartianTargetToEarthAnalogues,
@@ -22,10 +22,13 @@ export const AnalogueMatcherPanel: React.FC<AnalogueMatcherPanelProps> = ({
   const isDark = theme === "dark";
   const [weights, setWeights] = useState<AnalogueWeightSliders>(DEFAULT_ANALOGUE_WEIGHTS);
 
+  // Defer heavy planetary re-ranking calculation so slider knob tracks cursor at 60 FPS
+  const deferredWeights = useDeferredValue(weights);
+
   const rankings: AnalogueMatchRanking[] = useMemo(() => {
     if (!waypoint) return [];
-    return matchMartianTargetToEarthAnalogues(waypoint, weights);
-  }, [waypoint, weights]);
+    return matchMartianTargetToEarthAnalogues(waypoint, deferredWeights);
+  }, [waypoint, deferredWeights]);
 
   const handleSliderChange = (field: keyof AnalogueWeightSliders, value: number) => {
     setWeights((prev) => ({ ...prev, [field]: value }));
@@ -299,4 +302,4 @@ export const AnalogueMatcherPanel: React.FC<AnalogueMatcherPanelProps> = ({
   );
 };
 
-export default AnalogueMatcherPanel;
+export default React.memo(AnalogueMatcherPanel);

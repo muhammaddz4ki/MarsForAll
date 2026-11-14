@@ -514,4 +514,4 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
   );
 };
 
-export default ProspectorPanel;
+export default React.memo(ProspectorPanel);

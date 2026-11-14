@@ -77,14 +77,37 @@ const MOUNT_SHARP_FALLBACK_PHOTOS: CuriosityPhotoItem[] = [
   },
 ];
 
+// In-Memory TTL Cache (15 minutes) for NASA Curiosity Photos
+interface CachedPhotoPayload {
+  data: any;
+  cachedAt: number;
+}
+const PHOTO_CACHE = new Map<string, CachedPhotoPayload>();
+const PHOTO_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const solParam = searchParams.get("sol");
+  const solParam = searchParams.get("sol") || "all";
   const limit = Math.min(parseInt(searchParams.get("limit") || "12", 10), 24);
+  const cacheKey = `curiosity_${solParam}_${limit}`;
+
+  // Check in-memory TTL cache first
+  const cached = PHOTO_CACHE.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.cachedAt < PHOTO_TTL_MS) {
+    return NextResponse.json(cached.data, {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        "Access-Control-Allow-Origin": "*",
+        "X-Memory-Cache": "HIT",
+      },
+    });
+  }
 
   // Target NASA MSL Raw Images API
   let nasaUrl = "https://mars.nasa.gov/api/v1/raw_image_items/?order=sol+desc&per_page=" + limit + "&page=0&condition_1=msl:mission";
-  if (solParam) {
+  if (solParam && solParam !== "all") {
     nasaUrl += `&condition_2=${solParam}:sol:in`;
   }
 
@@ -140,21 +163,24 @@ export async function GET(request: NextRequest) {
       dataSource: "LIVE_NASA_MSL_API",
     }));
 
-    return NextResponse.json(
-      {
-        items: cleanPhotos,
-        total: cleanPhotos.length,
-        source: "LIVE_NASA_MSL_API",
-        fetchedAt: new Date().toISOString(),
+    const payload = {
+      items: cleanPhotos,
+      total: cleanPhotos.length,
+      source: "LIVE_NASA_MSL_API",
+      fetchedAt: new Date().toISOString(),
+    };
+
+    // Store in 15-minute in-memory cache
+    PHOTO_CACHE.set(cacheKey, { data: payload, cachedAt: Date.now() });
+
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        "Access-Control-Allow-Origin": "*",
+        "X-Memory-Cache": "MISS",
       },
-      {
-        status: 200,
-        headers: {
-          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }
-    );
+    });
   } catch (error) {
     // Return Mount Sharp cache fallback seamlessly on timeout or network block
     return NextResponse.json(

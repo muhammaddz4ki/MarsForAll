@@ -34,3 +34,12 @@
 - **Earth Analogue Similarity Matcher:** Real-time multi-criteria decision analysis (MCDA) linking Gale Crater to Devon Island, Death Valley, Río Tinto, and Atacama.
 - **Marswalk A* Router:** Safety-optimized routing with consumable forecasting for Solo Astronaut and Paired Crew + Cargo Mule Rover modes.
 - **Curiosity Historical Traverse Overlay:** Bradbury Landing Ellipse to 2025 Boxwork Formations traverse path with interactive toggle.
+
+---
+
+## 5. STRICT PERFORMANCE & BUNDLE OPTIMIZATION POLICY
+- **Dynamic Code Splitting:** Lazy-load Three.js (`SurfacePovModal`), Recharts (`MarswalkPlannerPanel`), and secondary modals via `next/dynamic` (`ssr: false`).
+- **Component Memoization:** Wrap `AresMapViewer`, `ProspectorPanel`, `ScientificLayersPanel`, `VisorHudOverlay`, and `AnalogueMatcherPanel` in `React.memo` to eliminate redundant renders during pan/zoom and slider updates.
+- **Slider Smoothness:** Isolate Earth Analogue MCDA calculation with `useDeferredValue` ensuring 60 FPS slider manipulation.
+- **WebGL GPU Cap:** Bound pixel ratio to `Math.min(window.devicePixelRatio, 1.5)`, optimize terrain geometry (80x80 segments), and throttle raycasting to ~30Hz (32ms).
+- **Server-Side In-Memory Cache:** 300-tile in-memory LRU cache on `/api/mars-tiles` (<2ms response) and 15-minute TTL cache on `/api/curiosity-photos` and `/api/space-weather`.

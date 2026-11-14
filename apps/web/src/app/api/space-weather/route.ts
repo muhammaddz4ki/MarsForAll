@@ -27,7 +27,23 @@ const BASELINE_GALE_RADIATION: SpaceWeatherTelemetry = {
   timestamp: new Date().toISOString(),
 };
 
+// In-Memory TTL Cache (15 minutes) for NASA DONKI Space Weather
+let cachedWeather: { data: SpaceWeatherTelemetry; cachedAt: number } | null = null;
+const WEATHER_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 export async function GET(request: NextRequest) {
+  const now = Date.now();
+  if (cachedWeather && now - cachedWeather.cachedAt < WEATHER_TTL_MS) {
+    return NextResponse.json(cachedWeather.data, {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400",
+        "Access-Control-Allow-Origin": "*",
+        "X-Memory-Cache": "HIT",
+      },
+    });
+  }
+
   // NASA DONKI (Database of Notifications, Knowledge, Information) Space Weather
   const donkiUrl = "https://api.nasa.gov/DONKI/SEP?api_key=DEMO_KEY";
 
@@ -76,11 +92,15 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
+    // Save into 15-minute in-memory cache
+    cachedWeather = { data: telemetry, cachedAt: Date.now() };
+
     return NextResponse.json(telemetry, {
       status: 200,
       headers: {
         "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=86400",
         "Access-Control-Allow-Origin": "*",
+        "X-Memory-Cache": "MISS",
       },
     });
   } catch (err) {

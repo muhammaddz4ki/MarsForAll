@@ -42,3 +42,18 @@
    - `Dual-Mode Unified Viewport`: Seamless 1-click toggle between Habitat Mission Control and Astronaut Visor HUD with 360° Surface POV panoramic explorer.
 4. **Offline-First Resilience:**
    - 100% functionality without external network dependencies via embedded GeoJSON and fallback procedural tiles.
+
+---
+
+## 5. STRICT PERFORMANCE & BUNDLE OPTIMIZATION POLICY
+1. **Mandatory Dynamic Code Splitting:**
+   - Heavy client-only modules (such as Three.js WebGL in `SurfacePovModal`, Recharts in `MarswalkPlannerPanel`, and secondary modals) MUST be imported dynamically via `next/dynamic` with `{ ssr: false }` and flat matte fallback skeletons.
+2. **Component Memoization & Isolated State:**
+   - Map viewers, telemetry HUDs, and analytical panels (`AresMapViewer`, `ProspectorPanel`, `ScientificLayersPanel`, `VisorHudOverlay`, `AnalogueMatcherPanel`) MUST be wrapped in `React.memo` with stable callbacks (`useCallback`) to prevent redundant map canvas repaints.
+   - Interactive sliders MUST utilize `useDeferredValue` or debounced updates to maintain 60 FPS UI interaction.
+3. **WebGL GPU & Memory Constraints:**
+   - WebGL renderers MUST cap pixel ratio: `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))` and use `powerPreference: "high-performance"`.
+   - Cursor raycasting and pointer camera state updates MUST be throttled to ~30Hz (≥32ms intervals) to eliminate Garbage Collection (GC) pauses.
+4. **Server Proxy In-Memory Caching:**
+   - Tile proxies (`/api/mars-tiles/...`) MUST employ server-side in-memory LRU caching (300 tiles max) providing sub-2ms response times.
+   - External NASA APIs (`/api/curiosity-photos`, `/api/space-weather`) MUST enforce in-memory TTL caching (15 minutes).

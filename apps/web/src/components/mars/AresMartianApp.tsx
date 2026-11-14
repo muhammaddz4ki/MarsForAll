@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import MarsForAllBadge from "../MarsForAllBadge";
 import AresMapViewer from "./AresMapViewer";
 import ProspectorPanel from "./ProspectorPanel";
 import AnalogueMatcherPanel from "./AnalogueMatcherPanel";
-import MarswalkPlannerPanel from "./MarswalkPlannerPanel";
 import ScientificLayersPanel from "./ScientificLayersPanel";
-import SurfacePovModal from "./SurfacePovModal";
 import VisorHudOverlay from "./VisorHudOverlay";
-import AresInfoModal from "./AresInfoModal";
 import {
   MOUNT_SHARP_WAYPOINTS,
   MountSharpWaypoint,
@@ -21,6 +19,36 @@ import {
 } from "@/lib/martian/scientificParams";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
+
+// Lazy-loaded heavy modules with zero-SSR to optimize initial bundle size & load speed
+const SurfacePovModal = dynamic(() => import("./SurfacePovModal"), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 z-50 bg-[#06090e]/95 flex items-center justify-center font-mono text-xs select-none">
+      <div className="px-5 py-3 border border-amber-500/80 bg-[#0b0f17] text-amber-400 flex items-center gap-3">
+        <span className="w-2.5 h-2.5 bg-amber-400 animate-pulse" />
+        <span className="tracking-wider uppercase font-bold">[ INITIALIZING 3D SURFACE MODULE... ]</span>
+      </div>
+    </div>
+  ),
+});
+
+const MarswalkPlannerPanel = dynamic(() => import("./MarswalkPlannerPanel"), {
+  ssr: false,
+  loading: () => (
+    <div className="p-4 text-center font-mono text-xs text-slate-400 select-none">
+      <div className="p-3 border border-slate-800 bg-[#0b0f17] flex items-center justify-center gap-2">
+        <span className="w-2 h-2 bg-emerald-400 animate-pulse" />
+        <span className="text-emerald-400 font-bold uppercase tracking-wider">[ LOADING MARSWALK ENGINE... ]</span>
+      </div>
+    </div>
+  ),
+});
+
+const AresInfoModal = dynamic(() => import("./AresInfoModal"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export type ViewMode = "mission_control" | "visor_hud";
 export type LeftDockTab = "layers" | "marswalk";
@@ -108,26 +136,26 @@ export const AresMartianApp: React.FC = () => {
       : MOUNT_SHARP_WAYPOINTS;
   }, [customPin]);
 
-  const handleToggleLayer = (layerId: string) => {
+  const handleToggleLayer = useCallback((layerId: string) => {
     setActiveLayers((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
-  };
+  }, []);
 
-  const handleSelectWaypoint = (wp: MountSharpWaypoint) => {
+  const handleSelectWaypoint = useCallback((wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
-  };
+  }, []);
 
-  const handleOpenPovModal = (wp: MountSharpWaypoint) => {
+  const handleOpenPovModal = useCallback((wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
     setIsPovOpen(true);
-  };
+  }, []);
 
-  const handlePlanRouteToWaypoint = (wp: MountSharpWaypoint) => {
+  const handlePlanRouteToWaypoint = useCallback((wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
     setLeftTab("marswalk");
-  };
+  }, []);
 
   // Click-anywhere custom coordinate pin
-  const handleMapClickCoordinate = (coords: [number, number], elevation: number) => {
+  const handleMapClickCoordinate = useCallback((coords: [number, number], elevation: number) => {
     const customWp: MountSharpWaypoint = {
       id: "custom_target_pin",
       name: `Custom Tactical Pin (Lat ${coords[1]}°, Lon ${coords[0]}°)`,
@@ -164,7 +192,7 @@ export const AresMartianApp: React.FC = () => {
     };
     setCustomPin(customWp);
     setSelectedWaypoint(customWp);
-  };
+  }, []);
 
   // 1-Click Export EVA Mission Manifest
   const handleExportEvaManifest = () => {

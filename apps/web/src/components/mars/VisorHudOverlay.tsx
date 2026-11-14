@@ -260,4 +260,4 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   );
 };
 
-export default VisorHudOverlay;
+export default React.memo(VisorHudOverlay);

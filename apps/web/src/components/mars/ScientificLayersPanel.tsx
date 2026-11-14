@@ -258,4 +258,4 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
   );
 };
 
-export default ScientificLayersPanel;
+export default React.memo(ScientificLayersPanel);

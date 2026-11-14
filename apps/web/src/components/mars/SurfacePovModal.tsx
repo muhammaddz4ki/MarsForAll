@@ -356,9 +356,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   });
   const hasDraggedRef = useRef<boolean>(false);
 
-  // Raycasting
+  // Raycasting & Performance Throttling
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseNormRef = useRef<THREE.Vector2>(new THREE.Vector2(-999, -999));
+  const lastRaycastTimeRef = useRef<number>(0);
+  const lastCamStateUpdateRef = useRef<number>(0);
 
   const baseElevation = waypoint?.elevationM ?? -4120;
   const wpId = waypoint?.id ?? "mount_sharp_baseline";
@@ -425,10 +427,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     cameraRef.current = camera;
     setCamElevation(Math.round(baseElevation + startY));
 
-    // 3. WebGL Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    // 3. WebGL Renderer (High-Performance GPU Profile & Capped Pixel Ratio)
+    const isHighDpi = typeof window !== "undefined" && window.devicePixelRatio > 1.5;
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !isHighDpi,
+      powerPreference: "high-performance",
+    });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, 1.5));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = dustStormActive ? 0.85 : 1.25;
     rendererRef.current = renderer;
@@ -454,8 +460,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     fillLight.position.set(-30, 20, -30);
     scene.add(fillLight);
 
-    // 5. Procedural Base & Real NASA MOLA DEM Elevation Plane
-    const terrainGeom = new THREE.PlaneGeometry(120, 120, 128, 128);
+    // 5. Procedural Base & Real NASA MOLA DEM Elevation Plane (Optimized 80x80 segments: 60% lighter)
+    const terrainGeom = new THREE.PlaneGeometry(120, 120, 80, 80);
     terrainGeom.rotateX(-Math.PI / 2);
 
     const posAttr = terrainGeom.attributes.position;
@@ -646,7 +652,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           camPosRef.current.copy(targetCamPosRef.current);
           isLerpingCamRef.current = false;
         }
-        setCamElevation(Math.round(baseElevation + camPosRef.current.y));
+        const newElev = Math.round(baseElevation + camPosRef.current.y);
+        setCamElevation((prev) => (prev === newElev ? prev : newElev));
       }
       camera.position.copy(camPosRef.current);
 
@@ -720,7 +727,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     }
   }, [viewMode]);
 
-  // Pointer Movement
+  // Pointer Movement (Throttled ~30Hz raycasting & camera state sync to maintain 60 FPS)
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const host = canvasHostRef.current;
     if (!host || !cameraRef.current || !terrainMeshRef.current) return;
@@ -729,6 +736,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     mouseNormRef.current.set(mouseX, mouseY);
+
+    const now = performance.now();
 
     if (isPointerDownRef.current) {
       const dx = e.clientX - pointerStartRef.current.x;
@@ -745,12 +754,20 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         Math.min(1.3, pointerStartRef.current.startPitch + dy * sens)
       );
 
-      const normDegAz = Math.round((((yawRef.current * 180) / Math.PI) % 360 + 360) % 360);
-      const normDegPitch = Math.round((pitchRef.current * 180) / Math.PI * 10) / 10;
-      setCamAzimuth(normDegAz);
-      setCamPitch(normDegPitch);
+      // Throttle React state updates to ~30Hz to prevent main-thread UI stalls
+      if (now - lastCamStateUpdateRef.current >= 32) {
+        lastCamStateUpdateRef.current = now;
+        const normDegAz = Math.round((((yawRef.current * 180) / Math.PI) % 360 + 360) % 360);
+        const normDegPitch = Math.round((pitchRef.current * 180) / Math.PI * 10) / 10;
+        setCamAzimuth(normDegAz);
+        setCamPitch(normDegPitch);
+      }
       return;
     }
+
+    // Throttle cursor raycast intersection tests to ~30Hz (32ms) to eliminate GC spikes
+    if (now - lastRaycastTimeRef.current < 32) return;
+    lastRaycastTimeRef.current = now;
 
     raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
     const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
@@ -783,7 +800,13 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     isPointerDownRef.current = false;
-    if (hasDraggedRef.current) return;
+    if (hasDraggedRef.current) {
+      const normDegAz = Math.round((((yawRef.current * 180) / Math.PI) % 360 + 360) % 360);
+      const normDegPitch = Math.round((pitchRef.current * 180) / Math.PI * 10) / 10;
+      setCamAzimuth(normDegAz);
+      setCamPitch(normDegPitch);
+      return;
+    }
 
     if (cameraRef.current && landmarkMeshesRef.current.length > 0) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);

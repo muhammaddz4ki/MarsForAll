@@ -479,9 +479,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       }
     });
 
+    // Throttled camera movement handler to avoid main-thread saturation
+    let rafMoveId: number | null = null;
+    map.on("move", () => {
+      if (rafMoveId) return;
+      rafMoveId = requestAnimationFrame(() => {
+        rafMoveId = null;
+      });
+    });
+
     mapRef.current = map;
 
     return () => {
+      if (rafMoveId) cancelAnimationFrame(rafMoveId);
       map.remove();
       mapRef.current = null;
     };
@@ -830,4 +840,4 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   );
 };
 
-export default AresMapViewer;
+export default React.memo(AresMapViewer);
