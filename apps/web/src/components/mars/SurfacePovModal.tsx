@@ -453,7 +453,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const wpId = waypoint?.id ?? "mount_sharp_baseline";
   const isJezero = wpId.startsWith("jzr_") || (waypoint?.coordinates && waypoint.coordinates[0] < 100);
 
-  const [viewMode, setViewMode] = useState<"surface" | "mesh" | "vr_stereo">("surface");
+  type ViewMode = "panorama_360" | "surface" | "mesh" | "vr_stereo";
+  const [viewMode, setViewMode] = useState<ViewMode>("panorama_360");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
   // DEM Source Status & Live Photos
@@ -477,8 +478,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const panoMeshRef = useRef<THREE.Mesh | null>(null);
   const terrainMeshRef = useRef<THREE.Mesh | null>(null);
   const wireframeMeshRef = useRef<THREE.LineSegments | null>(null);
+  const roverGroupRef = useRef<THREE.Group | null>(null);
   const reticleRef = useRef<THREE.Mesh | null>(null);
   const landmarkMeshesRef = useRef<THREE.Object3D[]>([]);
 
@@ -499,6 +502,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     startPitch: 0,
   });
   const hasDraggedRef = useRef<boolean>(false);
+  const viewModeRef = useRef<ViewMode>(viewMode);
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
 
   // Raycasting & Performance Throttling
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
@@ -671,8 +678,42 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       }
     };
 
+    // 5a. 360° Real Rover Spherical Panorama Mesh (ASU Mastcam-Z / MSL Curiosity Archive)
+    const panoGeom = new THREE.SphereGeometry(60, 64, 32);
+    panoGeom.scale(-1, 1, 1);
+    const panoMat = new THREE.MeshBasicMaterial({
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    const panoMesh = new THREE.Mesh(panoGeom, panoMat);
+    panoMesh.name = "rover_360_panorama_sphere";
+    panoMesh.position.copy(camPosRef.current);
+    panoMesh.visible = viewModeRef.current === "panorama_360";
+    scene.add(panoMesh);
+    panoMeshRef.current = panoMesh;
+
+    let panoTexture: THREE.Texture | null = null;
+    const panoLoader = new THREE.TextureLoader();
+    const panoProxyUrl = `/api/panorama-proxy?site=${isJezero ? "jezero" : "gale"}`;
+    panoLoader.load(
+      panoProxyUrl,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        panoMat.map = tex;
+        panoMat.needsUpdate = true;
+        panoTexture = tex;
+      },
+      undefined,
+      () => {
+        // Fallback handled by proxy
+      }
+    );
+
     const terrainMesh = new THREE.Mesh(terrainGeom, terrainMaterial);
     terrainMesh.name = "martian_terrain";
+    terrainMesh.visible = viewModeRef.current !== "panorama_360";
     scene.add(terrainMesh);
     terrainMeshRef.current = terrainMesh;
 
@@ -704,7 +745,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     // 7. Companion Rover 3D Unit
     const rover = createCompanionRoverGroup(wpId, -2.5, -4.5);
+    rover.visible = viewModeRef.current !== "panorama_360";
     scene.add(rover);
+    roverGroupRef.current = rover;
 
     // 8. 3D Spatial Landmark Pins
     const landmarkObjects: THREE.Object3D[] = [];
@@ -790,6 +833,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         const newElev = Math.round(baseElevation + camPosRef.current.y);
         setCamElevation((prev) => (prev === newElev ? prev : newElev));
       }
+      if (panoMeshRef.current) {
+        panoMeshRef.current.position.copy(camPosRef.current);
+      }
+
       camera.position.copy(camPosRef.current);
 
       const lookDist = 50;
@@ -802,7 +849,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camPosRef.current.z + cz
       );
 
-      if (viewMode === "vr_stereo") {
+      if (viewModeRef.current === "vr_stereo") {
         const sw = renderer.domElement.clientWidth;
         const sh = renderer.domElement.clientHeight;
         const halfW = sw / 2;
@@ -836,6 +883,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
       renderer.dispose();
+      panoGeom.dispose();
+      panoMat.dispose();
+      if (panoTexture) (panoTexture as THREE.Texture).dispose();
       terrainGeom.dispose();
       terrainMaterial.dispose();
       regolithTex.dispose();
@@ -848,17 +898,30 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         host.replaceChildren();
       }
     };
-  }, [waypoint, wpId, baseElevation, dustStormActive, viewMode]);
+  }, [waypoint, wpId, baseElevation, dustStormActive, isJezero]);
 
-  // Synchronize view mode styles
+  // Synchronize view mode styles & visibilities
   useEffect(() => {
-    if (!terrainMeshRef.current || !wireframeMeshRef.current) return;
-    if (viewMode === "mesh") {
-      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = false;
-      wireframeMeshRef.current.visible = true;
-    } else {
-      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = true;
+    if (!terrainMeshRef.current || !wireframeMeshRef.current || !panoMeshRef.current) return;
+    if (viewMode === "panorama_360") {
+      panoMeshRef.current.visible = true;
+      terrainMeshRef.current.visible = false;
       wireframeMeshRef.current.visible = false;
+      if (roverGroupRef.current) roverGroupRef.current.visible = false;
+      if (reticleRef.current) reticleRef.current.visible = false;
+    } else if (viewMode === "mesh") {
+      panoMeshRef.current.visible = false;
+      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = false;
+      terrainMeshRef.current.visible = true;
+      wireframeMeshRef.current.visible = true;
+      if (roverGroupRef.current) roverGroupRef.current.visible = true;
+    } else {
+      // "surface" or "vr_stereo"
+      panoMeshRef.current.visible = false;
+      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = true;
+      terrainMeshRef.current.visible = true;
+      wireframeMeshRef.current.visible = false;
+      if (roverGroupRef.current) roverGroupRef.current.visible = true;
     }
   }, [viewMode]);
 
@@ -904,18 +967,23 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     if (now - lastRaycastTimeRef.current < 32) return;
     lastRaycastTimeRef.current = now;
 
-    raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
-    const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
+    if (viewMode !== "panorama_360" && terrainMeshRef.current && cameraRef.current) {
+      raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
+      const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
 
-    if (intersects.length > 0 && reticleRef.current) {
-      const hit = intersects[0];
-      reticleRef.current.visible = true;
-      reticleRef.current.position.set(hit.point.x, hit.point.y + 0.04, hit.point.z);
-      setReticleCoords({
-        x: Math.round(hit.point.x * 10) / 10,
-        z: Math.round(hit.point.z * 10) / 10,
-        elev: Math.round((baseElevation + hit.point.y) * 10) / 10,
-      });
+      if (intersects.length > 0 && reticleRef.current) {
+        const hit = intersects[0];
+        reticleRef.current.visible = true;
+        reticleRef.current.position.set(hit.point.x, hit.point.y + 0.04, hit.point.z);
+        setReticleCoords({
+          x: Math.round(hit.point.x * 10) / 10,
+          z: Math.round(hit.point.z * 10) / 10,
+          elev: Math.round((baseElevation + hit.point.y) * 10) / 10,
+        });
+      } else if (reticleRef.current) {
+        reticleRef.current.visible = false;
+        setReticleCoords(null);
+      }
     } else if (reticleRef.current) {
       reticleRef.current.visible = false;
       setReticleCoords(null);
@@ -955,7 +1023,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       }
     }
 
-    if (terrainMeshRef.current && cameraRef.current) {
+    if (viewMode !== "panorama_360" && terrainMeshRef.current && cameraRef.current) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
       const hits = raycasterRef.current.intersectObject(terrainMeshRef.current);
       if (hits.length > 0) {
@@ -1025,6 +1093,16 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           {/* Mode Switcher Buttons */}
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-slate-800 bg-[#07090e] p-0.5">
+              <button
+                onClick={() => setViewMode("panorama_360")}
+                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                  viewMode === "panorama_360"
+                    ? "bg-[#161e2e] text-emerald-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {t("modePanorama360")}
+              </button>
               <button
                 onClick={() => setViewMode("surface")}
                 className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
@@ -1280,6 +1358,19 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                 </div>
               </div>
             )}
+
+            {/* 360° Spherical Rover Panorama Official Attribution Pill (NASA/JPL/ASU/MSSS) */}
+            <div className="absolute bottom-4 left-4 bg-[#0b0f17]/95 border border-slate-800 p-2.5 font-mono text-slate-300 pointer-events-auto max-w-md shadow-lg">
+              <div className="flex items-center gap-2 pb-1.5 border-b border-slate-800 mb-1.5">
+                <span className={`w-2 h-2 rounded-full ${viewMode === "panorama_360" ? "bg-emerald-400 animate-pulse" : "bg-cyan-500"}`} />
+                <span className="text-amber-400 font-bold text-[10px] tracking-wide uppercase">
+                  {viewMode === "panorama_360" ? t("panorama360Active") : (isJezero ? "JEZERO CRATER // PERSEVERANCE M2020" : "GALE CRATER // CURIOSITY MSL")}
+                </span>
+              </div>
+              <div className="text-slate-400 text-[10px] leading-relaxed">
+                {t("panoramaCredit")}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1293,7 +1384,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             <span className="text-slate-700">|</span>
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">{t("reticleTgt")}</span>
-              {reticleCoords ? (
+              {viewMode === "panorama_360" ? (
+                <span className="text-emerald-400 font-bold tabular-nums">
+                  [ 360° SPHERICAL POV // MASTCAM ]
+                </span>
+              ) : reticleCoords ? (
                 <span className="text-cyan-400 font-bold tabular-nums">
                   X: {reticleCoords.x > 0 ? `+${reticleCoords.x}` : reticleCoords.x}m, Z: {reticleCoords.z > 0 ? `+${reticleCoords.z}` : reticleCoords.z}m ({reticleCoords.elev}m)
                 </span>
