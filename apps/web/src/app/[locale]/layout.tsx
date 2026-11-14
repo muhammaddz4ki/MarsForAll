@@ -55,7 +55,7 @@ export default async function RootLocaleLayout({
   const theme = "dark";
 
   return (
-    <html lang={locale} data-theme={theme} className="dark" suppressHydrationWarning>
+    <html lang={locale} data-theme={theme} className="dark" translate="no" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

@@ -24,13 +24,14 @@ interface LandmarkPin {
   description: string;
 }
 
+// Framing coordinates: Placed in front of the camera (FOV 65°, pointing -Z)
 const LANDMARK_PINS: LandmarkPin[] = [
   {
     id: "pin_01",
     code: "PIN-01",
     name: "BOXWORK VEIN OUTCROP",
-    x: 10,
-    z: -12,
+    x: 4.5,
+    z: -8.5,
     instrument: "APXS / CHEMCAM",
     metricLabel: "SULFATE FILL",
     metricValue: "34.2% SO3 / Ca-Sulfate",
@@ -40,8 +41,8 @@ const LANDMARK_PINS: LandmarkPin[] = [
     id: "pin_02",
     code: "PIN-02",
     name: "CURIOSITY ROVER / COMPANION MULE",
-    x: -5,
-    z: 7,
+    x: -2.5,
+    z: -4.5,
     instrument: "HAZCAM / MOBILITY",
     metricLabel: "REGOLITH SINKAGE",
     metricValue: "3.2 cm basaltic sand",
@@ -51,8 +52,8 @@ const LANDMARK_PINS: LandmarkPin[] = [
     id: "pin_03",
     code: "PIN-03",
     name: "CHEMCAM LIBS LASER TARGET",
-    x: -14,
-    z: -9,
+    x: -6.5,
+    z: -11.0,
     instrument: "CHEMCAM LIBS",
     metricLabel: "EMISSION SPECTRA",
     metricValue: "High-Si / Al Phyllosilicate",
@@ -175,11 +176,9 @@ function createMartianBumpTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-// Build 3D Curiosity / Companion Mule Rover Unit
-function createCompanionRoverGroup(waypointId: string): THREE.Group {
+// Build 3D Curiosity / Companion Mule Rover Unit positioned at (roverX, roverZ)
+function createCompanionRoverGroup(waypointId: string, roverX = -2.5, roverZ = -4.5): THREE.Group {
   const roverGroup = new THREE.Group();
-  const roverX = -5;
-  const roverZ = 7;
   const roverBaseY = getTerrainHeight(roverX, roverZ, waypointId);
   roverGroup.position.set(roverX, roverBaseY, roverZ);
 
@@ -270,15 +269,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   theme = "dark",
   dustStormActive = false,
 }) => {
-  const mountRef = useRef<HTMLDivElement>(null);
+  // Dedicated Ref for WebGL Canvas Host Container (STRICTLY NO REACT CHILDREN)
+  const canvasHostRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
-  // Tactical view modes: surface (textured), mesh (cyan photogrammetric wireframe), vr_stereo (stereoscopic WebXR/dual-eye)
+  // Tactical view modes: surface (textured), mesh (cyan photogrammetric wireframe), vr_stereo (stereoscopic dual-eye)
   const [viewMode, setViewMode] = useState<"surface" | "mesh" | "vr_stereo">("surface");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
-  // Telemetry HUD readouts
-  const [camAzimuth, setCamAzimuth] = useState<number>(142);
-  const [camPitch, setCamPitch] = useState<number>(-4.5);
+  // Initial Camera Framing: y = 4.2m height, pitch = -8°, yaw = 0° (looking directly at Mount Sharp & Rover)
+  const [camAzimuth, setCamAzimuth] = useState<number>(0);
+  const [camPitch, setCamPitch] = useState<number>(-8);
   const [camFov, setCamFov] = useState<number>(65);
   const [camElevation, setCamElevation] = useState<number>(-4120);
   const [reticleCoords, setReticleCoords] = useState<{ x: number; z: number; elev: number } | null>(null);
@@ -294,11 +295,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const landmarkMeshesRef = useRef<THREE.Object3D[]>([]);
 
   // Camera orientation & motion control
-  const camPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.7, 0));
-  const targetCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.7, 0));
+  const camPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 4.2, 2.0));
+  const targetCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 4.2, 2.0));
   const isLerpingCamRef = useRef<boolean>(false);
-  const yawRef = useRef<number>((142 * Math.PI) / 180);
-  const pitchRef = useRef<number>((-4.5 * Math.PI) / 180);
+  const yawRef = useRef<number>(0); // 0 radians = looking toward -Z
+  const pitchRef = useRef<number>((-8 * Math.PI) / 180); // -8 degrees downward angle
   const fovRef = useRef<number>(65);
 
   // Mouse / Pointer drag state
@@ -318,76 +319,83 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const baseElevation = waypoint?.elevationM ?? -4120;
   const wpId = waypoint?.id ?? "mount_sharp_baseline";
 
-  // Reset camera to initial observation origin
+  // Reset camera to initial observation origin (y = 4.2m height, pitch = -8°, yaw = 0°)
   const handleResetOrigin = useCallback(() => {
-    const originY = getTerrainHeight(0, 0, wpId) + 1.7;
-    targetCamPosRef.current.set(0, originY, 0);
+    const originZ = 2.0;
+    const originX = 0.0;
+    const originY = getTerrainHeight(originX, originZ, wpId) + 4.2;
+    targetCamPosRef.current.set(originX, originY, originZ);
     isLerpingCamRef.current = true;
-    yawRef.current = (142 * Math.PI) / 180;
-    pitchRef.current = (-4.5 * Math.PI) / 180;
+    yawRef.current = 0;
+    pitchRef.current = (-8 * Math.PI) / 180;
     fovRef.current = 65;
     if (cameraRef.current) {
       cameraRef.current.fov = 65;
       cameraRef.current.updateProjectionMatrix();
     }
-    setCamAzimuth(142);
-    setCamPitch(-4.5);
+    setCamAzimuth(0);
+    setCamPitch(-8);
     setCamFov(65);
   }, [wpId]);
 
   // Main Three.js Scene Setup & Loop
   useEffect(() => {
-    const container = mountRef.current;
-    if (!container || !waypoint) return;
+    const host = canvasHostRef.current;
+    if (!host || !waypoint) return;
 
-    const width = container.clientWidth || window.innerWidth;
-    const height = container.clientHeight || window.innerHeight;
+    const width = host.clientWidth || window.innerWidth;
+    const height = host.clientHeight || window.innerHeight;
 
     // 1. Scene & Atmosphere Configuration
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    // Martian Atmosphere Color & Fog based on dustStormActive
-    const skyClearColor = dustStormActive ? 0x240e06 : 0x1f1410;
-    const fogColor = dustStormActive ? 0x6b2e10 : 0xb57852;
-    const fogDensity = dustStormActive ? 0.032 : 0.0065;
+    // Martian Atmosphere Color & Fog: Clear Sky is brighter & warmer (#3b2316 sky, #5c3520 fog)
+    const skyClearColor = dustStormActive ? 0x240e06 : 0x3b2316;
+    const fogColor = dustStormActive ? 0x6b2e10 : 0x5c3520;
+    const fogDensity = dustStormActive ? 0.032 : 0.007;
     scene.background = new THREE.Color(skyClearColor);
     scene.fog = new THREE.FogExp2(fogColor, fogDensity);
 
-    // 2. Camera Configuration (EVA 1.7m eye-level)
-    const camera = new THREE.PerspectiveCamera(fovRef.current, width / height, 0.1, 400);
-    const startY = getTerrainHeight(0, 0, wpId) + 1.7;
-    camPosRef.current.set(0, startY, 0);
-    targetCamPosRef.current.set(0, startY, 0);
+    // 2. Camera Configuration: Initial 4.2m height, pitch -8°, facing -Z
+    const camera = new THREE.PerspectiveCamera(fovRef.current, width / height, 0.1, 450);
+    const startZ = 2.0;
+    const startX = 0.0;
+    const startY = getTerrainHeight(startX, startZ, wpId) + 4.2;
+    camPosRef.current.set(startX, startY, startZ);
+    targetCamPosRef.current.set(startX, startY, startZ);
     camera.position.copy(camPosRef.current);
     cameraRef.current = camera;
+    setCamElevation(Math.round(baseElevation + startY));
 
     // 3. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = dustStormActive ? 0.8 : 1.15;
+    renderer.toneMappingExposure = dustStormActive ? 0.85 : 1.25;
     rendererRef.current = renderer;
-    container.innerHTML = "";
-    container.appendChild(renderer.domElement);
 
-    // 4. Lighting
+    // Clear host container safely and append WebGL Canvas
+    host.replaceChildren();
+    host.appendChild(renderer.domElement);
+
+    // 4. Lighting: Crisp, contrasty Martian directional illumination
     const ambientLight = new THREE.AmbientLight(
-      dustStormActive ? 0x994411 : 0xffd5ad,
-      dustStormActive ? 0.45 : 0.75
+      dustStormActive ? 0x994411 : 0xffd8b8,
+      dustStormActive ? 0.45 : 0.95
     );
     scene.add(ambientLight);
 
     const sunLight = new THREE.DirectionalLight(
-      dustStormActive ? 0xd97736 : 0xfff4e6,
-      dustStormActive ? 0.5 : 1.4
+      dustStormActive ? 0xd97736 : 0xfff0dd,
+      dustStormActive ? 0.5 : 1.7
     );
     sunLight.position.set(35, 45, 25);
     scene.add(sunLight);
 
     // Fill light from northern Aeolis Mons ridge
-    const fillLight = new THREE.DirectionalLight(0xb45309, 0.3);
+    const fillLight = new THREE.DirectionalLight(0xc26a35, 0.45);
     fillLight.position.set(-30, 20, -30);
     scene.add(fillLight);
 
@@ -447,8 +455,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     scene.add(reticleMesh);
     reticleRef.current = reticleMesh;
 
-    // 7. Companion Rover 3D Unit
-    const rover = createCompanionRoverGroup(wpId);
+    // 7. Companion Rover 3D Unit positioned at (-2.5, -4.5) directly framed in viewport
+    const rover = createCompanionRoverGroup(wpId, -2.5, -4.5);
     scene.add(rover);
 
     // 8. 3D Spatial Landmark Pins & Vertical Light Beams
@@ -506,9 +514,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     // 9. Resize Handler
     const handleResize = () => {
-      if (!container || !rendererRef.current || !cameraRef.current) return;
-      const nw = container.clientWidth;
-      const nh = container.clientHeight;
+      if (!host || !rendererRef.current || !cameraRef.current) return;
+      const nw = host.clientWidth;
+      const nh = host.clientHeight;
       cameraRef.current.aspect = nw / nh;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(nw, nh);
@@ -517,7 +525,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     // 10. Animation & Render Loop
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -541,7 +549,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       }
       camera.position.copy(camPosRef.current);
 
-      // Compute look direction from yaw and pitch
+      // Compute look direction from yaw and pitch (where yaw = 0 points towards -Z)
       const lookDist = 50;
       const cx = Math.sin(yawRef.current) * Math.cos(pitchRef.current) * lookDist;
       const cy = Math.sin(pitchRef.current) * lookDist;
@@ -586,7 +594,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
     animate();
 
-    // Cleanup on unmount
+    // Cleanup on unmount: Safe disposal without conflicting with React DOM tree
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
@@ -599,7 +607,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       wireframeMat.dispose();
       reticleGeom.dispose();
       reticleMat.dispose();
-      container.innerHTML = "";
+      if (host) {
+        host.replaceChildren();
+      }
     };
   }, [waypoint, wpId, baseElevation, dustStormActive, viewMode]);
 
@@ -617,10 +627,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   // Pointer Movement (Hover Reticle & Drag Pan)
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const container = mountRef.current;
-    if (!container || !cameraRef.current || !terrainMeshRef.current) return;
+    const host = canvasHostRef.current;
+    if (!host || !cameraRef.current || !terrainMeshRef.current) return;
 
-    const rect = container.getBoundingClientRect();
+    const rect = host.getBoundingClientRect();
     const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     mouseNormRef.current.set(mouseX, mouseY);
@@ -704,6 +714,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const hits = raycasterRef.current.intersectObject(terrainMeshRef.current);
       if (hits.length > 0) {
         const targetPoint = hits[0].point;
+        // Teleport to eye level: 1.7m above clicked terrain point
         targetCamPosRef.current.set(targetPoint.x, targetPoint.y + 1.7, targetPoint.z);
         isLerpingCamRef.current = true;
         setTeleportingNotice(true);
@@ -804,76 +815,82 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           </div>
         </div>
 
-        {/* 3D CANVAS VIEWPORT */}
+        {/* 3D CANVAS VIEWPORT WRAPPER (Captures Pointer Events Cleanly) */}
         <div
-          ref={mountRef}
+          ref={viewportRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onWheel={handleWheel}
           className="relative flex-1 w-full h-full cursor-grab active:cursor-grabbing overflow-hidden bg-black"
         >
-          {/* Teleporting In-Flight Notification */}
-          {teleportingNotice && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-cyan-500/80 text-cyan-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold pointer-events-none shadow-md z-30 animate-pulse">
-              [ EVA TELEPORTING TO RETICLE COORDINATES... ]
-            </div>
-          )}
+          {/* LAYER 1: DEDICATED EMPTY WEBGL MOUNT (STRICTLY NO REACT CHILDREN) */}
+          <div ref={canvasHostRef} className="absolute inset-0 w-full h-full" />
 
-          {/* Center Vertical Divider for Stereoscopic Mode */}
-          {viewMode === "vr_stereo" && (
-            <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700 pointer-events-none z-20" />
-          )}
+          {/* LAYER 2: SEPARATE REACT HUD OVERLAY (ISOLATED SIBLING DOM) */}
+          <div className="absolute inset-0 pointer-events-none z-10">
+            {/* Teleporting In-Flight Notification */}
+            {teleportingNotice && (
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-cyan-500/80 text-cyan-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold shadow-md animate-pulse">
+                [ EVA TELEPORTING TO RETICLE COORDINATES... ]
+              </div>
+            )}
 
-          {/* Compass Rose Overlay (Top Left) */}
-          <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 pointer-events-none z-20 space-y-1">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500">BEARING:</span>
-              <span className="text-amber-400 font-bold tabular-nums">{camAzimuth}°</span>
+            {/* Center Vertical Divider for Stereoscopic VR Mode */}
+            {viewMode === "vr_stereo" && (
+              <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700" />
+            )}
+
+            {/* Compass Rose & Atmospheric Telemetry (Top Left) */}
+            <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 space-y-1">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-500">BEARING:</span>
+                <span className="text-amber-400 font-bold tabular-nums">{camAzimuth}°</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-500">PITCH:</span>
+                <span className="text-slate-200 font-bold tabular-nums">{camPitch > 0 ? `+${camPitch}` : camPitch}°</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-500">FOV:</span>
+                <span className="text-cyan-400 font-bold tabular-nums">{camFov}°</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-slate-500">ATM TAU:</span>
+                <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>
+                  {dustStormActive ? "2.4 (DUST STORM)" : "0.3 (CLEAR)"}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500">PITCH:</span>
-              <span className="text-slate-200 font-bold tabular-nums">{camPitch > 0 ? `+${camPitch}` : camPitch}°</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500">FOV:</span>
-              <span className="text-cyan-400 font-bold tabular-nums">{camFov}°</span>
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-slate-500">ATM TAU:</span>
-              <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>
-                {dustStormActive ? "2.4 (DUST STORM)" : "0.3 (CLEAR)"}
-              </span>
-            </div>
+
+            {/* Landmark Hotspot Pin Card Popover (Interactive with pointer-events-auto) */}
+            {activePin && (
+              <div className="absolute top-4 right-4 w-80 bg-[#0b0f17] border border-amber-500/80 p-3 font-mono text-xs text-slate-200 shadow-lg pointer-events-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                  <span className="text-amber-400 font-bold">{activePin.code} // {activePin.name}</span>
+                  <button
+                    onClick={() => setActivePin(null)}
+                    className="text-slate-400 hover:text-white font-bold px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="space-y-2 text-[11px]">
+                  <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                    <span className="text-slate-500">INSTRUMENT:</span>
+                    <span className="text-slate-200 font-bold">{activePin.instrument}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                    <span className="text-slate-500">{activePin.metricLabel}:</span>
+                    <span className="text-emerald-400 font-bold">{activePin.metricValue}</span>
+                  </div>
+                  <p className="text-slate-400 text-[10px] leading-relaxed pt-1">
+                    {activePin.description}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Landmark Hotspot Pin Card Popover */}
-          {activePin && (
-            <div className="absolute top-4 right-4 w-80 bg-[#0b0f17] border border-amber-500/80 p-3 font-mono text-xs text-slate-200 z-30 shadow-lg pointer-events-auto">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
-                <span className="text-amber-400 font-bold">{activePin.code} // {activePin.name}</span>
-                <button
-                  onClick={() => setActivePin(null)}
-                  className="text-slate-400 hover:text-white font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="space-y-2 text-[11px]">
-                <div className="flex justify-between border-b border-slate-800/60 pb-1">
-                  <span className="text-slate-500">INSTRUMENT:</span>
-                  <span className="text-slate-200 font-bold">{activePin.instrument}</span>
-                </div>
-                <div className="flex justify-between border-b border-slate-800/60 pb-1">
-                  <span className="text-slate-500">{activePin.metricLabel}:</span>
-                  <span className="text-emerald-400 font-bold">{activePin.metricValue}</span>
-                </div>
-                <p className="text-slate-400 text-[10px] leading-relaxed pt-1">
-                  {activePin.description}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* BOTTOM TELEMETRY BAR: Zero Overlap & Aligned Grid */}
