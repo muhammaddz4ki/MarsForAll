@@ -225,7 +225,19 @@
     "hintPan": "[ ARRASTRAR: PANORÁMICA 360° ]",
     "hintTeleport": "[ CLIC EN SUELO: TELETRANSPORTE EVA (1.7M) ]",
     "hintZoom": "[ RUEDA: ZOOM ]",
-    "resetOrigin": "[ REINICIAR ORIGEN ]"
+    "resetOrigin": "[ REINICIAR ORIGEN ]",
+    "stationList": "ESTACIONES 360°",
+    "compareSplit": "COMPARAR (NATURAL / REALZADO)",
+    "compareNatural": "COLOR NATURAL",
+    "compareEnhanced": "GEOLOGÍA REALZADA",
+    "marsWindAudio": "AUDIO DEL VIENTO DE MARTE",
+    "audioPlaying": "AUDIO DE MARTE: ACTIVO",
+    "audioMuted": "AUDIO DE MARTE: SILENCIADO",
+    "jumpToStation": "SALTAR A {station}",
+    "currentStationBadge": "ESTÁS EN: SOL {sol}",
+    "distanceMeters": "{dist}m",
+    "backToMap": "VOLVER AL MAPA",
+    "infoCredits": "INFORMACIÓN DE LA MISIÓN"
   },
   "mapViewer": {
     "curiosityTraverse": "TRAYECTORIA CURIOSITY:",

@@ -225,7 +225,19 @@
     "hintPan": "[ DRAG: 360° PAN ]",
     "hintTeleport": "[ CLICK GROUND: TELEPORT EVA (1.7M) ]",
     "hintZoom": "[ WHEEL: ZOOM ]",
-    "resetOrigin": "[ RESET ORIGIN ]"
+    "resetOrigin": "[ RESET ORIGIN ]",
+    "stationList": "360° STATIONS",
+    "compareSplit": "COMPARE (NATURAL / ENHANCED)",
+    "compareNatural": "NATURAL COLOR",
+    "compareEnhanced": "ENHANCED GEOLOGY",
+    "marsWindAudio": "MARS WIND AUDIO",
+    "audioPlaying": "MARS AUDIO: ON",
+    "audioMuted": "MARS AUDIO: OFF",
+    "jumpToStation": "JUMP TO {station}",
+    "currentStationBadge": "YOU ARE AT: SOL {sol}",
+    "distanceMeters": "{dist}m",
+    "backToMap": "BACK TO MAP",
+    "infoCredits": "MISSION INFO"
   },
   "mapViewer": {
     "curiosityTraverse": "CURIOSITY TRAVERSE:",

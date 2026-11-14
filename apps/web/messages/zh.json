@@ -225,7 +225,19 @@
     "hintPan": "[ 拖拽: 360° 环视 ]",
     "hintTeleport": "[ 点击地面: 瞬移 EVA (1.7米高) ]",
     "hintZoom": "[ 滚轮: 缩放视场 ]",
-    "resetOrigin": "[ 重置观察原点 ]"
+    "resetOrigin": "[ 重置观察原点 ]",
+    "stationList": "360° 站点列表",
+    "compareSplit": "对比模式 (真彩 / 地质增强)",
+    "compareNatural": "自然真彩",
+    "compareEnhanced": "地质增强色彩",
+    "marsWindAudio": "火星风声声效",
+    "audioPlaying": "火星风声: 开启",
+    "audioMuted": "火星风声: 静音",
+    "jumpToStation": "跳跃至 {station}",
+    "currentStationBadge": "当前位置: SOL {sol}",
+    "distanceMeters": "{dist}米",
+    "backToMap": "返回战术地图",
+    "infoCredits": "任务科学信息"
   },
   "mapViewer": {
     "curiosityTraverse": "好奇号历史行驶轨迹:",

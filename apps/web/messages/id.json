@@ -225,7 +225,19 @@
     "hintPan": "[ GESER: PAN 360° ]",
     "hintTeleport": "[ KLIK TANAH: PINDAH EVA (1.7M) ]",
     "hintZoom": "[ RODA: ZOOM ]",
-    "resetOrigin": "[ RESET ASAL ]"
+    "resetOrigin": "[ RESET ASAL ]",
+    "stationList": "STASIUN 360°",
+    "compareSplit": "BANDINGKAN (ALAMI / WARNA KONTRAS)",
+    "compareNatural": "WARNA ALAMI",
+    "compareEnhanced": "KONTRAS GEOLOGI",
+    "marsWindAudio": "AUDIO ANGIN MARS",
+    "audioPlaying": "AUDIO MARS: NYALA",
+    "audioMuted": "AUDIO MARS: MATI",
+    "jumpToStation": "LOMPAT KE {station}",
+    "currentStationBadge": "LOKASI ANDA: SOL {sol}",
+    "distanceMeters": "{dist}m",
+    "backToMap": "KEMBALI KE PETA",
+    "infoCredits": "INFORMASI MISI"
   },
   "mapViewer": {
     "curiosityTraverse": "LINTASAN CURIOSITY:",

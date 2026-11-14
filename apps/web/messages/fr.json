@@ -225,7 +225,19 @@
     "hintPan": "[ GLISSER: PANORAMIQUE 360° ]",
     "hintTeleport": "[ CLIC SOL: TÉLÉPORTATION EVA (1.7M) ]",
     "hintZoom": "[ MOLETTE: ZOOM ]",
-    "resetOrigin": "[ RÉINITIALISER L'ORIGINE ]"
+    "resetOrigin": "[ RÉINITIALISER L'ORIGINE ]",
+    "stationList": "STATIONS 360°",
+    "compareSplit": "COMPARER (NATUREL / REHAUSSÉ)",
+    "compareNatural": "COULEUR NATURELLE",
+    "compareEnhanced": "GÉOLOGIE REHAUSSÉE",
+    "marsWindAudio": "AUDIO DU VENT MARTIEN",
+    "audioPlaying": "AUDIO MARS : ACTIF",
+    "audioMuted": "AUDIO MARS : COUPÉ",
+    "jumpToStation": "ALLER À {station}",
+    "currentStationBadge": "VOUS ÊTES À : SOL {sol}",
+    "distanceMeters": "{dist}m",
+    "backToMap": "RETOUR À LA CARTE",
+    "infoCredits": "INFOS MISSION"
   },
   "mapViewer": {
     "curiosityTraverse": "TRAVERSÉE DE CURIOSITY:",

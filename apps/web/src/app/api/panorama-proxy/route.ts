@@ -10,24 +10,30 @@ interface CachedPanoramaEntry {
   credit: string;
   stationTitle: string;
   stationSol: number;
+  variant: "natural" | "enhanced";
   cachedAt: number;
 }
 
-// In-Memory LRU Cache (max 20 panoramas)
+// In-Memory LRU Cache (max 30 panoramas)
 const PANORAMA_CACHE = new Map<string, CachedPanoramaEntry>();
-const MAX_CACHE_ENTRIES = 20;
+const MAX_CACHE_ENTRIES = 30;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Generates an offline fallback SVG image converted to a valid image buffer
-function createOfflineMartianPanoramaSvg(site: "gale" | "jezero", station: PanoramaStation): string {
+function createOfflineMartianPanoramaSvg(
+  site: "gale" | "jezero",
+  station: PanoramaStation,
+  variant: "natural" | "enhanced"
+): string {
   const isJezero = site === "jezero";
   const siteTitle = isJezero
     ? `JEZERO CRATER // STN-${station.station + 1} (SOL ${station.sol}) — ${station.title.toUpperCase()}`
     : `GALE CRATER // STN-${station.station + 1} (SOL ${station.sol}) — ${station.title.toUpperCase()}`;
-  const horizonColor = isJezero ? "#b45309" : "#991b1b";
-  const skyTop = isJezero ? "#451a03" : "#3b170c";
-  const skyBottom = isJezero ? "#78350f" : "#682512";
-  const groundColor = isJezero ? "#1f130b" : "#1a0f0a";
+
+  const horizonColor = variant === "enhanced" ? (isJezero ? "#0284c7" : "#0d9488") : (isJezero ? "#b45309" : "#991b1b");
+  const skyTop = variant === "enhanced" ? "#0f172a" : (isJezero ? "#451a03" : "#3b170c");
+  const skyBottom = variant === "enhanced" ? "#1e293b" : (isJezero ? "#78350f" : "#682512");
+  const groundColor = variant === "enhanced" ? "#1e1b4b" : (isJezero ? "#1f130b" : "#1a0f0a");
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="512" viewBox="0 0 1024 512">
     <defs>
@@ -37,7 +43,7 @@ function createOfflineMartianPanoramaSvg(site: "gale" | "jezero", station: Panor
         <stop offset="62%" stop-color="${horizonColor}" />
       </linearGradient>
       <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3d1b10" />
+        <stop offset="0%" stop-color="${variant === "enhanced" ? "#312e81" : "#3d1b10"}" />
         <stop offset="100%" stop-color="${groundColor}" />
       </linearGradient>
     </defs>
@@ -59,7 +65,7 @@ function createOfflineMartianPanoramaSvg(site: "gale" | "jezero", station: Panor
     <!-- Official Scientific Telemetry Overlay (No Emojis, No NASA Meatball) -->
     <rect x="24" y="24" width="976" height="36" fill="#0b0f17" fill-opacity="0.88" stroke="#334155" stroke-width="1" />
     <text x="40" y="47" fill="#fbbf24" font-family="monospace" font-size="12" font-weight="bold" letter-spacing="1.5">
-      ${siteTitle} [OFFLINE CACHED PANORAMA]
+      ${siteTitle} [${variant.toUpperCase()} COLOR CACHED PANORAMA]
     </text>
     <text x="980" y="47" text-anchor="end" fill="#94a3b8" font-family="monospace" font-size="10">
       NASA/JPL-Caltech/ASU/MSSS
@@ -75,10 +81,13 @@ export async function GET(request: NextRequest) {
   const stationParam = parseInt(searchParams.get("station") || "0", 10);
   const stationIdx = isNaN(stationParam) ? 0 : Math.max(0, Math.min(3, stationParam));
 
+  const variantParam = (searchParams.get("variant") || "natural").toLowerCase();
+  const variant: "natural" | "enhanced" = variantParam === "enhanced" ? "enhanced" : "natural";
+
   const stationList = PANORAMA_STATIONS[siteKey];
   const station = stationList[stationIdx] || stationList[0];
 
-  const cacheKey = `${siteKey}_stn_${stationIdx}`;
+  const cacheKey = `${siteKey}_stn_${stationIdx}_${variant}`;
 
   // Check In-Memory LRU Cache
   const cached = PANORAMA_CACHE.get(cacheKey);
@@ -98,17 +107,24 @@ export async function GET(request: NextRequest) {
         "X-Station-Title": cached.stationTitle,
         "X-Station-Sol": cached.stationSol.toString(),
         "X-Station-Index": stationIdx.toString(),
+        "X-Panorama-Variant": cached.variant,
         "X-Panorama-Source": cached.source,
         "X-Panorama-Credit": cached.credit,
       },
     });
   }
 
+  // Choose source list based on requested variant
+  const candidateSources =
+    variant === "enhanced" && station.enhancedSources && station.enhancedSources.length > 0
+      ? [...station.enhancedSources, ...station.sources]
+      : station.sources;
+
   // Try each upstream mirror in succession with strict timeout
-  for (const src of station.sources) {
+  for (const src of candidateSources) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      const timeoutId = setTimeout(() => controller.abort(), 5500);
 
       const upstream = await fetch(src.url, {
         signal: controller.signal,
@@ -141,6 +157,7 @@ export async function GET(request: NextRequest) {
             credit: src.credit,
             stationTitle: station.title,
             stationSol: station.sol,
+            variant,
             cachedAt: now,
           });
 
@@ -154,6 +171,7 @@ export async function GET(request: NextRequest) {
               "X-Station-Title": station.title,
               "X-Station-Sol": station.sol.toString(),
               "X-Station-Index": stationIdx.toString(),
+              "X-Panorama-Variant": variant,
               "X-Panorama-Source": src.name,
               "X-Panorama-Credit": src.credit,
             },
@@ -166,7 +184,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Fallback: Return locally generated calibrated Martian panorama SVG (100% offline resilience)
-  const fallbackSvg = createOfflineMartianPanoramaSvg(siteKey, station);
+  const fallbackSvg = createOfflineMartianPanoramaSvg(siteKey, station, variant);
   const fallbackBuffer = Buffer.from(fallbackSvg, "utf8");
 
   return new NextResponse(new Uint8Array(fallbackBuffer), {
@@ -179,6 +197,7 @@ export async function GET(request: NextRequest) {
       "X-Station-Title": station.title,
       "X-Station-Sol": station.sol.toString(),
       "X-Station-Index": stationIdx.toString(),
+      "X-Panorama-Variant": variant,
       "X-Panorama-Source": "LOCAL_PROCEDURAL_CALIBRATED_FALLBACK",
       "X-Panorama-Credit": station.sources[0]?.credit || "NASA/JPL-Caltech/ASU/MSSS",
       "X-Panorama-Fallback": "OFFLINE_CACHED_PANORAMA",
