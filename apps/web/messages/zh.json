@@ -121,7 +121,8 @@
     "resolution": "空间分辨率: {res}",
     "legendTitle": "地层图例与高程分色条带",
     "source": "科学数据来源: {source}",
-    "pdsDocs": "[PDS 官方档案文档]"
+    "pdsDocs": "[PDS 官方档案文档]",
+    "opacity": "不透明度"
   },
   "marswalk": {
     "title": "MARSWALK A* 自主路径规划引擎",
@@ -259,5 +260,39 @@
     "distance": "目标直线距离",
     "meanSlope": "平均爬升坡度",
     "inspectPov": "进入地表第一视角"
+  },
+  "mmgis": {
+    "toolbarTitle": "MMGIS 工具箱",
+    "measureTool": "测距 / 高程剖面",
+    "measureActive": "测量中...",
+    "measureInstruction": "点击地图点绘制地形高程剖面断面线。",
+    "swipeTool": "卷帘对比",
+    "swipeActive": "卷帘模式已开启",
+    "viewshedTool": "360° 视域覆盖",
+    "viewshedActive": "视域计算中...",
+    "viewshedInstruction": "点击任意点计算 360° 通视覆盖多边形。",
+    "markZoi": "+ 标记关注区",
+    "zoiActive": "点击放置关注区 (ZOI)",
+    "exportGeoJson": "导出 .GEOJSON",
+    "profileTitle": "MMGIS 地形高程剖面与通视分析",
+    "totalDistance": "总距离",
+    "elevationGain": "爬升",
+    "elevationLoss": "下降",
+    "maxSlope": "最大坡度",
+    "losStatus": "LOS (1.7米高)",
+    "losClear": "通视良好",
+    "losObstructed": "视线受阻",
+    "exportCsv": "导出 CSV",
+    "clear": "清除",
+    "close": "关闭",
+    "cursorLat": "纬度",
+    "cursorLon": "经度",
+    "cursorElev": "高程",
+    "cursorSlope": "坡度",
+    "swipeLeftLabel": "天然光学底图",
+    "swipeRightLabel": "科学分析图层",
+    "opacity": "不透明度",
+    "zoiMarkerPrefix": "研究分区",
+    "scaleBar": "比例尺"
   }
 }

@@ -121,7 +121,8 @@
     "resolution": "RÉS: {res}",
     "legendTitle": "LÉGENDE & RAMPES STRATIGRAPHIQUES",
     "source": "SOURCE: {source}",
-    "pdsDocs": "[DOCS PDS]"
+    "pdsDocs": "[DOCS PDS]",
+    "opacity": "OPACITÉ"
   },
   "marswalk": {
     "title": "PLANIFICATEUR D'ITINÉRAIRE MARSWALK A*",
@@ -259,5 +260,39 @@
     "distance": "DISTANCE",
     "meanSlope": "PENTE MOYENNE",
     "inspectPov": "INSPECTER LE POINT DE VUE DE SURFACE"
+  },
+  "mmgis": {
+    "toolbarTitle": "OUTILS MMGIS",
+    "measureTool": "MESURER / PROFIL",
+    "measureActive": "MESURE EN COURS...",
+    "measureInstruction": "Cliquez sur la carte pour tracer une coupe d'élévation.",
+    "swipeTool": "RIDEAU COMPARATIF",
+    "swipeActive": "RIDEAU ACTIF",
+    "viewshedTool": "BASSIN VISUEL 360°",
+    "viewshedActive": "BASSIN VISUEL ACTIF",
+    "viewshedInstruction": "Cliquez sur un point pour calculer le polygone de visibilité 360°.",
+    "markZoi": "+ MARQUER ZOI",
+    "zoiActive": "CLIQUER POUR PLACER ZOI",
+    "exportGeoJson": "EXPORTER .GEOJSON",
+    "profileTitle": "PROFIL D'ÉLÉVATION & LIGNE DE VISÉE MMGIS",
+    "totalDistance": "DISTANCE TOTALE",
+    "elevationGain": "GAIN",
+    "elevationLoss": "PERTE",
+    "maxSlope": "PENTE MAX",
+    "losStatus": "LOS (1.7m)",
+    "losClear": "DÉGAGÉ",
+    "losObstructed": "OBSTRUÉ",
+    "exportCsv": "EXPORTER CSV",
+    "clear": "EFFACER",
+    "close": "FERMER",
+    "cursorLat": "LAT",
+    "cursorLon": "LON",
+    "cursorElev": "ÉLÉV",
+    "cursorSlope": "PENTE",
+    "swipeLeftLabel": "CARTE OPTIQUE DE BASE",
+    "swipeRightLabel": "COUCHES ANALYTIQUES",
+    "opacity": "OPACITÉ",
+    "zoiMarkerPrefix": "ZONE DE RECHERCHE",
+    "scaleBar": "ÉCHELLE"
   }
 }

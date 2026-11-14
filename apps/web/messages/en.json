@@ -121,7 +121,8 @@
     "resolution": "RES: {res}",
     "legendTitle": "LEGEND & STRATIGRAPHIC RAMPS",
     "source": "SOURCE: {source}",
-    "pdsDocs": "[PDS DOCS]"
+    "pdsDocs": "[PDS DOCS]",
+    "opacity": "OPACITY"
   },
   "marswalk": {
     "title": "MARSWALK A* ROUTE PLANNER",
@@ -259,5 +260,39 @@
     "distance": "DISTANCE",
     "meanSlope": "MEAN SLOPE",
     "inspectPov": "INSPECT SURFACE POV"
+  },
+  "mmgis": {
+    "toolbarTitle": "MMGIS TOOLS",
+    "measureTool": "MEASURE / PROFILE",
+    "measureActive": "MEASURING...",
+    "measureInstruction": "Click map points to plot elevation cross-section.",
+    "swipeTool": "SWIPE COMPARE",
+    "swipeActive": "SWIPE ACTIVE",
+    "viewshedTool": "VIEWSHED 360°",
+    "viewshedActive": "VIEWSHED ACTIVE",
+    "viewshedInstruction": "Click any point to compute 360° Line-of-Sight polygon.",
+    "markZoi": "+ MARK ZOI",
+    "zoiActive": "CLICK TO MARK ZOI",
+    "exportGeoJson": "EXPORT .GEOJSON",
+    "profileTitle": "MMGIS ELEVATION PROFILE & LINE-OF-SIGHT",
+    "totalDistance": "TOTAL DISTANCE",
+    "elevationGain": "GAIN",
+    "elevationLoss": "LOSS",
+    "maxSlope": "MAX SLOPE",
+    "losStatus": "LOS (1.7m)",
+    "losClear": "UNOBSTRUCTED",
+    "losObstructed": "OBSTRUCTED",
+    "exportCsv": "EXPORT CSV",
+    "clear": "CLEAR",
+    "close": "CLOSE",
+    "cursorLat": "LAT",
+    "cursorLon": "LON",
+    "cursorElev": "ELEV",
+    "cursorSlope": "SLOPE",
+    "swipeLeftLabel": "OPTICAL BASEMAP",
+    "swipeRightLabel": "ANALYTICAL LAYERS",
+    "opacity": "OPACITY",
+    "zoiMarkerPrefix": "RESEARCH ZONE",
+    "scaleBar": "SCALE"
   }
 }

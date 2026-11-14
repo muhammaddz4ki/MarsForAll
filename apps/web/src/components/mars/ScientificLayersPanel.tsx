@@ -16,6 +16,8 @@ interface ScientificLayersPanelProps {
   orbitalSource?: OrbitalImagerySource;
   onSelectOrbitalSource?: (source: OrbitalImagerySource) => void;
   wmtsStatus?: WmtsStreamStatus;
+  layerOpacities?: Record<string, number>;
+  onChangeLayerOpacity?: (layerId: string, opacity: number) => void;
 }
 
 export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
@@ -25,6 +27,8 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
   orbitalSource = "jpl_hirise",
   onSelectOrbitalSource,
   wmtsStatus = "streaming",
+  layerOpacities,
+  onChangeLayerOpacity,
 }) => {
   const t = useTranslations("layers");
   const isDark = theme === "dark";
@@ -127,6 +131,30 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
               {/* Legends & Orbital Source Controls if Visible */}
               {isVisible && (
                 <div className={`mt-2.5 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"} space-y-2 font-mono`}>
+                  {/* Layer Opacity Slider */}
+                  <div className={`p-1.5 border ${
+                    isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"
+                  } flex items-center justify-between gap-2 text-[9px]`}>
+                    <span className="text-slate-400 uppercase font-bold tracking-wider shrink-0">
+                      {t("opacity")}
+                    </span>
+                    <div className="flex items-center gap-2 flex-1 max-w-[140px]">
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="1.0"
+                        step="0.05"
+                        value={layerOpacities?.[layer.id] ?? 0.8}
+                        onChange={(e) =>
+                          onChangeLayerOpacity?.(layer.id, parseFloat(e.target.value))
+                        }
+                        className="w-full h-1 bg-slate-700 rounded-none accent-amber-500 cursor-pointer"
+                      />
+                      <span className="text-amber-400 font-bold tabular-nums w-8 text-right">
+                        {Math.round((layerOpacities?.[layer.id] ?? 0.8) * 100)}%
+                      </span>
+                    </div>
+                  </div>
                   {/* Specialized Callout for Layer 3: Sand Trap Detector */}
                   {layer.id === "layer_thermal_subsurface" && (
                     <div className={`p-2 border ${

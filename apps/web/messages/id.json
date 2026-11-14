@@ -121,7 +121,8 @@
     "resolution": "RES: {res}",
     "legendTitle": "LEGENDA & RAMP STRATIGRAFI",
     "source": "SUMBER: {source}",
-    "pdsDocs": "[DOKUMEN PDS]"
+    "pdsDocs": "[DOKUMEN PDS]",
+    "opacity": "OPASITAS"
   },
   "marswalk": {
     "title": "PERENCANA RUTE MARSWALK A*",
@@ -259,5 +260,39 @@
     "distance": "JARAK",
     "meanSlope": "KEMIRINGAN RATA-RATA",
     "inspectPov": "INSPEKSI POV PERMUKAAN"
+  },
+  "mmgis": {
+    "toolbarTitle": "ALAT MMGIS",
+    "measureTool": "UKUR / PROFIL",
+    "measureActive": "MENGUKUR...",
+    "measureInstruction": "Klik titik pada peta untuk membuat profil elevasi melintang.",
+    "swipeTool": "GESER BANDING",
+    "swipeActive": "GESER AKTIF",
+    "viewshedTool": "VIEWSHED 360°",
+    "viewshedActive": "VIEWSHED AKTIF",
+    "viewshedInstruction": "Klik sembarang titik untuk kalkulasi poligon pandang 360°.",
+    "markZoi": "+ TANDAI ZOI",
+    "zoiActive": "KLIK UNTUK TANDAI ZOI",
+    "exportGeoJson": "EKSPOR .GEOJSON",
+    "profileTitle": "PROFIL ELEVASI & GARIS PANDANG MMGIS",
+    "totalDistance": "JARAK TOTAL",
+    "elevationGain": "KENAIKAN",
+    "elevationLoss": "PENURUNAN",
+    "maxSlope": "KELERENGAN MAKS",
+    "losStatus": "LOS (1.7m)",
+    "losClear": "BEBAS HALANGAN",
+    "losObstructed": "TERHALANG",
+    "exportCsv": "EKSPOR CSV",
+    "clear": "BERSIHKAN",
+    "close": "TUTUP",
+    "cursorLat": "LINTANG",
+    "cursorLon": "BUJUR",
+    "cursorElev": "ELEVASI",
+    "cursorSlope": "KELERENGAN",
+    "swipeLeftLabel": "BASEMAP OPTIK",
+    "swipeRightLabel": "LAPISAN ANALISIS",
+    "opacity": "OPASITAS",
+    "zoiMarkerPrefix": "ZONA RISET",
+    "scaleBar": "SKALA"
   }
 }

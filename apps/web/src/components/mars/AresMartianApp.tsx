@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import MarsForAllBadge from "../MarsForAllBadge";
 import AresMapViewer from "./AresMapViewer";
+import MmgisProfileDrawer from "./MmgisProfileDrawer";
 import ProspectorPanel from "./ProspectorPanel";
 import AnalogueMatcherPanel from "./AnalogueMatcherPanel";
 import ScientificLayersPanel from "./ScientificLayersPanel";
@@ -19,6 +20,11 @@ import {
   OrbitalImagerySource,
   WmtsStreamStatus,
 } from "@/lib/martian/scientificParams";
+import {
+  ElevationProfileResult,
+  ZoiFeature,
+  exportGisGeoJson,
+} from "@/lib/martian/mmgisSpatialAnalysis";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -99,6 +105,32 @@ export const AresMartianApp: React.FC = () => {
     layer_safety_magnetic: false,
   });
 
+  // Layer Opacities State (0% - 100%)
+  const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({
+    layer_optical_geologic: 0.8,
+    layer_topographic_hazard: 0.8,
+    layer_thermal_subsurface: 0.8,
+    layer_science_mineral: 0.8,
+    layer_safety_magnetic: 0.8,
+  });
+
+  const handleChangeLayerOpacity = useCallback((layerId: string, opacity: number) => {
+    setLayerOpacities((prev) => ({ ...prev, [layerId]: opacity }));
+  }, []);
+
+  // MMGIS Spatial Analysis States
+  const [activeMmgisTool, setActiveMmgisTool] = useState<"none" | "measure" | "viewshed" | "zoi">("none");
+  const [swipeCurtainActive, setSwipeCurtainActive] = useState<boolean>(false);
+  const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+  const [elevationProfile, setElevationProfile] = useState<ElevationProfileResult | null>(null);
+  const [zoiList, setZoiList] = useState<ZoiFeature[]>([]);
+
+  const handleAddZoi = useCallback((newZoi: ZoiFeature) => {
+    setZoiList((prev) => [...prev, newZoi]);
+    setExportNotification(`ZONE ADDED: ${newZoi.name}`);
+    setTimeout(() => setExportNotification(null), 2500);
+  }, []);
+
   const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -152,6 +184,27 @@ export const AresMartianApp: React.FC = () => {
       ? [...siteBase, customPin]
       : siteBase;
   }, [currentSite, customPin]);
+
+  const handleExportGeoJson = useCallback(() => {
+    const geojsonStr = exportGisGeoJson({
+      site: currentSite,
+      waypoints: allWaypoints,
+      route: activeRoute,
+      zoiFeatures: zoiList,
+      measurePath: measurePoints.length > 1 ? measurePoints : undefined,
+    });
+    const blob = new Blob([geojsonStr], { type: "application/geo+json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `marsforall-gis-${currentSite}-sol${currentSol}.geojson`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setExportNotification("GEOJSON EXPORT GENERATED");
+    setTimeout(() => setExportNotification(null), 3000);
+  }, [currentSite, allWaypoints, activeRoute, zoiList, measurePoints, currentSol]);
 
   const handleToggleLayer = useCallback((layerId: string) => {
     setActiveLayers((prev) => ({ ...prev, [layerId]: !prev[layerId] }));
@@ -483,6 +536,7 @@ export const AresMartianApp: React.FC = () => {
         <AresMapViewer
           currentSite={currentSite}
           activeLayers={activeLayers}
+          layerOpacities={layerOpacities}
           selectedWaypoint={selectedWaypoint}
           onSelectWaypoint={handleSelectWaypoint}
           onMapClickCoordinate={handleMapClickCoordinate}
@@ -495,7 +549,31 @@ export const AresMartianApp: React.FC = () => {
           tileMode={tileMode}
           orbitalSource={orbitalSource}
           onWmtsStatusChange={setWmtsStatus}
+          activeMmgisTool={activeMmgisTool}
+          onSelectMmgisTool={setActiveMmgisTool}
+          swipeCurtainActive={swipeCurtainActive}
+          onToggleSwipeCurtain={() => setSwipeCurtainActive((prev) => !prev)}
+          measurePoints={measurePoints}
+          onUpdateMeasurePoints={setMeasurePoints}
+          onProfileGenerated={setElevationProfile}
+          zoiList={zoiList}
+          onAddZoi={handleAddZoi}
+          onExportGeoJson={handleExportGeoJson}
         />
+
+        {/* MMGIS Interactive Elevation Profile & Line-of-Sight Drawer */}
+        {elevationProfile && (
+          <MmgisProfileDrawer
+            profile={elevationProfile}
+            onClear={() => {
+              setMeasurePoints([]);
+              setElevationProfile(null);
+            }}
+            onClose={() => setElevationProfile(null)}
+            theme={theme}
+            siteName={currentSite === "jezero_crater" ? "Jezero Crater" : "Gale Crater"}
+          />
+        )}
 
         {/* MODE: ASTRONAUT VISOR HUD (Simetris 4 Sudut, 16px Margin) */}
         {viewMode === "visor_hud" && (
@@ -560,6 +638,8 @@ export const AresMartianApp: React.FC = () => {
                     orbitalSource={orbitalSource}
                     onSelectOrbitalSource={setOrbitalSource}
                     wmtsStatus={wmtsStatus}
+                    layerOpacities={layerOpacities}
+                    onChangeLayerOpacity={handleChangeLayerOpacity}
                   />
                 ) : (
                   <MarswalkPlannerPanel
