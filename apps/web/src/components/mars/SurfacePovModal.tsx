@@ -42,80 +42,6 @@ export interface CuriosityPhotoItem {
   dataSource?: string;
 }
 
-// Landmark Pins for Gale Crater / Mount Sharp (3D Terrain Mode)
-const LANDMARK_PINS_GALE: LandmarkPin[] = [
-  {
-    id: "pin_01",
-    code: "PIN-01",
-    name: "BOXWORK VEIN OUTCROP",
-    x: 4.5,
-    z: -8.5,
-    instrument: "APXS / CHEMCAM",
-    metricLabel: "SULFATE FILL",
-    metricValue: "34.2% SO3 / Ca-Sulfate",
-    description: "Polygonal ridge network formed by ancient deep subsurface hydrothermal fluid flow in Aeolis Mons strata.",
-  },
-  {
-    id: "pin_02",
-    code: "PIN-02",
-    name: "CURIOSITY ROVER / COMPANION MULE",
-    x: -2.5,
-    z: -4.5,
-    instrument: "HAZCAM / MOBILITY",
-    metricLabel: "REGOLITH SINKAGE",
-    metricValue: "3.2 cm basaltic sand",
-    description: "Curiosity 50cm cleated aluminum wheel imprint showing regolith bearing capacity and eolian ripple compaction.",
-  },
-  {
-    id: "pin_03",
-    code: "PIN-03",
-    name: "CHEMCAM LIBS LASER TARGET",
-    x: -6.5,
-    z: -11.0,
-    instrument: "CHEMCAM LIBS",
-    metricLabel: "EMISSION SPECTRA",
-    metricValue: "High-Si / Al Phyllosilicate",
-    description: "Pitted laser-ablation target analyzing clay-sulfate transition zone bedrock with 1064nm optical laser.",
-  },
-];
-
-// Landmark Pins for Jezero Crater (3D Terrain Mode)
-const LANDMARK_PINS_JEZERO: LandmarkPin[] = [
-  {
-    id: "pin_jzr_01",
-    code: "PIN-01",
-    name: "CHEYAVA FALLS REDOX VEIN",
-    x: 4.5,
-    z: -8.5,
-    instrument: "SUPERCAM / SHERLOC",
-    metricLabel: "LEOPARD SPOT RIMS",
-    metricValue: "Vivianite / Fe-Phosphate Halos",
-    description: "Millimeter-sized reaction rings with organic signatures along calcium sulfate veins in Neretva Vallis ancient river inflow.",
-  },
-  {
-    id: "pin_jzr_02",
-    code: "PIN-02",
-    name: "PERSEVERANCE ROVER CHASSIS",
-    x: -2.5,
-    z: -4.5,
-    instrument: "HAZCAM / MOBILITY",
-    metricLabel: "BEARING TRACTION",
-    metricValue: "Rigid Olivine Pavement",
-    description: "Mars 2020 52.5cm curved cleat wheels on flat basaltic unit, zero wheel-spin slip at Octavia E. Butler site.",
-  },
-  {
-    id: "pin_jzr_03",
-    code: "PIN-03",
-    name: "DELTA FRONT SMECTITE SCARP",
-    x: -6.5,
-    z: -11.0,
-    instrument: "MASTCAM-Z / PIXL",
-    metricLabel: "CARBONATE & CLAYS",
-    metricValue: "38% Phyllosilicate Mudstone",
-    description: "Ancient river delta front bottomset beds preserving fossil bio-signatures from Lake Jezero 3.7 billion years ago.",
-  },
-];
-
 // Fallback Rover Imagery
 const FALLBACK_CURIOSITY_PHOTOS: CuriosityPhotoItem[] = [
   {
@@ -228,7 +154,7 @@ function getTerrainHeight(x: number, z: number, waypointId: string): number {
   return regionalSlope + eolianRipples + macroHummocks + fineGravel;
 }
 
-// Deterministic pseudo-random generator (seeded LCG)
+// Deterministic pseudo-random generator
 function createPrng(seed: number) {
   let s = seed % 2147483647;
   if (s <= 0) s += 2147483646;
@@ -238,46 +164,87 @@ function createPrng(seed: number) {
   };
 }
 
-// Procedural Martian regolith texture for fallback 3D terrain
-function createMartianRegolithTexture(): THREE.CanvasTexture {
+// High-resolution Martian satellite rock & regolith texture with sharp MOLA elevation contour lines
+function createMartianReliefContourTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 512;
+  canvas.width = 1024;
+  canvas.height = 1024;
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
   const nextRand = createPrng(418042);
-  ctx.fillStyle = "#a84b2c";
-  ctx.fillRect(0, 0, 512, 512);
 
-  for (let i = 0; i < 350; i++) {
-    const px = nextRand() * 512;
-    const py = nextRand() * 512;
-    const pr = nextRand() * 35 + 8;
-    ctx.fillStyle = nextRand() > 0.45 ? "#ba5936" : "#87381e";
+  // 1. Base ferric-oxide dark rock gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 1024, 1024);
+  bgGrad.addColorStop(0, "#7c2d12");
+  bgGrad.addColorStop(0.5, "#9a3412");
+  bgGrad.addColorStop(1, "#6c230e");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  // 2. Linear eolian sand ripples & strata fractures
+  ctx.strokeStyle = "#431407";
+  ctx.lineWidth = 1.5;
+  for (let y = 0; y < 1024; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x <= 1024; x += 32) {
+      const dy = Math.sin(x * 0.04) * 6 + (nextRand() - 0.5) * 4;
+      ctx.lineTo(x, y + dy);
+    }
+    ctx.stroke();
+  }
+
+  // 3. Clastic bedrock pebble distribution
+  for (let i = 0; i < 800; i++) {
+    const px = nextRand() * 1024;
+    const py = nextRand() * 1024;
+    const pr = nextRand() * 3 + 1;
+    ctx.fillStyle = nextRand() > 0.5 ? "#c2410c" : "#3b1104";
     ctx.beginPath();
     ctx.arc(px, py, pr, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  const imgData = ctx.getImageData(0, 0, 512, 512);
-  const data = imgData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const grain = (nextRand() - 0.5) * 48;
-    data[i] = Math.max(0, Math.min(255, data[i] + grain));
-    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grain * 0.65));
-    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grain * 0.45));
+  // 4. Sharp MOLA topographic elevation contour lines (interval lines with index lines)
+  for (let y = 0; y < 1024; y += 48) {
+    const isIndex = y % 192 === 0;
+    ctx.strokeStyle = isIndex ? "rgba(254, 215, 170, 0.45)" : "rgba(251, 146, 60, 0.22)";
+    ctx.lineWidth = isIndex ? 2.0 : 1.0;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x <= 1024; x += 16) {
+      const cy = Math.sin(x * 0.015) * 18 + Math.cos(x * 0.035) * 8;
+      ctx.lineTo(x, y + cy);
+    }
+    ctx.stroke();
   }
-  ctx.putImageData(imgData, 0, 0);
+
+  // 5. Orthogonal fine topographic coordinate grid (every 128px)
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+  ctx.lineWidth = 1;
+  for (let p = 0; p <= 1024; p += 128) {
+    ctx.beginPath();
+    ctx.moveTo(p, 0);
+    ctx.lineTo(p, 1024);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, p);
+    ctx.lineTo(1024, p);
+    ctx.stroke();
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(16, 16);
+  texture.repeat.set(4, 4);
+  texture.needsUpdate = true;
   return texture;
 }
 
-// Blend spherical 360° rover panorama photo with smooth Martian zenith sky dome and nadir
+// Blend spherical 360° rover panorama photo with seamless Martian zenith sky dome and nadir
+// 100% Patch Black Holes & Spiral Zenith Gaps
 function blendMartianZenithAndNadir(
   sourceImg: HTMLImageElement,
   dustStormActive: boolean,
@@ -306,25 +273,70 @@ function blendMartianZenithAndNadir(
     ? "#090d16"
     : dustStormActive
     ? "#260e06"
-    : "#1a0f0a";
+    : "#4a2c1d";
 
-  // 1. Zenith blending: smoothly blend upper 22%
-  const zenithHeight = Math.round(canvas.height * 0.22);
+  // Martian atmosphere RGB for pixel patching
+  const skyR = isEnhanced ? 15 : dustStormActive ? 107 : 184;
+  const skyG = isEnhanced ? 23 : dustStormActive ? 46 : 125;
+  const skyB = isEnhanced ? 42 : dustStormActive ? 16 : 86;
+
+  // Martian regolith nadir RGB for pixel patching (#4a2c1d = 74, 44, 29)
+  const groundR = isEnhanced ? 20 : 74;
+  const groundG = isEnhanced ? 24 : 44;
+  const groundB = isEnhanced ? 35 : 29;
+
+  // Scan entire image: replace unstitched black hole pixels (r < 14 && g < 14 && b < 14)
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  for (let y = 0; y < h; y++) {
+    const isUpper = y < h * 0.55;
+    const progress = isUpper ? y / (h * 0.55) : (y - h * 0.55) / (h * 0.45);
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const isBlackHole = r < 14 && g < 14 && b < 14;
+
+      if (isBlackHole) {
+        if (isUpper) {
+          // Fill sky atmosphere with smooth vertical gradient
+          const factor = 1 - progress * 0.2;
+          data[idx] = Math.round(skyR * factor);
+          data[idx + 1] = Math.round(skyG * factor);
+          data[idx + 2] = Math.round(skyB * factor);
+          data[idx + 3] = 255;
+        } else {
+          // Fill ground regolith seamlessly
+          const factor = 0.85 + progress * 0.25;
+          data[idx] = Math.round(groundR * factor);
+          data[idx + 1] = Math.round(groundG * factor);
+          data[idx + 2] = Math.round(groundB * factor);
+          data[idx + 3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // Smooth Zenith gradient overlay (upper 24%)
+  const zenithHeight = Math.round(canvas.height * 0.24);
   const skyGrad = ctx.createLinearGradient(0, 0, 0, zenithHeight);
   skyGrad.addColorStop(0, zenithSkyColor);
-  skyGrad.addColorStop(0.4, horizonSkyColor);
+  skyGrad.addColorStop(0.45, horizonSkyColor);
   skyGrad.addColorStop(1, "rgba(184, 125, 86, 0)");
-
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, canvas.width, zenithHeight);
 
-  // 2. Nadir blending: smoothly blend bottom 12%
-  const nadirStartY = Math.round(canvas.height * 0.88);
+  // Smooth Nadir gradient overlay (bottom 14%)
+  const nadirStartY = Math.round(canvas.height * 0.86);
   const nadirGrad = ctx.createLinearGradient(0, nadirStartY, 0, canvas.height);
-  nadirGrad.addColorStop(0, "rgba(26, 15, 10, 0)");
+  nadirGrad.addColorStop(0, "rgba(74, 44, 29, 0)");
   nadirGrad.addColorStop(0.5, nadirColor);
   nadirGrad.addColorStop(1, nadirColor);
-
   ctx.fillStyle = nadirGrad;
   ctx.fillRect(0, nadirStartY, canvas.width, canvas.height - nadirStartY);
 
@@ -358,7 +370,6 @@ function createTextSprite(
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = 3;
 
-    // Draw rounded rectangle
     const x = 8, y = 16, w = 496, h = 96, r = 6;
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -374,7 +385,6 @@ function createTextSprite(
     ctx.fill();
     ctx.stroke();
 
-    // Monospaced text
     ctx.fillStyle = textColor;
     ctx.font = "bold 26px monospace";
     ctx.textAlign = "center";
@@ -411,7 +421,6 @@ class MarsWindSynthesizer {
       if (!AudioCtx) return;
       this.ctx = new AudioCtx();
 
-      // 5-second buffer of procedural Brownian noise (deep low-frequency Martian rumble)
       const bufferSize = this.ctx.sampleRate * 5;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -427,13 +436,11 @@ class MarsWindSynthesizer {
       this.noiseNode.buffer = buffer;
       this.noiseNode.loop = true;
 
-      // Low-pass filter mimicking thin CO2 atmosphere (attenuates >280 Hz)
       this.filterNode = this.ctx.createBiquadFilter();
       this.filterNode.type = "lowpass";
       this.filterNode.frequency.setValueAtTime(260, this.ctx.currentTime);
       this.filterNode.Q.setValueAtTime(2.2, this.ctx.currentTime);
 
-      // Low-frequency oscillator simulating wind gusts (~0.18 Hz)
       this.lfoNode = this.ctx.createOscillator();
       this.lfoNode.type = "sine";
       this.lfoNode.frequency.setValueAtTime(0.18, this.ctx.currentTime);
@@ -454,9 +461,7 @@ class MarsWindSynthesizer {
       this.noiseNode.start();
       this.lfoNode.start();
       this.isPlaying = true;
-    } catch (_e) {
-      // AudioContext policy blocked or unsupported
-    }
+    } catch (_e) {}
   }
 
   stop() {
@@ -500,6 +505,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const [viewMode, setViewMode] = useState<ViewMode>("panorama_360");
   const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
+  // 3D Terrain Vertical Exaggeration (1.0x to 3.0x, default 1.5x)
+  const [verticalExaggeration, setVerticalExaggeration] = useState<number>(1.5);
+
   // Active Collapsible Left Drawer ("none" = 100% full-bleed clean view)
   type ActiveDrawerType = "none" | "stations" | "raw_feed" | "info";
   const [activeDrawer, setActiveDrawer] = useState<ActiveDrawerType>("none");
@@ -519,7 +527,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   // Split-Screen Compare Mode (Natural vs Enhanced Geological Color)
   const [isCompareActive, setIsCompareActive] = useState<boolean>(false);
-  const [compareSplitPercent, setCompareSplitPercent] = useState<number>(50); // 10% to 90%
+  const [compareSplitPercent, setCompareSplitPercent] = useState<number>(50);
   const isDraggingCompareRef = useRef<boolean>(false);
   const isCompareActiveRef = useRef<boolean>(false);
   useEffect(() => {
@@ -578,7 +586,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const pitchRef = useRef<number>((-8 * Math.PI) / 180);
   const fovRef = useRef<number>(65);
 
-  // Load and blend spherical station panorama textures (Both Natural and Enhanced)
+  // Load and blend spherical station panorama textures
   const loadStationPanorama = useCallback(
     (stationIdx: number) => {
       const site = isJezero ? "jezero" : "gale";
@@ -630,6 +638,16 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     },
     [siteKey, loadStationPanorama]
   );
+
+  // Update 3D Terrain Vertical Exaggeration Scale
+  useEffect(() => {
+    if (terrainMeshRef.current) {
+      terrainMeshRef.current.scale.set(1, verticalExaggeration / 1.5, 1);
+    }
+    if (wireframeMeshRef.current) {
+      wireframeMeshRef.current.scale.set(1, verticalExaggeration / 1.5, 1);
+    }
+  }, [verticalExaggeration]);
 
   // Pointer drag state
   const isPointerDownRef = useRef<boolean>(false);
@@ -769,7 +787,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     // Load initial panorama textures
     loadStationPanorama(activeStationIdxRef.current);
 
-    // 6. Procedural Base Terrain (for 3D Surface / Mesh Mode)
+    // 6. 3D Terrain Geometry with Sharp MOLA Contour Relief Texture (100% Free of Camo Oranye)
     const terrainGeom = new THREE.PlaneGeometry(120, 120, 80, 80);
     terrainGeom.rotateX(-Math.PI / 2);
     const posAttr = terrainGeom.attributes.position;
@@ -780,16 +798,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     }
     terrainGeom.computeVertexNormals();
 
-    const regolithTex = createMartianRegolithTexture();
+    const reliefContourTex = createMartianReliefContourTexture();
     const terrainMaterial = new THREE.MeshStandardMaterial({
-      map: regolithTex,
-      roughness: 0.92,
-      metalness: 0.04,
+      map: reliefContourTex,
+      roughness: 0.88,
+      metalness: 0.05,
       flatShading: false,
     });
 
     const terrainMesh = new THREE.Mesh(terrainGeom, terrainMaterial);
     terrainMesh.name = "martian_terrain";
+    terrainMesh.scale.set(1, 1.0, 1);
     terrainMesh.visible = false;
     scene.add(terrainMesh);
     terrainMeshRef.current = terrainMesh;
@@ -801,11 +820,12 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       opacity: 0.65,
     });
     const wireframeMesh = new THREE.LineSegments(wireframeGeom, wireframeMat);
+    wireframeMesh.scale.set(1, 1.0, 1);
     wireframeMesh.visible = false;
     scene.add(wireframeMesh);
     wireframeMeshRef.current = wireframeMesh;
 
-    // 7. Ground-Projected Targeting Reticle (for Teleportation in 3D terrain mode)
+    // 7. Ground-Projected Targeting Reticle
     const reticleGeom = new THREE.RingGeometry(0.55, 0.72, 32);
     reticleGeom.rotateX(-Math.PI / 2);
     const reticleMat = new THREE.MeshBasicMaterial({
@@ -819,7 +839,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     scene.add(reticleMesh);
     reticleRef.current = reticleMesh;
 
-    // 8. Ground-Projected Circular Station Hotspots (FU Berlin jezero/360/4N standard)
+    // 8. Ground-Projected Circular Station Hotspots Group
     const groundHotspotsGroup = new THREE.Group();
     groundHotspotsGroup.name = "ground_projected_hotspots";
     scene.add(groundHotspotsGroup);
@@ -844,12 +864,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Pulse ground hotspots ring rotation
+      // Rotate outer ground hotspot rings
       groundHotspotsGroup.traverse((obj) => {
         if (obj.name === "ground_hotspot_ring_outer") {
           obj.rotation.z = elapsedTime * 0.45;
         }
       });
+
+      // Hotspots visibility: hide automatically when user looks up into the sky (> +5° pitch)
+      const isLookingAtGround = pitchRef.current <= (5 * Math.PI) / 180;
+      groundHotspotsGroup.visible =
+        viewModeRef.current === "panorama_360" && isLookingAtGround;
 
       // Camera Position Lerp
       if (isLerpingCamRef.current) {
@@ -881,7 +906,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camPosRef.current.z + cz
       );
 
-      // Rendering logic: Split Compare vs VR Stereo vs Full Viewport
+      // Rendering: Split Compare vs VR Stereo (True 360 Panorama) vs Standard
       if (viewModeRef.current === "panorama_360" && isCompareActiveRef.current) {
         const sw = renderer.domElement.clientWidth;
         const sh = renderer.domElement.clientHeight;
@@ -889,14 +914,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
         renderer.setScissorTest(true);
 
-        // Left Scissor Viewport: Natural Color
+        // Left Viewport: Natural Color
         renderer.setScissor(0, 0, splitX, sh);
         renderer.setViewport(0, 0, sw, sh);
         if (panoMeshNaturalRef.current) panoMeshNaturalRef.current.visible = true;
         if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
         renderer.render(scene, camera);
 
-        // Right Scissor Viewport: Enhanced Geological Color
+        // Right Viewport: Enhanced Geological Color
         renderer.setScissor(splitX, 0, sw - splitX, sh);
         renderer.setViewport(0, 0, sw, sh);
         if (panoMeshNaturalRef.current) panoMeshNaturalRef.current.visible = false;
@@ -905,12 +930,17 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
         renderer.setScissorTest(false);
       } else if (viewModeRef.current === "vr_stereo") {
+        // VR Stereoscopic Mode: renders True Rover 360° Panorama
         const sw = renderer.domElement.clientWidth;
         const sh = renderer.domElement.clientHeight;
         const halfW = sw / 2;
 
+        if (panoMeshNaturalRef.current) panoMeshNaturalRef.current.visible = true;
+        if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
+
         renderer.setScissorTest(true);
 
+        // Left Eye
         renderer.setScissor(0, 0, halfW, sh);
         renderer.setViewport(0, 0, halfW, sh);
         camera.aspect = halfW / sh;
@@ -918,6 +948,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camera.position.x = camPosRef.current.x - 0.032;
         renderer.render(scene, camera);
 
+        // Right Eye
         renderer.setScissor(halfW, 0, halfW, sh);
         renderer.setViewport(halfW, 0, halfW, sh);
         camera.aspect = halfW / sh;
@@ -928,8 +959,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         camera.position.copy(camPosRef.current);
         renderer.setScissorTest(false);
       } else {
-        if (panoMeshNaturalRef.current) panoMeshNaturalRef.current.visible = true;
-        if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
+        if (viewModeRef.current === "panorama_360") {
+          if (panoMeshNaturalRef.current) panoMeshNaturalRef.current.visible = true;
+          if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
+        }
         renderer.render(scene, camera);
       }
     };
@@ -945,7 +978,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       panoMatEnhanced.dispose();
       terrainGeom.dispose();
       terrainMaterial.dispose();
-      regolithTex.dispose();
+      reliefContourTex.dispose();
       wireframeGeom.dispose();
       wireframeMat.dispose();
       reticleGeom.dispose();
@@ -956,12 +989,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     };
   }, [waypoint, wpId, baseElevation, dustStormActive, compareSplitPercent]);
 
-  // Re-build Ground-Projected Station Hotspots whenever active station or site changes
+  // Re-build Ground Hotspots: Positioned firmly at ground level y = -18, radius = 34
   useEffect(() => {
     const group = groundHotspotsGroupRef.current;
     if (!group) return;
 
-    // Clear previous hotspot children
     while (group.children.length > 0) {
       const child = group.children[0];
       group.remove(child);
@@ -980,11 +1012,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const currentStation = stationList[activeStationIdx] || stationList[0];
     const neighbors = getNeighborStations(siteKey, activeStationIdx);
 
-    // 1. Nadir Hotspot Ring Directly Below Rover: [ YOU ARE AT: SOL X ]
+    // 1. Nadir Hotspot Ring Directly Below Rover on Ground (y = -18)
     const nadirRingGroup = new THREE.Group();
-    nadirRingGroup.position.set(0, -9.0, 0);
+    nadirRingGroup.position.set(0, -18.0, 0);
 
-    const nadirRingGeom = new THREE.RingGeometry(1.8, 2.3, 32);
+    const nadirRingGeom = new THREE.RingGeometry(2.2, 2.8, 32);
     nadirRingGeom.rotateX(-Math.PI / 2);
     const nadirRingMat = new THREE.MeshBasicMaterial({
       color: 0x10b981,
@@ -1001,23 +1033,22 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       "#34d399",
       "#10b981"
     );
-    nadirSprite.position.set(0, 1.2, 0);
+    nadirSprite.position.set(0, 1.8, 0);
     nadirRingGroup.add(nadirSprite);
     group.add(nadirRingGroup);
 
-    // 2. Projected Ground Hotspot Rings for Neighboring Stations (FU Berlin standard)
+    // 2. Projected Ground Hotspot Rings for Neighboring Stations (y = -18, groundDist = 34)
     neighbors.forEach((nbr) => {
       const rad = (nbr.azimuthDeg * Math.PI) / 180;
-      const groundDist = 24.0; // Projected circle radius on ground
+      const groundDist = 34.0;
       const gx = Math.sin(rad) * groundDist;
       const gz = -Math.cos(rad) * groundDist;
-      const gy = -7.5; // Surface plane below eye level
+      const gy = -18.0;
 
       const hotspotGroup = new THREE.Group();
       hotspotGroup.position.set(gx, gy, gz);
 
-      // Concentric target rings on ground
-      const outerRingGeom = new THREE.RingGeometry(1.6, 2.1, 32);
+      const outerRingGeom = new THREE.RingGeometry(2.0, 2.6, 32);
       outerRingGeom.rotateX(-Math.PI / 2);
       const outerRingMat = new THREE.MeshBasicMaterial({
         color: 0x06b6d4,
@@ -1029,7 +1060,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       outerRing.name = "ground_hotspot_ring_outer";
       hotspotGroup.add(outerRing);
 
-      const innerRingGeom = new THREE.RingGeometry(0.5, 0.8, 24);
+      const innerRingGeom = new THREE.RingGeometry(0.7, 1.1, 24);
       innerRingGeom.rotateX(-Math.PI / 2);
       const innerRingMat = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
@@ -1040,15 +1071,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const innerRing = new THREE.Mesh(innerRingGeom, innerRingMat);
       hotspotGroup.add(innerRing);
 
-      // Informative monospaced label sprite
       const labelText = `[ JUMP -> SOL ${nbr.sol}: STN-0${nbr.targetStation + 1} (~${nbr.distanceM}m) ]`;
       const labelSprite = createTextSprite(labelText, "#0b0f17", "#38bdf8", "#0284c7");
-      labelSprite.position.set(0, 1.8, 0);
+      labelSprite.position.set(0, 2.2, 0);
       hotspotGroup.add(labelSprite);
 
-      // Raycast hit target cylinder
-      const hitGeom = new THREE.CylinderGeometry(2.8, 2.8, 4.0, 16);
-      hitGeom.translate(0, 1.5, 0);
+      // Hit cylinder target
+      const hitGeom = new THREE.CylinderGeometry(3.6, 3.6, 5.0, 16);
+      hitGeom.translate(0, 2.5, 0);
       const hitMat = new THREE.MeshBasicMaterial({ visible: false });
       const hitMesh = new THREE.Mesh(hitGeom, hitMat);
       hitMesh.userData = { isGroundHotspot: true, targetStationIdx: nbr.targetStation, nbrData: nbr };
@@ -1064,11 +1094,11 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     if (!terrainMeshRef.current || !wireframeMeshRef.current || !panoMeshNaturalRef.current) return;
     const groundGroup = groundHotspotsGroupRef.current;
 
-    if (viewMode === "panorama_360") {
+    if (viewMode === "panorama_360" || viewMode === "vr_stereo") {
       panoMeshNaturalRef.current.visible = true;
       terrainMeshRef.current.visible = false;
       wireframeMeshRef.current.visible = false;
-      if (groundGroup) groundGroup.visible = true;
+      if (groundGroup) groundGroup.visible = viewMode === "panorama_360";
     } else if (viewMode === "mesh") {
       panoMeshNaturalRef.current.visible = false;
       if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
@@ -1077,6 +1107,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       wireframeMeshRef.current.visible = true;
       if (groundGroup) groundGroup.visible = false;
     } else {
+      // 3D SURFACE mode
       panoMeshNaturalRef.current.visible = false;
       if (panoMeshEnhancedRef.current) panoMeshEnhancedRef.current.visible = false;
       (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = true;
@@ -1091,7 +1122,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const host = canvasHostRef.current;
     if (!host || !cameraRef.current) return;
 
-    // Handle Split Compare Divider Dragging
     if (isDraggingCompareRef.current) {
       const rect = host.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -1135,8 +1165,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     if (now - lastRaycastTimeRef.current < 32) return;
     lastRaycastTimeRef.current = now;
 
-    // Raycast in 3D terrain mode for reticle
-    if (viewMode !== "panorama_360" && terrainMeshRef.current && cameraRef.current) {
+    if (viewMode !== "panorama_360" && viewMode !== "vr_stereo" && terrainMeshRef.current && cameraRef.current) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
       const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
 
@@ -1182,7 +1211,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     if (cameraRef.current) {
       raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
 
-      // 1. Raycast Check Ground Hotspots in 360° Tour (FU Berlin Standard)
       if (viewModeRef.current === "panorama_360" && groundHotspotHitMeshesRef.current.length > 0) {
         const hits = raycasterRef.current.intersectObjects(groundHotspotHitMeshesRef.current);
         if (hits.length > 0) {
@@ -1194,8 +1222,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         }
       }
 
-      // 2. Terrain Teleportation in 3D Mode
-      if (viewModeRef.current !== "panorama_360" && terrainMeshRef.current) {
+      if (viewModeRef.current !== "panorama_360" && viewModeRef.current !== "vr_stereo" && terrainMeshRef.current) {
         const hits = raycasterRef.current.intersectObject(terrainMeshRef.current);
         if (hits.length > 0) {
           const targetPoint = hits[0].point;
@@ -1242,7 +1269,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#07090e] font-mono select-none overflow-hidden">
-      {/* 1. HUD TOP HEADER (h-9, Full-Width, Compact Telemetry) */}
+      {/* 1. HUD TOP HEADER (h-9, Full-Width) */}
       <header className="h-9 bg-[#0b0f17]/95 border-b border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-30">
         <div className="flex items-center gap-3 overflow-hidden">
           <MarsForAllBadge size={20} showSubtext={false} />
@@ -1324,9 +1351,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
       {/* 2. MAIN 360° WORKSPACE WITH COLLAPSIBLE FU BERLIN ICON RAIL */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex">
-        {/* COLLAPSIBLE LEFT ICON RAIL (w-11 = 44px, FU Berlin Planetarium Style) */}
+        {/* COLLAPSIBLE LEFT ICON RAIL (w-11 = 44px) */}
         <nav className="w-11 h-full bg-[#0b0f17]/95 border-r border-slate-800 flex flex-col items-center py-2 z-30 shrink-0 select-none">
-          {/* Tool 1: Return to 2D Map */}
           <button
             onClick={onClose}
             title={t("backToMap")}
@@ -1371,7 +1397,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </svg>
           </button>
 
-          {/* Tool 4: Split-Screen Compare Mode (Natural vs Enhanced Geological Stretch) */}
+          {/* Tool 4: Split-Screen Compare Mode */}
           <button
             onClick={() => setIsCompareActive((prev) => !prev)}
             title={t("compareSplit")}
@@ -1429,7 +1455,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
           <div className="w-6 h-[1px] bg-slate-800 my-1" />
 
-          {/* Tool 7: Mission Info & Attributions */}
+          {/* Tool 7: Mission Info */}
           <button
             onClick={() => setActiveDrawer((prev) => (prev === "info" ? "none" : "info"))}
             title={t("infoCredits")}
@@ -1447,10 +1473,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           </button>
         </nav>
 
-        {/* COLLAPSIBLE LEFT DRAWER (Only open when activeDrawer !== "none") */}
+        {/* COLLAPSIBLE LEFT DRAWER */}
         {activeDrawer !== "none" && (
           <aside className="absolute left-11 top-0 bottom-0 w-80 bg-[#0b0f17]/95 border-r border-slate-800 z-30 shadow-2xl flex flex-col font-mono text-xs">
-            {/* Drawer Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800 bg-[#07090e] shrink-0">
               <span className="font-bold text-amber-400 uppercase tracking-wider">
                 {activeDrawer === "stations" && t("stationList")}
@@ -1465,7 +1490,6 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
               </button>
             </div>
 
-            {/* Drawer Content */}
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {/* STATIONS LIST DRAWER */}
               {activeDrawer === "stations" && (
@@ -1560,7 +1584,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
                 </div>
               )}
 
-              {/* MISSION INFO & CREDITS DRAWER */}
+              {/* MISSION INFO DRAWER */}
               {activeDrawer === "info" && (
                 <div className="space-y-3">
                   <div className="text-slate-200 font-bold text-xs uppercase">
@@ -1596,23 +1620,36 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           onWheel={handleWheel}
           className="relative flex-1 w-full h-full cursor-grab active:cursor-grabbing overflow-hidden bg-black"
         >
-          {/* WebGL Canvas Host */}
           <div ref={canvasHostRef} className="absolute inset-0 w-full h-full" />
+
+          {/* 3D Vertical Exaggeration Slider Control (Surface & Mesh Modes) */}
+          {(viewMode === "surface" || viewMode === "mesh") && (
+            <div className="absolute top-4 right-4 z-20 bg-[#0b0f17]/95 border border-slate-700 px-3 py-1.5 font-mono text-[10px] flex items-center gap-2.5 shadow-xl select-none">
+              <span className="text-amber-400 font-bold whitespace-nowrap">{t("verticalExaggeration")}:</span>
+              <input
+                type="range"
+                min="1.0"
+                max="3.0"
+                step="0.1"
+                value={verticalExaggeration}
+                onChange={(e) => setVerticalExaggeration(parseFloat(e.target.value))}
+                className="w-24 accent-amber-500 cursor-pointer"
+              />
+              <span className="text-slate-200 font-bold tabular-nums whitespace-nowrap w-8 text-right">
+                {verticalExaggeration.toFixed(1)}x
+              </span>
+            </div>
+          )}
 
           {/* Interactive Split-Screen Compare Overlay */}
           {viewMode === "panorama_360" && isCompareActive && (
             <div className="absolute inset-0 pointer-events-none z-20">
-              {/* Left Label: Natural Color */}
               <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-700 px-3 py-1 text-[10px] font-bold text-amber-300">
                 [ ◀ {t("compareNatural")} ]
               </div>
-
-              {/* Right Label: Enhanced Geological Color */}
               <div className="absolute top-4 right-4 bg-[#0b0f17]/90 border border-slate-700 px-3 py-1 text-[10px] font-bold text-cyan-300">
                 [ {t("compareEnhanced")} ▶ ]
               </div>
-
-              {/* Draggable Divider Line */}
               <div
                 style={{ left: `${compareSplitPercent}%` }}
                 onPointerDown={(e) => {
@@ -1642,7 +1679,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </div>
           )}
 
-          {/* Quick Station Navigation Floating Buttons (Left/Right Chevrons) */}
+          {/* Quick Station Navigation Floating Buttons */}
           {viewMode === "panorama_360" && (
             <>
               <button
@@ -1674,7 +1711,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         </div>
       </div>
 
-      {/* 4. BOTTOM TELEMETRY BAR (Simetris h-9, Zero Overlap) */}
+      {/* 4. BOTTOM TELEMETRY BAR (Simetris h-9) */}
       <footer className="h-9 bg-[#0b0f17] border-t border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-30">
         <div className="flex items-center gap-3 text-slate-300 text-[11px]">
           <div className="flex items-center gap-1.5">
@@ -1684,7 +1721,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           <span className="text-slate-700">|</span>
           <div className="flex items-center gap-1.5">
             <span className="text-slate-500">{t("reticleTgt")}</span>
-            {viewMode === "panorama_360" ? (
+            {viewMode === "panorama_360" || viewMode === "vr_stereo" ? (
               <span className="text-emerald-400 font-bold tabular-nums">
                 [ 360° POV // STN-0{activeStationIdx + 1}: SOL {currentStation.sol} ]
               </span>
@@ -1698,8 +1735,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           </div>
         </div>
 
-        {/* 360° Tour Station Selector Pills (Planetarium Center Bar) */}
-        {viewMode === "panorama_360" && (
+        {/* 360° Tour Station Selector Pills */}
+        {(viewMode === "panorama_360" || viewMode === "vr_stereo") && (
           <div className="hidden md:flex items-center gap-1 border border-slate-800 bg-[#07090e] p-0.5">
             <span className="text-slate-500 text-[9px] px-1 font-bold">{t("tourStations")}:</span>
             {stationList.map((stn, idx) => (

@@ -237,7 +237,8 @@
     "currentStationBadge": "LOKASI ANDA: SOL {sol}",
     "distanceMeters": "{dist}m",
     "backToMap": "KEMBALI KE PETA",
-    "infoCredits": "INFORMASI MISI"
+    "infoCredits": "INFORMASI MISI",
+    "verticalExaggeration": "EKSAGERASI VERTIKAL"
   },
   "mapViewer": {
     "curiosityTraverse": "LINTASAN CURIOSITY:",
@@ -308,6 +309,16 @@
     "swipeRightLabel": "LAPISAN ANALISIS",
     "opacity": "OPASITAS",
     "zoiMarkerPrefix": "ZONA RISET",
-    "scaleBar": "SKALA"
+    "scaleBar": "SKALA",
+    "graticuleGrid": "KISI 0.05°",
+    "graticuleActive": "KISI: NYALA",
+    "identifierTitle": "IDENTIFIKASI FITUR MMGIS",
+    "identifierUnit": "UNIT GEOLOGI",
+    "identifierAge": "ERA STRATIGRAFI",
+    "identifierElev": "ELEVASI MOLA",
+    "identifierSlope": "KEMIRINGAN LERENG",
+    "identifierMineral": "MINERAL DOMINAN",
+    "openPov": "[ BUKA POV 360° ]",
+    "analyzeProspector": "[ ANALISIS PROSPEKTOR ]"
   }
 }

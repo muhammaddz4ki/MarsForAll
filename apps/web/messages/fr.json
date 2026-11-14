@@ -237,7 +237,8 @@
     "currentStationBadge": "VOUS ÊTES À : SOL {sol}",
     "distanceMeters": "{dist}m",
     "backToMap": "RETOUR À LA CARTE",
-    "infoCredits": "INFOS MISSION"
+    "infoCredits": "INFOS MISSION",
+    "verticalExaggeration": "EXAGÉRATION VERTICALE"
   },
   "mapViewer": {
     "curiosityTraverse": "TRAVERSÉE DE CURIOSITY:",
@@ -308,6 +309,16 @@
     "swipeRightLabel": "COUCHES ANALYTIQUES",
     "opacity": "OPACITÉ",
     "zoiMarkerPrefix": "ZONE DE RECHERCHE",
-    "scaleBar": "ÉCHELLE"
+    "scaleBar": "ÉCHELLE",
+    "graticuleGrid": "GRILLE 0.05°",
+    "graticuleActive": "GRILLE : ON",
+    "identifierTitle": "IDENTIFICATEUR DE CARACTÉRISTIQUES MMGIS",
+    "identifierUnit": "UNITÉ GÉOLOGIQUE",
+    "identifierAge": "ÂGE STRATIGRAPHIQUE",
+    "identifierElev": "ÉLÉVATION MOLA",
+    "identifierSlope": "PENTE DU TERRAIN",
+    "identifierMineral": "MINÉRAL DOMINANT",
+    "openPov": "[ OUVRIR POV 360° ]",
+    "analyzeProspector": "[ ANALYSER PROSPECTOR ]"
   }
 }

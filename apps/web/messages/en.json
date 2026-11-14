@@ -237,7 +237,8 @@
     "currentStationBadge": "YOU ARE AT: SOL {sol}",
     "distanceMeters": "{dist}m",
     "backToMap": "BACK TO MAP",
-    "infoCredits": "MISSION INFO"
+    "infoCredits": "MISSION INFO",
+    "verticalExaggeration": "VERTICAL EXAGGERATION"
   },
   "mapViewer": {
     "curiosityTraverse": "CURIOSITY TRAVERSE:",
@@ -308,6 +309,16 @@
     "swipeRightLabel": "ANALYTICAL LAYERS",
     "opacity": "OPACITY",
     "zoiMarkerPrefix": "RESEARCH ZONE",
-    "scaleBar": "SCALE"
+    "scaleBar": "SCALE",
+    "graticuleGrid": "GRID 0.05°",
+    "graticuleActive": "GRID: ON",
+    "identifierTitle": "MMGIS FEATURE IDENTIFIER",
+    "identifierUnit": "GEOLOGIC UNIT",
+    "identifierAge": "STRATIGRAPHIC AGE",
+    "identifierElev": "MOLA ELEVATION",
+    "identifierSlope": "TERRAIN SLOPE",
+    "identifierMineral": "DOMINANT MINERAL",
+    "openPov": "[ OPEN 360° POV ]",
+    "analyzeProspector": "[ ANALYZE PROSPECTOR ]"
   }
 }

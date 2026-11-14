@@ -229,6 +229,11 @@ export const AresMartianApp: React.FC = () => {
     setIsPovOpen(true);
   }, []);
 
+  const handleAnalyzeProspector = useCallback((wp: MountSharpWaypoint) => {
+    setSelectedWaypoint(wp);
+    setActiveTool("prospector");
+  }, []);
+
   const handleToggleTool = useCallback((tool: "layers" | "marswalk" | "prospector" | "analogue") => {
     setActiveTool((prev) => (prev === tool ? null : tool));
   }, []);
@@ -747,6 +752,8 @@ export const AresMartianApp: React.FC = () => {
           onExportGeoJson={handleExportGeoJson}
           onOpenPlanetGlobe={() => setViewMode("planet_globe")}
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
+          onOpenPovModal={handleOpenPovModal}
+          onAnalyzeProspector={handleAnalyzeProspector}
         />
 
         {/* 3D PLANET GLOBE ENGINE (MMGIS Architecture) */}

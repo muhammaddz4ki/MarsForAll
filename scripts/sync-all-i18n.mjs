@@ -243,6 +243,7 @@ const en = {
     distanceMeters: "{dist}m",
     backToMap: "BACK TO MAP",
     infoCredits: "MISSION INFO",
+    verticalExaggeration: "VERTICAL EXAGGERATION",
   },
   mapViewer: {
     curiosityTraverse: "CURIOSITY TRAVERSE:",
@@ -314,6 +315,16 @@ const en = {
     opacity: "OPACITY",
     zoiMarkerPrefix: "RESEARCH ZONE",
     scaleBar: "SCALE",
+    graticuleGrid: "GRID 0.05°",
+    graticuleActive: "GRID: ON",
+    identifierTitle: "MMGIS FEATURE IDENTIFIER",
+    identifierUnit: "GEOLOGIC UNIT",
+    identifierAge: "STRATIGRAPHIC AGE",
+    identifierElev: "MOLA ELEVATION",
+    identifierSlope: "TERRAIN SLOPE",
+    identifierMineral: "DOMINANT MINERAL",
+    openPov: "[ OPEN 360° POV ]",
+    analyzeProspector: "[ ANALYZE PROSPECTOR ]",
   },
 };
 
@@ -557,6 +568,7 @@ const id = {
     distanceMeters: "{dist}m",
     backToMap: "KEMBALI KE PETA",
     infoCredits: "INFORMASI MISI",
+    verticalExaggeration: "EKSAGERASI VERTIKAL",
   },
   mapViewer: {
     curiosityTraverse: "LINTASAN CURIOSITY:",
@@ -628,6 +640,16 @@ const id = {
     opacity: "OPASITAS",
     zoiMarkerPrefix: "ZONA RISET",
     scaleBar: "SKALA",
+    graticuleGrid: "KISI 0.05°",
+    graticuleActive: "KISI: NYALA",
+    identifierTitle: "IDENTIFIKASI FITUR MMGIS",
+    identifierUnit: "UNIT GEOLOGI",
+    identifierAge: "ERA STRATIGRAFI",
+    identifierElev: "ELEVASI MOLA",
+    identifierSlope: "KEMIRINGAN LERENG",
+    identifierMineral: "MINERAL DOMINAN",
+    openPov: "[ BUKA POV 360° ]",
+    analyzeProspector: "[ ANALISIS PROSPEKTOR ]",
   },
 };
 
@@ -871,6 +893,7 @@ const es = {
     distanceMeters: "{dist}m",
     backToMap: "VOLVER AL MAPA",
     infoCredits: "INFORMACIÓN DE LA MISIÓN",
+    verticalExaggeration: "EXAGERACIÓN VERTICAL",
   },
   mapViewer: {
     curiosityTraverse: "TRAYECTORIA CURIOSITY:",
@@ -942,6 +965,16 @@ const es = {
     opacity: "OPACIDAD",
     zoiMarkerPrefix: "ZONA DE INVESTIGACIÓN",
     scaleBar: "ESCALA",
+    graticuleGrid: "RED 0.05°",
+    graticuleActive: "RED: ACTIVA",
+    identifierTitle: "IDENTIFICADOR DE ELEMENTOS MMGIS",
+    identifierUnit: "UNIDAD GEOLÓGICA",
+    identifierAge: "EDAD ESTRATIGRÁFICA",
+    identifierElev: "ELEVACIÓN MOLA",
+    identifierSlope: "PENDIENTE DEL TERRENO",
+    identifierMineral: "MINERAL DOMINANTE",
+    openPov: "[ ABRIR POV 360° ]",
+    analyzeProspector: "[ ANALIZAR PROSPECTOR ]",
   },
 };
 
@@ -1185,6 +1218,7 @@ const fr = {
     distanceMeters: "{dist}m",
     backToMap: "RETOUR À LA CARTE",
     infoCredits: "INFOS MISSION",
+    verticalExaggeration: "EXAGÉRATION VERTICALE",
   },
   mapViewer: {
     curiosityTraverse: "TRAVERSÉE DE CURIOSITY:",
@@ -1256,6 +1290,16 @@ const fr = {
     opacity: "OPACITÉ",
     zoiMarkerPrefix: "ZONE DE RECHERCHE",
     scaleBar: "ÉCHELLE",
+    graticuleGrid: "GRILLE 0.05°",
+    graticuleActive: "GRILLE : ON",
+    identifierTitle: "IDENTIFICATEUR DE CARACTÉRISTIQUES MMGIS",
+    identifierUnit: "UNITÉ GÉOLOGIQUE",
+    identifierAge: "ÂGE STRATIGRAPHIQUE",
+    identifierElev: "ÉLÉVATION MOLA",
+    identifierSlope: "PENTE DU TERRAIN",
+    identifierMineral: "MINÉRAL DOMINANT",
+    openPov: "[ OUVRIR POV 360° ]",
+    analyzeProspector: "[ ANALYSER PROSPECTOR ]",
   },
 };
 
@@ -1499,6 +1543,7 @@ const zh = {
     distanceMeters: "{dist}米",
     backToMap: "返回战术地图",
     infoCredits: "任务科学信息",
+    verticalExaggeration: "垂直夸张比例",
   },
   mapViewer: {
     curiosityTraverse: "好奇号历史行驶轨迹:",
@@ -1570,6 +1615,16 @@ const zh = {
     opacity: "不透明度",
     zoiMarkerPrefix: "研究分区",
     scaleBar: "比例尺",
+    graticuleGrid: "经纬网 0.05°",
+    graticuleActive: "经纬网: 开启",
+    identifierTitle: "MMGIS 地物属性识别器",
+    identifierUnit: "地质单元",
+    identifierAge: "地层年代",
+    identifierElev: "MOLA 高程",
+    identifierSlope: "地形坡度",
+    identifierMineral: "优势矿物",
+    openPov: "[ 打开 360° POV ]",
+    analyzeProspector: "[ 分析勘探指标 ]",
   },
 };
 

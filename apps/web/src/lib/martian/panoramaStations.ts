@@ -195,13 +195,13 @@ export const PANORAMA_STATIONS: Record<"jezero" | "gale", PanoramaStation[]> = {
       description: "Prominent resistant topographic ridge rich in crystalline gray hematite formed in groundwater environments.",
       sources: [
         {
-          name: "NASA_IMAGES_VERA_RUBIN_PIA22208_LARGE",
-          url: "https://images-assets.nasa.gov/image/PIA22208/PIA22208~large.jpg",
-          credit: "NASA/JPL-Caltech/MSSS (Vera Rubin Ridge Hematite Panorama - Natural)",
+          name: "NASA_IMAGES_VERA_RUBIN_PIA22207_LARGE",
+          url: "https://images-assets.nasa.gov/image/PIA22207/PIA22207~large.jpg",
+          credit: "NASA/JPL-Caltech/MSSS (Vera Rubin Ridge Surface Panorama - Natural)",
         },
         {
-          name: "NASA_IMAGES_VERA_RUBIN_PIA22208_MED",
-          url: "https://images-assets.nasa.gov/image/PIA22208/PIA22208~medium.jpg",
+          name: "NASA_IMAGES_VERA_RUBIN_PIA22207_MED",
+          url: "https://images-assets.nasa.gov/image/PIA22207/PIA22207~medium.jpg",
           credit: "NASA/JPL-Caltech/MSSS (Vera Rubin Ridge Web Panorama)",
         },
       ],

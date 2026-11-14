@@ -7,6 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import {
   MountSharpWaypoint,
   ALL_MARTIAN_WAYPOINTS,
+  getWaypointsForSite,
   MissionSiteId,
   CURIOSITY_HISTORICAL_TRAVERSE,
   PERSEVERANCE_HISTORICAL_TRAVERSE,
@@ -60,6 +61,8 @@ interface AresMapViewerProps {
   onExportGeoJson?: () => void;
   onOpenPlanetGlobe?: () => void;
   isLeftDrawerOpen?: boolean;
+  onOpenPovModal?: (wp: MountSharpWaypoint) => void;
+  onAnalyzeProspector?: (wp: MountSharpWaypoint) => void;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -140,6 +143,64 @@ const WAYPOINT_SHORT_CODES: Record<
   },
 };
 
+interface IdentifiedFeatureInfo {
+  name: string;
+  category: string;
+  stratigraphicAge: string;
+  elevationM: number;
+  slopeDeg: number;
+  mineralogy: string;
+  coordinates: [number, number];
+  associatedWaypoint?: MountSharpWaypoint;
+}
+
+function generateMartianGraticule(centerLon: number, centerLat: number): any {
+  const features: any[] = [];
+  const span = 0.4;
+  const step = 0.05;
+  const minLon = Number((centerLon - span).toFixed(2));
+  const maxLon = Number((centerLon + span).toFixed(2));
+  const minLat = Number((centerLat - span).toFixed(2));
+  const maxLat = Number((centerLat + span).toFixed(2));
+
+  // Meridians (Lines of constant longitude)
+  for (let lon = minLon; lon <= maxLon + 0.001; lon += step) {
+    const roundedLon = Number(lon.toFixed(3));
+    features.push({
+      type: "Feature",
+      properties: { type: "meridian", value: `${roundedLon}°E` },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [roundedLon, minLat],
+          [roundedLon, maxLat],
+        ],
+      },
+    });
+  }
+
+  // Parallels (Lines of constant latitude)
+  for (let lat = minLat; lat <= maxLat + 0.001; lat += step) {
+    const roundedLat = Number(lat.toFixed(3));
+    features.push({
+      type: "Feature",
+      properties: { type: "parallel", value: `${roundedLat}°N` },
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [minLon, roundedLat],
+          [maxLon, roundedLat],
+        ],
+      },
+    });
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+}
+
 export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   currentSite = "gale_crater",
   activeLayers,
@@ -175,6 +236,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onExportGeoJson,
   onOpenPlanetGlobe,
   isLeftDrawerOpen = false,
+  onOpenPovModal,
+  onAnalyzeProspector,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -191,6 +254,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const viewshedMarkerRef = useRef<Marker | null>(null);
 
   const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
+  const [showGraticule, setShowGraticule] = useState<boolean>(false);
+  const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
   const [swipePosition, setSwipePosition] = useState<number>(50); // percentage 0 - 100
   const isDraggingDivider = useRef<boolean>(false);
 
@@ -663,6 +728,28 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
+      // MMGIS 4: Graticule Grid Layer
+      const centerCoords = currentSite === "jezero_crater" ? JEZERO_CRATER_CENTER : MOUNT_SHARP_CENTER;
+      map.addSource("mmgis_graticule_source", {
+        type: "geojson",
+        data: generateMartianGraticule(centerCoords[0], centerCoords[1]),
+      });
+
+      map.addLayer({
+        id: "mmgis_graticule_line",
+        type: "line",
+        source: "mmgis_graticule_source",
+        layout: {
+          visibility: "none",
+        },
+        paint: {
+          "line-color": "#94a3b8",
+          "line-opacity": 0.25,
+          "line-width": 1,
+          "line-dasharray": [2, 2],
+        },
+      });
+
       updateScaleBar(map);
     });
 
@@ -819,9 +906,65 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         return;
       }
 
-      // 4. Default: User pin drop
+      // 4. Default: MMGIS Feature Identifier & User pin drop
+      const siteWaypoints = getWaypointsForSite(currentSite);
+
+      let matchedWp: MountSharpWaypoint | undefined;
+      let minDistance = 0.025; // ~1.5 km tolerance
+      for (const wp of siteWaypoints) {
+        const d = Math.hypot(wp.coordinates[0] - lon, wp.coordinates[1] - lat);
+        if (d < minDistance) {
+          minDistance = d;
+          matchedWp = wp;
+        }
+      }
+
+      const approxElev = getMartianElevation(lon, lat, currentSite);
+      const approxSlope = getMartianSlope(lon, lat, currentSite);
+
+      if (matchedWp) {
+        setIdentifiedFeature({
+          name: matchedWp.name,
+          category: matchedWp.category.toUpperCase().replace("_", " "),
+          stratigraphicAge:
+            matchedWp.stratigraphicAge ||
+            (currentSite === "jezero_crater"
+              ? "Noachian / Early Hesperian"
+              : "Hesperian / Amazonian"),
+          elevationM: matchedWp.elevationM,
+          slopeDeg: approxSlope,
+          mineralogy: matchedWp.dominantHydratedMineral || "Phyllosilicates / Clay-Sulfate",
+          coordinates: matchedWp.coordinates,
+          associatedWaypoint: matchedWp,
+        });
+      } else {
+        const rendered = map.queryRenderedFeatures(e.point);
+        const geoFeature = rendered.find(
+          (f) => f.properties && (f.properties.unit_name || f.properties.name)
+        );
+        const unitName =
+          (geoFeature?.properties?.unit_name as string) ||
+          (currentSite === "jezero_crater"
+            ? "Deltaic Stratified Sediment Unit"
+            : "Mt Sharp Flank Layered Sulfate Unit");
+
+        setIdentifiedFeature({
+          name: unitName,
+          category: "MARTIAN REGOLITH / BEDROCK",
+          stratigraphicAge:
+            currentSite === "jezero_crater" ? "Noachian (~3.8 Ga)" : "Hesperian (~3.3 Ga)",
+          elevationM: approxElev,
+          slopeDeg: approxSlope,
+          mineralogy:
+            currentSite === "jezero_crater"
+              ? "Olivine-Carbonate & Smectite Clays"
+              : "Hematite, Sulfates & Amorphous Silica",
+          coordinates: [lon, lat],
+          associatedWaypoint: siteWaypoints[0],
+        });
+      }
+
       if (onMapClickCoordinate) {
-        const approxElev = getMartianElevation(lon, lat, currentSite);
         onMapClickCoordinate([lon, lat], approxElev);
       }
     };
@@ -1162,6 +1305,25 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     });
   }, [showRoverTraverse, currentSite]);
 
+  // Sync MMGIS Graticule Grid Layer
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const source = map.getSource("mmgis_graticule_source") as maplibregl.GeoJSONSource | undefined;
+    if (source) {
+      const centerCoords = currentSite === "jezero_crater" ? JEZERO_CRATER_CENTER : MOUNT_SHARP_CENTER;
+      source.setData(generateMartianGraticule(centerCoords[0], centerCoords[1]));
+    }
+    if (map.getLayer("mmgis_graticule_line")) {
+      map.setLayoutProperty(
+        "mmgis_graticule_line",
+        "visibility",
+        showGraticule ? "visible" : "none"
+      );
+    }
+  }, [showGraticule, currentSite]);
+
   // Render Marswalk Path on Route Calculation
   useEffect(() => {
     const map = mapRef.current;
@@ -1457,7 +1619,114 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           <span className={`w-2 h-2 rounded-full ${showRoverTraverse ? "bg-[#facc15]" : "bg-slate-500"}`} />
           <span>{currentSite === "jezero_crater" ? "PERSEVERANCE" : "CURIOSITY"} {showRoverTraverse ? t("on") : t("off")}</span>
         </button>
+
+        {/* Graticule Grid Toggle */}
+        <button
+          onClick={() => setShowGraticule((prev) => !prev)}
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
+            showGraticule
+              ? "bg-[#1e293b] text-[#93c5fd] border-[#60a5fa]"
+              : isDark
+              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
+              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
+          }`}
+        >
+          <span className={`w-2 h-2 ${showGraticule ? "bg-[#60a5fa]" : "bg-slate-500"}`} />
+          <span>[ {tMmgis("graticuleGrid")} {showGraticule ? t("on") : t("off")} ]</span>
+        </button>
       </div>
+
+      {/* In-Map MMGIS Feature Identifier Popover */}
+      {identifiedFeature && (
+        <div
+          className={`absolute top-12 right-4 z-30 w-80 border font-mono select-none ${
+            isDark
+              ? "bg-[#07090e]/95 border-cyan-500/80 text-slate-200"
+              : "bg-white border-cyan-600 text-slate-800 shadow-lg"
+          }`}
+        >
+          {/* Header */}
+          <div className="h-7 px-2.5 bg-[#0b0f17] flex items-center justify-between border-b border-cyan-900/60 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-cyan-400" />
+              <span>{tMmgis("identifierTitle")}</span>
+            </span>
+            <button
+              onClick={() => setIdentifiedFeature(null)}
+              className="text-slate-400 hover:text-white px-1 text-[11px]"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Feature Attributes Table */}
+          <div className="p-3 space-y-2 text-[10px]">
+            <div>
+              <div className="text-[9px] text-slate-400 uppercase font-bold">{tMmgis("identifierUnit")}</div>
+              <div className="text-cyan-400 font-bold truncate">{identifiedFeature.name}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+              <div>
+                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierAge")}</span>
+                <span className="text-slate-200">{identifiedFeature.stratigraphicAge}</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierElev")}</span>
+                <span className="text-amber-400 font-bold tabular-nums">
+                  {identifiedFeature.elevationM > 0 ? `+${identifiedFeature.elevationM}` : identifiedFeature.elevationM} m
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+              <div>
+                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierSlope")}</span>
+                <span className="text-slate-200 tabular-nums">{identifiedFeature.slopeDeg.toFixed(1)}°</span>
+              </div>
+              <div>
+                <span className="text-[9px] text-slate-400 block">COORDINATES</span>
+                <span className="text-slate-300 tabular-nums">
+                  {identifiedFeature.coordinates[1].toFixed(3)}°, {identifiedFeature.coordinates[0].toFixed(3)}°
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-1 border-t border-slate-800">
+              <span className="text-[9px] text-slate-400 block">{tMmgis("identifierMineral")}</span>
+              <span className="text-emerald-400">{identifiedFeature.mineralogy}</span>
+            </div>
+
+            {/* MMGIS Action Buttons */}
+            <div className="pt-2 border-t border-slate-800 flex gap-2">
+              {identifiedFeature.associatedWaypoint && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (identifiedFeature.associatedWaypoint && onOpenPovModal) {
+                        onOpenPovModal(identifiedFeature.associatedWaypoint);
+                      }
+                    }}
+                    className="flex-1 py-1 px-1.5 bg-[#451a03] border border-[#ea580c] text-[#fed7aa] font-bold text-[9px] hover:bg-[#7c2d12] transition-colors text-center"
+                  >
+                    [ {tMmgis("openPov")} ]
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (identifiedFeature.associatedWaypoint && onAnalyzeProspector) {
+                        onAnalyzeProspector(identifiedFeature.associatedWaypoint);
+                      }
+                    }}
+                    className="flex-1 py-1 px-1.5 bg-[#083344] border border-[#06b6d4] text-[#a5f3fc] font-bold text-[9px] hover:bg-[#0e7490] transition-colors text-center"
+                  >
+                    [ {tMmgis("analyzeProspector")} ]
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (

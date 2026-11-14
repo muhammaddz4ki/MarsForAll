@@ -237,7 +237,8 @@
     "currentStationBadge": "当前位置: SOL {sol}",
     "distanceMeters": "{dist}米",
     "backToMap": "返回战术地图",
-    "infoCredits": "任务科学信息"
+    "infoCredits": "任务科学信息",
+    "verticalExaggeration": "垂直夸张比例"
   },
   "mapViewer": {
     "curiosityTraverse": "好奇号历史行驶轨迹:",
@@ -308,6 +309,16 @@
     "swipeRightLabel": "科学分析图层",
     "opacity": "不透明度",
     "zoiMarkerPrefix": "研究分区",
-    "scaleBar": "比例尺"
+    "scaleBar": "比例尺",
+    "graticuleGrid": "经纬网 0.05°",
+    "graticuleActive": "经纬网: 开启",
+    "identifierTitle": "MMGIS 地物属性识别器",
+    "identifierUnit": "地质单元",
+    "identifierAge": "地层年代",
+    "identifierElev": "MOLA 高程",
+    "identifierSlope": "地形坡度",
+    "identifierMineral": "优势矿物",
+    "openPov": "[ 打开 360° POV ]",
+    "analyzeProspector": "[ 分析勘探指标 ]"
   }
 }
