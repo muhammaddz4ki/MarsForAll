@@ -4,7 +4,8 @@
 > **NASA Space Apps Challenge 2026 Submission**  
 > **Challenge:** Interplanetary Survival Guide: Martian Map  
 > **Primary Target:** Mount Sharp (*Aeolis Mons*), Gale Crater, Mars (`Lat: -5.4453°, Lon: 137.8414°`)  
-> **Scientific Focus:** Curiosity Rover 2025 Boxwork Mineral Vein Discovery, 5 NASA Operational Layers, & Curiosity Historical Traverse
+> **Scientific Focus:** Curiosity Rover 2025 Boxwork Mineral Vein Discovery, 5 NASA Operational Layers, & Curiosity Historical Traverse  
+> **Official Repository:** [https://github.com/muhammaddz4ki/MarsForAll](https://github.com/muhammaddz4ki/MarsForAll)
 
 ---
 
@@ -115,31 +116,38 @@ ares-martian-map/
 
 ### 1. Installation
 ```bash
-git clone <repository-url> ares-martian-map
-cd ares-martian-map
+git clone https://github.com/muhammaddz4ki/MarsForAll.git
+cd MarsForAll
 pnpm install
 ```
 
 ### 2. Verify Scientific Calculation Engines
 ```bash
-pnpm --filter @ares-path/shared build
+pnpm --filter @marsforall/shared build
 node scripts/verify-mars-engines.mjs
 ```
-*Expected: All 6 test suites pass (`[PASS] Mount Sharp Waypoints`, `[PASS] Prospector ML Fusion`, `[PASS] Earth Analogue Matcher`, `[PASS] Marswalk Route Planner`, `[PASS] Mineral Hardness`, `[PASS] Consumable Safety Checks`).*
+*Expected: All 7 verification test suites pass successfully.*
 
 ### 3. Run Development Server
 ```bash
-pnpm --filter @ares-path/web dev
+pnpm --filter @marsforall/web dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 4. Production Build & Typecheck
 ```bash
-pnpm --filter @ares-path/web typecheck
-pnpm --filter @ares-path/web build
+pnpm --filter @marsforall/web typecheck
+pnpm --filter @marsforall/web build
 ```
 
 ---
 
-## 7. License
+## 7. Official Repository & Deployment
+- **GitHub Repository**: [https://github.com/muhammaddz4ki/MarsForAll](https://github.com/muhammaddz4ki/MarsForAll)
+- **Clone (HTTPS)**: `git clone https://github.com/muhammaddz4ki/MarsForAll.git`
+- **Submission Branch**: `main`
+
+---
+
+## 8. License
 Distributed under the MIT License. Developed for NASA Space Apps Challenge 2026.

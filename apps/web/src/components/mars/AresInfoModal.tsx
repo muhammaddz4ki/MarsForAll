@@ -90,6 +90,28 @@ export const AresInfoModal: React.FC<AresInfoModalProps> = ({
             </ul>
           </section>
 
+          <section className={`${
+            isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"
+          } p-3 border space-y-1 font-mono text-[10px]`}>
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-emerald-400 uppercase tracking-wider">
+                PROJECT SOURCE // OPEN REPOSITORY
+              </span>
+              <a
+                href="https://github.com/muhammaddz4ki/MarsForAll"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-amber-400 hover:text-amber-300 underline font-bold"
+              >
+                github.com/muhammaddz4ki/MarsForAll
+              </a>
+            </div>
+            <p className={`${isDark ? "text-slate-400" : "text-slate-600"} mt-0.5`}>
+              Official open-source repository for the NASA Space Apps Challenge 2026 hackathon submission.
+              Contains full monorepo source code, mathematical planetary science engines, 3D WebGL photogrammetric explorer, and offline dataset bundles.
+            </p>
+          </section>
+
           <section className={`text-[10px] ${isDark ? "text-slate-400" : "text-slate-600"} font-mono`}>
             <span className={`font-bold ${isDark ? "text-slate-300" : "text-slate-800"} uppercase`}>[STRICT ZERO NASA LOGO NOTICE]</span>
             <p className="mt-0.5">
