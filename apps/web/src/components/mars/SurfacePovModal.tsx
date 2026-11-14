@@ -224,6 +224,45 @@ function createMartianBumpTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+// Transform NASA MOLA/HRSC Hillshade DEM image into True-Color natural Martian regolith relief
+function createProcessedMolaReliefTexture(sourceImg: HTMLImageElement): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Draw source MOLA hillshade
+  ctx.drawImage(sourceImg, 0, 0, 512, 512);
+  const imgData = ctx.getImageData(0, 0, 512, 512);
+  const d = imgData.data;
+
+  // Grade into authentic ferric-oxide True Color palette (NASA Mars Trek standard):
+  // Illuminated slopes: warm ferric oxide (#ba552e), mid-tones: hematite ocher (#943b1c), shaded lowlands: dark basaltic umber (#4a1a0c)
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i];
+    const g = d[i + 1];
+    const b = d[i + 2];
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+    const contrastLum = Math.pow(lum, 1.12);
+
+    // True-Color Martian red channel
+    d[i] = Math.max(0, Math.min(255, Math.round(74 + contrastLum * 146)));
+    // True-Color weathered ocher green channel
+    d[i + 1] = Math.max(0, Math.min(255, Math.round(26 + contrastLum * 66)));
+    // True-Color low-albedo basalt blue channel
+    d[i + 2] = Math.max(0, Math.min(255, Math.round(12 + contrastLum * 32)));
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 // Build 3D Curiosity / Companion Mule Rover Unit positioned at (roverX, roverZ)
 function createCompanionRoverGroup(waypointId: string, roverX = -2.5, roverZ = -4.5): THREE.Group {
   const roverGroup = new THREE.Group();
@@ -476,12 +515,13 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const regolithTex = createMartianRegolithTexture();
     const bumpTex = createMartianBumpTexture();
 
+    // Photographic Martian Regolith Material (High roughness for light-absorbing matte dust)
     const terrainMaterial = new THREE.MeshStandardMaterial({
       map: regolithTex,
       bumpMap: bumpTex,
-      bumpScale: 0.12,
-      roughness: 0.88,
-      metalness: 0.08,
+      bumpScale: 0.14,
+      roughness: 0.92,
+      metalness: 0.04,
       flatShading: false,
     });
 
@@ -519,19 +559,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         posAttr.needsUpdate = true;
         setDemSourceStatus("NASA_MOLA_REAL_DEM");
 
-        // Map Real NASA Orbital Satellite Texture onto Terrain
-        const texLoader = new THREE.TextureLoader();
-        texLoader.load(
-          "/api/mars-tiles/mola-clrshade/7/66/113",
-          (molaTex) => {
-            molaTex.wrapS = THREE.ClampToEdgeWrapping;
-            molaTex.wrapT = THREE.ClampToEdgeWrapping;
-            terrainMaterial.map = molaTex;
-            terrainMaterial.needsUpdate = true;
-          },
-          undefined,
-          () => {}
-        );
+        // Map Contrast-Balanced True-Color NASA MOLA Relief Texture onto 3D Mount Sharp
+        const processedMolaTex = createProcessedMolaReliefTexture(demImg);
+        terrainMaterial.map = processedMolaTex;
+        terrainMaterial.needsUpdate = true;
       } catch (err) {
         // Safe procedural fallback retained
       }

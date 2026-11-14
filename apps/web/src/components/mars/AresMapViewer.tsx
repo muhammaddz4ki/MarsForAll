@@ -152,7 +152,17 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           {
             id: "background-mars-space",
             type: "background",
-            paint: { "background-color": isDark ? "#07090e" : "#e2e8f0" },
+            paint: { "background-color": isDark ? "#06080d" : "#e2e8f0" },
+          },
+          // Mars True-Color Ferric Oxide Underlay:
+          // Blends with OpenPlanetary hillshade to yield natural Mars rust-ocher terrain
+          {
+            id: "mars-true-color-underlay",
+            type: "background",
+            paint: {
+              "background-color": isDark ? "#8f371a" : "#b44c28",
+              "background-opacity": 0.88,
+            },
           },
           // 1. Regional Shaded Relief Basemap (OpenPlanetary)
           {
@@ -163,9 +173,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource !== "local_vector" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.85,
-              "raster-contrast": 0.25,
-              "raster-hue-rotate": 10,
+              "raster-opacity": 0.82,
+              "raster-contrast": 0.22,
+              "raster-brightness-min": 0.08,
+              "raster-brightness-max": 0.95,
+              "raster-saturation": 0.20,
             },
           },
           // 2. MOLA + HRSC Colorized Hillshade Blend (Overlaid via Next.js Proxy)
@@ -190,18 +202,20 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "jpl_hirise" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.90,
-              "raster-contrast": 0.25,
-              "raster-saturation": -1,
+              "raster-opacity": 0.88,
+              "raster-contrast": 0.22,
+              "raster-saturation": -0.70,
             },
           },
         ],
       },
       center: MOUNT_SHARP_CENTER,
       zoom: MOUNT_SHARP_DEFAULT_ZOOM,
+      minZoom: 1.2,
+      maxZoom: 18,
       pitch: 45,
       bearing: -15,
-      maxPitch: 70,
+      maxPitch: 75,
       attributionControl: false,
     });
 
@@ -505,7 +519,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setPaintProperty(
         "background-mars-space",
         "background-color",
-        isDark ? "#07090e" : "#f1f5f9"
+        isDark ? "#06080d" : "#f1f5f9"
+      );
+    }
+    if (map.getLayer("mars-true-color-underlay")) {
+      map.setPaintProperty(
+        "mars-true-color-underlay",
+        "background-color",
+        isDark ? "#8f371a" : "#b44c28"
       );
     }
   }, [isDark]);
@@ -567,16 +588,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       );
       map.setPaintProperty("mars-raster-mola", "raster-opacity", 0.90);
     }
-    // Gale CTX: Monochromatic crisp contrast active only when selected
+    // Gale CTX: High-resolution orbital mosaic with true-color natural regolith preservation
     if (map.getLayer("mars-raster-hirise")) {
       map.setLayoutProperty(
         "mars-raster-hirise",
         "visibility",
         orbitalSource === "jpl_hirise" ? "visible" : "none"
       );
-      map.setPaintProperty("mars-raster-hirise", "raster-opacity", 0.90);
-      map.setPaintProperty("mars-raster-hirise", "raster-saturation", -1);
-      map.setPaintProperty("mars-raster-hirise", "raster-contrast", 0.25);
+      map.setPaintProperty("mars-raster-hirise", "raster-opacity", 0.88);
+      map.setPaintProperty("mars-raster-hirise", "raster-saturation", -0.70);
+      map.setPaintProperty("mars-raster-hirise", "raster-contrast", 0.22);
     }
 
     if (onWmtsStatusChange) onWmtsStatusChange("streaming");
@@ -818,7 +839,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
-      {/* Tactical Curiosity Traverse Toggle & HUD Widget */}
+      {/* Tactical Horizon / Traverse Controls */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 font-mono text-[10px]">
         <button
           onClick={() => setShowCuriosityTraverse((prev) => !prev)}
@@ -832,6 +853,50 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         >
           <span className={`w-2 h-2 ${showCuriosityTraverse ? "bg-[#06b6d4]" : "bg-slate-500"}`} />
           <span>CURIOSITY TRAVERSE: {showCuriosityTraverse ? "[ON]" : "[OFF]"}</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            map.flyTo({
+              center: [137.4, -4.74],
+              zoom: 1.8,
+              pitch: 62,
+              bearing: -12,
+              duration: 1200,
+            });
+          }}
+          title="Zoom out to Planetary Mars Horizon (Globe Perspective)"
+          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
+            isDark
+              ? "bg-[#111827] text-amber-400 border-slate-700 hover:text-amber-300 hover:border-amber-500"
+              : "bg-white text-amber-700 border-slate-300 hover:text-amber-900"
+          }`}
+        >
+          <span>PLANET GLOBE</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const map = mapRef.current;
+            if (!map) return;
+            map.flyTo({
+              center: MOUNT_SHARP_CENTER,
+              zoom: MOUNT_SHARP_DEFAULT_ZOOM,
+              pitch: pitch3D ? 55 : 0,
+              bearing: -15,
+              duration: 1200,
+            });
+          }}
+          title="Dive into Gale Crater / Mount Sharp Focus"
+          className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${
+            isDark
+              ? "bg-[#111827] text-cyan-400 border-slate-700 hover:text-cyan-300 hover:border-cyan-500"
+              : "bg-white text-cyan-700 border-slate-300 hover:text-cyan-900"
+          }`}
+        >
+          <span>GALE FOCUS</span>
         </button>
       </div>
 
