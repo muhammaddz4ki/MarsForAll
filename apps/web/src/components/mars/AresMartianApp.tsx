@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import AresMissionBadge from "../AresMissionBadge";
+import MarsForAllBadge from "../MarsForAllBadge";
 import AresMapViewer from "./AresMapViewer";
 import ProspectorPanel from "./ProspectorPanel";
 import AnalogueMatcherPanel from "./AnalogueMatcherPanel";
@@ -262,7 +262,7 @@ export const AresMartianApp: React.FC = () => {
       } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-hidden`}>
         {/* SLOT KIRI: Badge + Active Coordinates */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <AresMissionBadge size={30} showSubtext />
+          <MarsForAllBadge size={32} showSubtext />
           <div className={`hidden 2xl:flex items-center gap-2 pl-2.5 border-l ${
             isDark ? "border-slate-800 text-slate-400" : "border-slate-300 text-slate-600"
           } text-[10px] font-mono`}>
@@ -706,6 +706,7 @@ export const AresMartianApp: React.FC = () => {
           waypoint={selectedWaypoint}
           onClose={() => setIsPovOpen(false)}
           theme={theme}
+          dustStormActive={dustStormActive}
         />
       )}
 

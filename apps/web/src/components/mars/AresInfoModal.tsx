@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import AresMissionBadge from "../AresMissionBadge";
+import MarsForAllBadge from "../MarsForAllBadge";
 
 interface AresInfoModalProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export const AresInfoModal: React.FC<AresInfoModalProps> = ({
         <div className={`${
           isDark ? "bg-[#111827] border-slate-800" : "bg-slate-100 border-slate-300"
         } px-4 py-3 border-b flex items-center justify-between`}>
-          <AresMissionBadge size={32} showSubtext />
+          <MarsForAllBadge size={34} showSubtext />
           <button
             onClick={onClose}
             title="Close Info"

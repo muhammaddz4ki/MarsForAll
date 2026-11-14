@@ -23,11 +23,12 @@ export const metadata: Metadata = {
   applicationName: "MARSFORALL",
   icons: {
     icon: [
+      { url: "/images/marsforall-logo.png", type: "image/png" },
       { url: "/images/marsforall-badge.svg", type: "image/svg+xml" },
       { url: "/favicon.png", type: "image/png" },
     ],
-    shortcut: "/images/marsforall-badge.svg",
-    apple: "/images/marsforall-badge.svg",
+    shortcut: "/images/marsforall-logo.png",
+    apple: "/images/marsforall-logo.png",
   },
   keywords: [
     "Mars",

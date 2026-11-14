@@ -1,33 +1,36 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import * as THREE from "three";
 import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
+import MarsForAllBadge from "../MarsForAllBadge";
 
 interface SurfacePovModalProps {
   waypoint: MountSharpWaypoint | null;
   onClose: () => void;
   theme?: "dark" | "light";
+  dustStormActive?: boolean;
 }
 
-interface ScienceHotspot {
+interface LandmarkPin {
   id: string;
   code: string;
   name: string;
-  azimuth: number; // 0° - 360°
-  pitch: number;   // -25° to +45°
+  x: number;
+  z: number;
   instrument: string;
   metricLabel: string;
   metricValue: string;
   description: string;
 }
 
-const SCIENCE_HOTSPOTS: ScienceHotspot[] = [
+const LANDMARK_PINS: LandmarkPin[] = [
   {
     id: "pin_01",
     code: "PIN-01",
     name: "BOXWORK VEIN OUTCROP",
-    azimuth: 145,
-    pitch: -5,
+    x: 10,
+    z: -12,
     instrument: "APXS / CHEMCAM",
     metricLabel: "SULFATE FILL",
     metricValue: "34.2% SO3 / Ca-Sulfate",
@@ -36,9 +39,9 @@ const SCIENCE_HOTSPOTS: ScienceHotspot[] = [
   {
     id: "pin_02",
     code: "PIN-02",
-    name: "CURIOSITY SOL-4180 ROVER TRACKS",
-    azimuth: 210,
-    pitch: -18,
+    name: "CURIOSITY ROVER / COMPANION MULE",
+    x: -5,
+    z: 7,
     instrument: "HAZCAM / MOBILITY",
     metricLabel: "REGOLITH SINKAGE",
     metricValue: "3.2 cm basaltic sand",
@@ -48,8 +51,8 @@ const SCIENCE_HOTSPOTS: ScienceHotspot[] = [
     id: "pin_03",
     code: "PIN-03",
     name: "CHEMCAM LIBS LASER TARGET",
-    azimuth: 95,
-    pitch: -2,
+    x: -14,
+    z: -9,
     instrument: "CHEMCAM LIBS",
     metricLabel: "EMISSION SPECTRA",
     metricValue: "High-Si / Al Phyllosilicate",
@@ -57,647 +60,863 @@ const SCIENCE_HOTSPOTS: ScienceHotspot[] = [
   },
 ];
 
+// Helper to compute terrain elevation y(x, z) procedurally based on waypoint characteristics
+function getTerrainHeight(x: number, z: number, waypointId: string): number {
+  const isBoxwork = waypointId === "curiosity_boxwork_2025";
+
+  if (isBoxwork) {
+    // Regional gentle slope
+    const baseSlope = 0.04 * x - 0.025 * z + Math.sin(x * 0.12) * Math.cos(z * 0.12) * 0.5;
+
+    // Sharp polygonal boxwork lattice blade walls
+    const scale = 0.22;
+    const cellX = Math.abs(((x * scale) % 1 + 1) % 1 - 0.5);
+    const cellZ = Math.abs(((z * scale) % 1 + 1) % 1 - 0.5);
+    const diag = Math.abs((((x + z) * scale * 0.707) % 1 + 1) % 1 - 0.5);
+    const distToEdge = Math.min(cellX, cellZ, diag);
+
+    let boxworkRidges = 0;
+    if (distToEdge < 0.065) {
+      const ridgeProximity = (0.065 - distToEdge) / 0.065;
+      boxworkRidges = ridgeProximity * 1.8 * (0.8 + 0.3 * Math.sin(x * 0.5) * Math.cos(z * 0.5));
+    }
+
+    // Secondary fine vein ridges
+    const smallGrid = Math.min(
+      Math.abs(((x * 0.55) % 1 + 1) % 1 - 0.5),
+      Math.abs(((z * 0.55) % 1 + 1) % 1 - 0.5)
+    );
+    if (smallGrid < 0.04) {
+      boxworkRidges += ((0.04 - smallGrid) / 0.04) * 0.5;
+    }
+
+    // Basaltic gravel roughness
+    const fineRoughness = Math.sin(x * 2.8) * Math.sin(z * 2.8) * 0.05;
+
+    return baseSlope + boxworkRidges + fineRoughness;
+  }
+
+  // Mount Sharp slopes / Gediz Vallis / Gale Crater Floor
+  const regionalSlope = 0.07 * x - 0.04 * z;
+  const eolianRipples = Math.sin(0.75 * x + 0.35 * z) * 0.38 + Math.cos(0.35 * x - 0.65 * z) * 0.22;
+  const macroHummocks = Math.sin(x * 0.09) * Math.cos(z * 0.09) * 2.1;
+  const fineGravel = Math.sin(x * 3.2) * Math.sin(z * 3.2) * 0.04;
+
+  return regionalSlope + eolianRipples + macroHummocks + fineGravel;
+}
+
+// Generate procedural Martian regolith texture in memory (100% offline, zero network latency)
+function createMartianRegolithTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Red-ochre martian ground base
+  ctx.fillStyle = "#a84b2c";
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Mottled patches of weathered iron oxide dust
+  for (let i = 0; i < 350; i++) {
+    const px = Math.random() * 512;
+    const py = Math.random() * 512;
+    const pr = Math.random() * 35 + 8;
+    ctx.fillStyle = Math.random() > 0.45 ? "#ba5936" : "#87381e";
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Dark basaltic grains & noise
+  const imgData = ctx.getImageData(0, 0, 512, 512);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const grain = (Math.random() - 0.5) * 48;
+    data[i] = Math.max(0, Math.min(255, data[i] + grain));
+    data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grain * 0.65));
+    data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grain * 0.45));
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(16, 16);
+  return texture;
+}
+
+// Generate procedural bump texture for rock micro-texture
+function createMartianBumpTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  ctx.fillStyle = "#808080";
+  ctx.fillRect(0, 0, 512, 512);
+
+  const imgData = ctx.getImageData(0, 0, 512, 512);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const val = 128 + Math.floor((Math.random() - 0.5) * 85);
+    const clamped = Math.max(0, Math.min(255, val));
+    data[i] = clamped;
+    data[i + 1] = clamped;
+    data[i + 2] = clamped;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(24, 24);
+  return texture;
+}
+
+// Build 3D Curiosity / Companion Mule Rover Unit
+function createCompanionRoverGroup(waypointId: string): THREE.Group {
+  const roverGroup = new THREE.Group();
+  const roverX = -5;
+  const roverZ = 7;
+  const roverBaseY = getTerrainHeight(roverX, roverZ, waypointId);
+  roverGroup.position.set(roverX, roverBaseY, roverZ);
+
+  // Materials
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x64748b, // Titanium slate body
+    roughness: 0.6,
+    metalness: 0.3,
+  });
+  const wheelMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b, // Dark cleated aluminum wheels
+    roughness: 0.85,
+    metalness: 0.2,
+  });
+  const goldFoilMat = new THREE.MeshStandardMaterial({
+    color: 0xb45309, // Multi-layer thermal insulation foil
+    roughness: 0.3,
+    metalness: 0.8,
+  });
+  const lensMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+
+  // Main chassis box
+  const chassisGeom = new THREE.BoxGeometry(2.4, 0.6, 1.6);
+  const chassis = new THREE.Mesh(chassisGeom, bodyMat);
+  chassis.position.y = 0.75;
+  roverGroup.add(chassis);
+
+  // Gold foil avionics payload compartment
+  const foilGeom = new THREE.BoxGeometry(1.2, 0.45, 1.1);
+  const foilBox = new THREE.Mesh(foilGeom, goldFoilMat);
+  foilBox.position.set(-0.2, 1.1, 0);
+  roverGroup.add(foilBox);
+
+  // Mastcam Remote Sensing Mast (RSM)
+  const mastGeom = new THREE.CylinderGeometry(0.045, 0.05, 1.4, 8);
+  const mast = new THREE.Mesh(mastGeom, bodyMat);
+  mast.position.set(0.8, 1.6, 0.4);
+  roverGroup.add(mast);
+
+  // Mastcam camera head
+  const headGeom = new THREE.BoxGeometry(0.3, 0.2, 0.25);
+  const head = new THREE.Mesh(headGeom, bodyMat);
+  head.position.set(0.8, 2.35, 0.4);
+  roverGroup.add(head);
+
+  // Mastcam stereo optical lenses
+  const lensGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 12);
+  lensGeom.rotateX(Math.PI / 2);
+  const leftLens = new THREE.Mesh(lensGeom, lensMat);
+  leftLens.position.set(0.88, 2.35, 0.34);
+  const rightLens = new THREE.Mesh(lensGeom, lensMat);
+  rightLens.position.set(0.88, 2.35, 0.46);
+  roverGroup.add(leftLens);
+  roverGroup.add(rightLens);
+
+  // Multi-Mission Radioisotope Thermoelectric Generator (MMRTG)
+  const rtgGeom = new THREE.CylinderGeometry(0.25, 0.25, 0.8, 8);
+  rtgGeom.rotateZ(Math.PI / 2);
+  const rtg = new THREE.Mesh(rtgGeom, wheelMat);
+  rtg.position.set(-1.4, 0.85, 0);
+  roverGroup.add(rtg);
+
+  // 6 Cleated Rocker-Bogie Wheels
+  const wheelGeom = new THREE.CylinderGeometry(0.28, 0.28, 0.26, 16);
+  wheelGeom.rotateX(Math.PI / 2);
+
+  const wheelPositions = [
+    [0.9, 0.28, 1.05],
+    [0.0, 0.28, 1.15],
+    [-0.9, 0.28, 1.05],
+    [0.9, 0.28, -1.05],
+    [0.0, 0.28, -1.15],
+    [-0.9, 0.28, -1.05],
+  ];
+
+  wheelPositions.forEach(([wx, wy, wz]) => {
+    const wheel = new THREE.Mesh(wheelGeom, wheelMat);
+    wheel.position.set(wx, wy, wz);
+    roverGroup.add(wheel);
+  });
+
+  return roverGroup;
+}
+
 export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   waypoint,
   onClose,
   theme = "dark",
+  dustStormActive = false,
 }) => {
-  const initialAz = waypoint?.roverRawImage?.pointingAzimuthDeg ?? 142;
-  const initialPitch = waypoint?.roverRawImage?.elevationAngleDeg ?? -4.5;
+  const mountRef = useRef<HTMLDivElement>(null);
 
-  const [povMode, setPovMode] = useState<"panorama" | "tactical_lidar">("panorama");
-  const [azimuth, setAzimuth] = useState<number>(initialAz);
-  const [pitch, setPitch] = useState<number>(initialPitch);
-  const [zoom, setZoom] = useState<number>(1.0);
-  const [activePinId, setActivePinId] = useState<string | null>(null);
-  const [imageFailed, setImageFailed] = useState<boolean>(false);
+  // Tactical view modes: surface (textured), mesh (cyan photogrammetric wireframe), vr_stereo (stereoscopic WebXR/dual-eye)
+  const [viewMode, setViewMode] = useState<"surface" | "mesh" | "vr_stereo">("surface");
+  const [activePin, setActivePin] = useState<LandmarkPin | null>(null);
 
-  // Drag interaction state
-  const isDraggingRef = useRef<boolean>(false);
-  const dragStartRef = useRef<{ x: number; y: number; startAz: number; startPitch: number }>({
+  // Telemetry HUD readouts
+  const [camAzimuth, setCamAzimuth] = useState<number>(142);
+  const [camPitch, setCamPitch] = useState<number>(-4.5);
+  const [camFov, setCamFov] = useState<number>(65);
+  const [camElevation, setCamElevation] = useState<number>(-4120);
+  const [reticleCoords, setReticleCoords] = useState<{ x: number; z: number; elev: number } | null>(null);
+  const [teleportingNotice, setTeleportingNotice] = useState<boolean>(false);
+
+  // References for Three.js state across re-renders
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const terrainMeshRef = useRef<THREE.Mesh | null>(null);
+  const wireframeMeshRef = useRef<THREE.LineSegments | null>(null);
+  const reticleRef = useRef<THREE.Mesh | null>(null);
+  const landmarkMeshesRef = useRef<THREE.Object3D[]>([]);
+
+  // Camera orientation & motion control
+  const camPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.7, 0));
+  const targetCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 1.7, 0));
+  const isLerpingCamRef = useRef<boolean>(false);
+  const yawRef = useRef<number>((142 * Math.PI) / 180);
+  const pitchRef = useRef<number>((-4.5 * Math.PI) / 180);
+  const fovRef = useRef<number>(65);
+
+  // Mouse / Pointer drag state
+  const isPointerDownRef = useRef<boolean>(false);
+  const pointerStartRef = useRef<{ x: number; y: number; startYaw: number; startPitch: number }>({
     x: 0,
     y: 0,
-    startAz: initialAz,
-    startPitch: initialPitch,
+    startYaw: 0,
+    startPitch: 0,
   });
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const hasDraggedRef = useRef<boolean>(false);
 
-  if (!waypoint) return null;
+  // Raycasting for ground intersection and pins
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseNormRef = useRef<THREE.Vector2>(new THREE.Vector2(-999, -999));
 
-  const isDark = theme === "dark";
-  const roverImage = waypoint.roverRawImage;
+  const baseElevation = waypoint?.elevationM ?? -4120;
+  const wpId = waypoint?.id ?? "mount_sharp_baseline";
 
-  // Viewport FOV calculations
-  const fovX = 70 / zoom; // horizontal field of view in degrees
-  const fovY = 44 / zoom; // vertical field of view in degrees
-  const halfFovX = fovX / 2;
-  const halfFovY = fovY / 2;
+  // Reset camera to initial observation origin
+  const handleResetOrigin = useCallback(() => {
+    const originY = getTerrainHeight(0, 0, wpId) + 1.7;
+    targetCamPosRef.current.set(0, originY, 0);
+    isLerpingCamRef.current = true;
+    yawRef.current = (142 * Math.PI) / 180;
+    pitchRef.current = (-4.5 * Math.PI) / 180;
+    fovRef.current = 65;
+    if (cameraRef.current) {
+      cameraRef.current.fov = 65;
+      cameraRef.current.updateProjectionMatrix();
+    }
+    setCamAzimuth(142);
+    setCamPitch(-4.5);
+    setCamFov(65);
+  }, [wpId]);
 
-  // Normalize azimuth to 0-360
-  const normalizedAz = ((azimuth % 360) + 360) % 360;
+  // Main Three.js Scene Setup & Loop
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container || !waypoint) return;
 
-  // Pointer drag handlers
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    isDraggingRef.current = true;
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      startAz: azimuth,
-      startPitch: pitch,
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
+
+    // 1. Scene & Atmosphere Configuration
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Martian Atmosphere Color & Fog based on dustStormActive
+    const skyClearColor = dustStormActive ? 0x240e06 : 0x1f1410;
+    const fogColor = dustStormActive ? 0x6b2e10 : 0xb57852;
+    const fogDensity = dustStormActive ? 0.032 : 0.0065;
+    scene.background = new THREE.Color(skyClearColor);
+    scene.fog = new THREE.FogExp2(fogColor, fogDensity);
+
+    // 2. Camera Configuration (EVA 1.7m eye-level)
+    const camera = new THREE.PerspectiveCamera(fovRef.current, width / height, 0.1, 400);
+    const startY = getTerrainHeight(0, 0, wpId) + 1.7;
+    camPosRef.current.set(0, startY, 0);
+    targetCamPosRef.current.set(0, startY, 0);
+    camera.position.copy(camPosRef.current);
+    cameraRef.current = camera;
+
+    // 3. WebGL Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = dustStormActive ? 0.8 : 1.15;
+    rendererRef.current = renderer;
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
+
+    // 4. Lighting
+    const ambientLight = new THREE.AmbientLight(
+      dustStormActive ? 0x994411 : 0xffd5ad,
+      dustStormActive ? 0.45 : 0.75
+    );
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(
+      dustStormActive ? 0xd97736 : 0xfff4e6,
+      dustStormActive ? 0.5 : 1.4
+    );
+    sunLight.position.set(35, 45, 25);
+    scene.add(sunLight);
+
+    // Fill light from northern Aeolis Mons ridge
+    const fillLight = new THREE.DirectionalLight(0xb45309, 0.3);
+    fillLight.position.set(-30, 20, -30);
+    scene.add(fillLight);
+
+    // 5. Procedural Martian Terrain Geometry (120x120m, 128x128 segments)
+    const terrainGeom = new THREE.PlaneGeometry(120, 120, 128, 128);
+    terrainGeom.rotateX(-Math.PI / 2);
+
+    const posAttr = terrainGeom.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainHeight(vx, vz, wpId);
+      posAttr.setY(i, vy);
+    }
+    terrainGeom.computeVertexNormals();
+
+    const regolithTex = createMartianRegolithTexture();
+    const bumpTex = createMartianBumpTexture();
+
+    const terrainMaterial = new THREE.MeshStandardMaterial({
+      map: regolithTex,
+      bumpMap: bumpTex,
+      bumpScale: 0.12,
+      roughness: 0.88,
+      metalness: 0.08,
+      flatShading: false,
+    });
+
+    const terrainMesh = new THREE.Mesh(terrainGeom, terrainMaterial);
+    terrainMesh.name = "martian_terrain";
+    scene.add(terrainMesh);
+    terrainMeshRef.current = terrainMesh;
+
+    // Photogrammetric Wireframe Overlay Mesh (Cyan Topographic Lattice)
+    const wireframeGeom = new THREE.WireframeGeometry(terrainGeom);
+    const wireframeMat = new THREE.LineBasicMaterial({
+      color: 0x00f0ff,
+      transparent: true,
+      opacity: 0.65,
+    });
+    const wireframeMesh = new THREE.LineSegments(wireframeGeom, wireframeMat);
+    wireframeMesh.visible = false;
+    scene.add(wireframeMesh);
+    wireframeMeshRef.current = wireframeMesh;
+
+    // 6. Ground-Projected Targeting Reticle (Click-to-Teleport)
+    const reticleGeom = new THREE.RingGeometry(0.55, 0.72, 32);
+    reticleGeom.rotateX(-Math.PI / 2);
+    const reticleMat = new THREE.MeshBasicMaterial({
+      color: 0x22d3ee,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85,
+    });
+    const reticleMesh = new THREE.Mesh(reticleGeom, reticleMat);
+    reticleMesh.visible = false;
+    scene.add(reticleMesh);
+    reticleRef.current = reticleMesh;
+
+    // 7. Companion Rover 3D Unit
+    const rover = createCompanionRoverGroup(wpId);
+    scene.add(rover);
+
+    // 8. 3D Spatial Landmark Pins & Vertical Light Beams
+    const landmarkObjects: THREE.Object3D[] = [];
+    LANDMARK_PINS.forEach((pin) => {
+      const pinY = getTerrainHeight(pin.x, pin.z, wpId);
+
+      const pinGroup = new THREE.Group();
+      pinGroup.position.set(pin.x, pinY, pin.z);
+
+      // Vertical Light Beam Pillar
+      const pillarGeom = new THREE.CylinderGeometry(0.08, 0.08, 8, 8);
+      pillarGeom.translate(0, 4, 0);
+      const pillarMat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        transparent: true,
+        opacity: 0.6,
+      });
+      const pillar = new THREE.Mesh(pillarGeom, pillarMat);
+      pinGroup.add(pillar);
+
+      // Rotating Octahedron Beacon Crystal
+      const beaconGeom = new THREE.OctahedronGeometry(0.48);
+      const beaconMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true });
+      const beacon = new THREE.Mesh(beaconGeom, beaconMat);
+      beacon.position.y = 8.2;
+      beacon.name = "rotating_beacon";
+      pinGroup.add(beacon);
+
+      // Base footprint ring
+      const baseRingGeom = new THREE.RingGeometry(0.8, 0.95, 24);
+      baseRingGeom.rotateX(-Math.PI / 2);
+      const baseRingMat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.7,
+      });
+      const baseRing = new THREE.Mesh(baseRingGeom, baseRingMat);
+      baseRing.position.y = 0.05;
+      pinGroup.add(baseRing);
+
+      // Hitbox for raycasting click
+      const hitGeom = new THREE.CylinderGeometry(1.2, 1.2, 9, 8);
+      hitGeom.translate(0, 4.5, 0);
+      const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+      const hitMesh = new THREE.Mesh(hitGeom, hitMat);
+      hitMesh.userData = { pinData: pin };
+      pinGroup.add(hitMesh);
+
+      scene.add(pinGroup);
+      landmarkObjects.push(hitMesh);
+    });
+    landmarkMeshesRef.current = landmarkObjects;
+
+    // 9. Resize Handler
+    const handleResize = () => {
+      if (!container || !rendererRef.current || !cameraRef.current) return;
+      const nw = container.clientWidth;
+      const nh = container.clientHeight;
+      cameraRef.current.aspect = nw / nh;
+      cameraRef.current.updateProjectionMatrix();
+      rendererRef.current.setSize(nw, nh);
     };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
+    window.addEventListener("resize", handleResize);
 
+    // 10. Animation & Render Loop
+    let animationFrameId: number;
+    let clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+
+      // Rotate landmark beacon diamonds
+      scene.traverse((obj) => {
+        if (obj.name === "rotating_beacon") {
+          obj.rotation.y = elapsedTime * 1.5;
+        }
+      });
+
+      // Smooth camera position lerping (click-to-teleport)
+      if (isLerpingCamRef.current) {
+        camPosRef.current.lerp(targetCamPosRef.current, 0.08);
+        if (camPosRef.current.distanceTo(targetCamPosRef.current) < 0.05) {
+          camPosRef.current.copy(targetCamPosRef.current);
+          isLerpingCamRef.current = false;
+        }
+        setCamElevation(Math.round(baseElevation + camPosRef.current.y));
+      }
+      camera.position.copy(camPosRef.current);
+
+      // Compute look direction from yaw and pitch
+      const lookDist = 50;
+      const cx = Math.sin(yawRef.current) * Math.cos(pitchRef.current) * lookDist;
+      const cy = Math.sin(pitchRef.current) * lookDist;
+      const cz = -Math.cos(yawRef.current) * Math.cos(pitchRef.current) * lookDist;
+      camera.lookAt(
+        camPosRef.current.x + cx,
+        camPosRef.current.y + cy,
+        camPosRef.current.z + cz
+      );
+
+      // Standard single-viewport vs. stereoscopic dual-eye rendering
+      if (viewMode === "vr_stereo") {
+        const sw = renderer.domElement.clientWidth;
+        const sh = renderer.domElement.clientHeight;
+        const halfW = sw / 2;
+
+        renderer.setScissorTest(true);
+
+        // Left Eye (offset -0.032m)
+        renderer.setScissor(0, 0, halfW, sh);
+        renderer.setViewport(0, 0, halfW, sh);
+        camera.aspect = halfW / sh;
+        camera.updateProjectionMatrix();
+        camera.position.x = camPosRef.current.x - 0.032;
+        renderer.render(scene, camera);
+
+        // Right Eye (offset +0.032m)
+        renderer.setScissor(halfW, 0, halfW, sh);
+        renderer.setViewport(halfW, 0, halfW, sh);
+        camera.aspect = halfW / sh;
+        camera.updateProjectionMatrix();
+        camera.position.x = camPosRef.current.x + 0.032;
+        renderer.render(scene, camera);
+
+        // Restore
+        camera.position.copy(camPosRef.current);
+        renderer.setScissorTest(false);
+      } else {
+        renderer.render(scene, camera);
+      }
+    };
+
+    animate();
+
+    // Cleanup on unmount
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", handleResize);
+      renderer.dispose();
+      terrainGeom.dispose();
+      terrainMaterial.dispose();
+      regolithTex.dispose();
+      bumpTex.dispose();
+      wireframeGeom.dispose();
+      wireframeMat.dispose();
+      reticleGeom.dispose();
+      reticleMat.dispose();
+      container.innerHTML = "";
+    };
+  }, [waypoint, wpId, baseElevation, dustStormActive, viewMode]);
+
+  // Synchronize tactical view mode styles
+  useEffect(() => {
+    if (!terrainMeshRef.current || !wireframeMeshRef.current) return;
+    if (viewMode === "mesh") {
+      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = false;
+      wireframeMeshRef.current.visible = true;
+    } else {
+      (terrainMeshRef.current.material as THREE.MeshStandardMaterial).visible = true;
+      wireframeMeshRef.current.visible = false;
+    }
+  }, [viewMode]);
+
+  // Pointer Movement (Hover Reticle & Drag Pan)
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current || !viewportRef.current) return;
-    const rect = viewportRef.current.getBoundingClientRect();
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
+    const container = mountRef.current;
+    if (!container || !cameraRef.current || !terrainMeshRef.current) return;
 
-    const deltaAz = -(dx / rect.width) * fovX;
-    const deltaPitch = (dy / rect.height) * fovY;
+    const rect = container.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    mouseNormRef.current.set(mouseX, mouseY);
 
-    const newAz = ((dragStartRef.current.startAz + deltaAz) % 360 + 360) % 360;
-    const newPitch = Math.max(-25, Math.min(45, dragStartRef.current.startPitch + deltaPitch));
+    // Pointer Drag Rotation
+    if (isPointerDownRef.current) {
+      const dx = e.clientX - pointerStartRef.current.x;
+      const dy = e.clientY - pointerStartRef.current.y;
 
-    setAzimuth(Math.round(newAz * 10) / 10);
-    setPitch(Math.round(newPitch * 10) / 10);
-  };
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        hasDraggedRef.current = true;
+      }
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    isDraggingRef.current = false;
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if pointer capture already lost
+      // Drag sensitivity
+      const sens = 0.0035;
+      yawRef.current = pointerStartRef.current.startYaw - dx * sens;
+      pitchRef.current = Math.max(
+        -1.3,
+        Math.min(1.3, pointerStartRef.current.startPitch + dy * sens)
+      );
+
+      const normDegAz = Math.round((((yawRef.current * 180) / Math.PI) % 360 + 360) % 360);
+      const normDegPitch = Math.round((pitchRef.current * 180) / Math.PI * 10) / 10;
+      setCamAzimuth(normDegAz);
+      setCamPitch(normDegPitch);
+      return;
+    }
+
+    // Raycast for Ground Reticle Projection
+    raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
+    const intersects = raycasterRef.current.intersectObject(terrainMeshRef.current);
+
+    if (intersects.length > 0 && reticleRef.current) {
+      const hit = intersects[0];
+      reticleRef.current.visible = true;
+      reticleRef.current.position.set(hit.point.x, hit.point.y + 0.04, hit.point.z);
+      setReticleCoords({
+        x: Math.round(hit.point.x * 10) / 10,
+        z: Math.round(hit.point.z * 10) / 10,
+        elev: Math.round((baseElevation + hit.point.y) * 10) / 10,
+      });
+    } else if (reticleRef.current) {
+      reticleRef.current.visible = false;
+      setReticleCoords(null);
     }
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isPointerDownRef.current = true;
+    hasDraggedRef.current = false;
+    pointerStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      startYaw: yawRef.current,
+      startPitch: pitchRef.current,
+    };
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isPointerDownRef.current = false;
+
+    // If it was a drag, don't execute teleport/pin click
+    if (hasDraggedRef.current) return;
+
+    // Check click on landmark pins first
+    if (cameraRef.current && landmarkMeshesRef.current.length > 0) {
+      raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
+      const pinHits = raycasterRef.current.intersectObjects(landmarkMeshesRef.current);
+      if (pinHits.length > 0) {
+        const pinData = pinHits[0].object.userData.pinData as LandmarkPin;
+        if (pinData) {
+          setActivePin(pinData);
+          return;
+        }
+      }
+    }
+
+    // Ground Click-to-Teleport
+    if (terrainMeshRef.current && cameraRef.current) {
+      raycasterRef.current.setFromCamera(mouseNormRef.current, cameraRef.current);
+      const hits = raycasterRef.current.intersectObject(terrainMeshRef.current);
+      if (hits.length > 0) {
+        const targetPoint = hits[0].point;
+        targetCamPosRef.current.set(targetPoint.x, targetPoint.y + 1.7, targetPoint.z);
+        isLerpingCamRef.current = true;
+        setTeleportingNotice(true);
+        setTimeout(() => setTeleportingNotice(false), 900);
+      }
+    }
+  };
+
+  // Mouse Wheel Zoom (FOV 30° - 85°)
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const delta = e.deltaY * -0.0015;
-    setZoom((prev) => Math.max(1.0, Math.min(2.5, Math.round((prev + delta) * 10) / 10)));
+    if (!cameraRef.current) return;
+    const delta = e.deltaY * 0.05;
+    const newFov = Math.max(30, Math.min(85, fovRef.current + delta));
+    fovRef.current = newFov;
+    cameraRef.current.fov = newFov;
+    cameraRef.current.updateProjectionMatrix();
+    setCamFov(Math.round(newFov));
   };
 
-  const resetPov = () => {
-    setAzimuth(initialAz);
-    setPitch(initialPitch);
-    setZoom(1.0);
-    setActivePinId(null);
-  };
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (activePin) {
+          setActivePin(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, activePin]);
 
-  // Compass tick angles (every 15° around 360°)
-  const compassTicks = [
-    { deg: 0, label: "N" },
-    { deg: 30, label: "30" },
-    { deg: 45, label: "NE" },
-    { deg: 60, label: "60" },
-    { deg: 90, label: "E" },
-    { deg: 120, label: "120" },
-    { deg: 135, label: "SE" },
-    { deg: 150, label: "150" },
-    { deg: 180, label: "S" },
-    { deg: 210, label: "210" },
-    { deg: 225, label: "SW" },
-    { deg: 240, label: "240" },
-    { deg: 270, label: "W" },
-    { deg: 300, label: "300" },
-    { deg: 315, label: "NW" },
-    { deg: 330, label: "330" },
-  ];
-
-  // Helper to calculate delta angle wrapped to [-180, 180]
-  const getAngleDelta = (targetDeg: number, currentDeg: number) => {
-    return ((targetDeg - currentDeg + 540) % 360) - 180;
-  };
-
-  // Cardinal direction label for current azimuth
-  const getCardinal = (deg: number) => {
-    const val = ((deg % 360) + 360) % 360;
-    if (val >= 337.5 || val < 22.5) return "N";
-    if (val >= 22.5 && val < 67.5) return "NE";
-    if (val >= 67.5 && val < 112.5) return "E";
-    if (val >= 112.5 && val < 157.5) return "SE";
-    if (val >= 157.5 && val < 202.5) return "S";
-    if (val >= 202.5 && val < 247.5) return "SW";
-    if (val >= 247.5 && val < 292.5) return "W";
-    return "NW";
-  };
-
-  const activePin = SCIENCE_HOTSPOTS.find((p) => p.id === activePinId);
-
-  // Parallax background offset based on azimuth & pitch
-  const bgHorizonShiftX = -((normalizedAz / 360) * 100);
-  const bgMidgroundShiftX = -((normalizedAz / 360) * 160);
-  const bgPitchOffset = (pitch / 45) * 35; // vertical shift in px
-
-  // Rover raw image center angle relative to current azimuth
-  const roverTargetAz = roverImage?.pointingAzimuthDeg ?? 142;
-  const roverTargetPitch = roverImage?.elevationAngleDeg ?? -4.5;
-  const dAzRover = getAngleDelta(roverTargetAz, normalizedAz);
-  const dPitchRover = roverTargetPitch - pitch;
-  const isRoverImageVisible =
-    roverImage &&
-    !imageFailed &&
-    Math.abs(dAzRover) <= halfFovX + 35 &&
-    Math.abs(dPitchRover) <= halfFovY + 25;
-  const roverImgScreenX = 50 + (dAzRover / halfFovX) * 50;
-  const roverImgScreenY = 50 - (dPitchRover / halfFovY) * 50;
+  if (!waypoint) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 select-none">
-      <div
-        className={`relative w-full max-w-5xl border flex flex-col max-h-[94vh] shadow-none ${
-          isDark ? "bg-[#0b0f17] border-slate-700" : "bg-white border-slate-300"
-        }`}
-      >
-        {/* Top Tactical Banner */}
-        <div
-          className={`px-4 py-2 border-b flex items-center justify-between ${
-            isDark ? "bg-[#111827] border-slate-800" : "bg-slate-100 border-slate-300"
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 bg-amber-500" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-mono text-[10px] font-bold uppercase tracking-widest block ${
-                    isDark ? "text-amber-400" : "text-amber-800"
-                  }`}
-                >
-                  360° SURFACE PANORAMIC EXPLORER // {povMode === "panorama" ? "SURFACE PANORAMA" : "TACTICAL LIDAR"}
-                </span>
-                <span className="font-mono text-[9px] text-cyan-400 border border-cyan-800/80 bg-[#07090e] px-1 py-0.2">
-                  FOV: {Math.round(fovX)}°
-                </span>
-              </div>
-              <h2 className={`text-xs font-mono font-semibold uppercase ${isDark ? "text-white" : "text-slate-900"}`}>
-                {waypoint.name}
-              </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4 select-none">
+      {/* Outer Tactical Viewport Box */}
+      <div className="relative w-full h-full max-w-7xl max-h-[92vh] bg-[#07090e] border border-slate-700 flex flex-col overflow-hidden">
+        
+        {/* HUD HEADER: Mission Badge, Waypoint Meta & Tactical View Mode Switcher */}
+        <div className="h-11 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
+          <div className="flex items-center gap-3">
+            <MarsForAllBadge size={22} showSubtext={false} />
+            <div className="flex items-center gap-2 text-slate-300">
+              <span className="font-bold text-amber-400">MARSFORALL // GALE-01</span>
+              <span className="text-slate-600">|</span>
+              <span className="text-slate-400">3D SURFACE EXPLORER</span>
+              <span className="text-slate-600">|</span>
+              <span className="text-emerald-400 font-bold">{waypoint.name}</span>
             </div>
           </div>
 
+          {/* Mode Switcher Buttons */}
           <div className="flex items-center gap-2">
-            {/* View Mode Toggle: 360° PANORAMA vs TACTICAL LIDAR */}
-            <div className="flex bg-[#07090e] border border-slate-700 p-0.5 font-mono text-[10px]">
+            <div className="flex items-center border border-slate-800 bg-[#07090e] p-0.5">
               <button
-                onClick={() => setPovMode("panorama")}
-                className={`px-2.5 py-1 transition-colors ${
-                  povMode === "panorama"
-                    ? "bg-amber-600 text-slate-950 font-bold"
-                    : "text-slate-400 hover:text-white"
+                onClick={() => setViewMode("surface")}
+                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                  viewMode === "surface"
+                    ? "bg-[#161e2e] text-amber-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                360° PANORAMA
+                [ 3D SURFACE ]
               </button>
               <button
-                onClick={() => setPovMode("tactical_lidar")}
-                className={`px-2.5 py-1 transition-colors ${
-                  povMode === "tactical_lidar"
-                    ? "bg-cyan-600 text-slate-950 font-bold"
-                    : "text-slate-400 hover:text-white"
+                onClick={() => setViewMode("mesh")}
+                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                  viewMode === "mesh"
+                    ? "bg-[#161e2e] text-cyan-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                TACTICAL LIDAR
+                [ 3D PHOTOGRAMMETRY MESH ]
+              </button>
+              <button
+                onClick={() => setViewMode("vr_stereo")}
+                className={`px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                  viewMode === "vr_stereo"
+                    ? "bg-[#161e2e] text-rose-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                [ VR / STEREO MODE ]
               </button>
             </div>
 
-            <span className="font-mono text-[10px] text-slate-300 bg-[#161e2e] border border-slate-700 px-2 py-1 tabular-nums hidden sm:inline-block">
-              DATUM: {waypoint.elevationM} m
-            </span>
-
+            {/* Close Button */}
             <button
               onClick={onClose}
-              title="Close Viewer"
-              className="w-7 h-7 bg-[#1f2937] hover:bg-[#374151] border border-slate-600 text-slate-300 font-mono text-xs flex items-center justify-center transition-colors"
+              className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-xs font-bold transition-colors"
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              [ ESC / X ]
             </button>
           </div>
         </div>
 
-        {/* 360° Interactive Panoramic Viewport */}
+        {/* 3D CANVAS VIEWPORT */}
         <div
-          ref={viewportRef}
+          ref={mountRef}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onWheel={handleWheel}
-          className="relative w-full h-80 sm:h-96 bg-[#07090e] border-b border-slate-800 overflow-hidden cursor-grab active:cursor-grabbing select-none"
+          className="relative flex-1 w-full h-full cursor-grab active:cursor-grabbing overflow-hidden bg-black"
         >
-          {/* LAYER 1: COMPASS HEADING TAPE (Top HUD Ribbon) */}
-          <div className="absolute top-0 left-0 right-0 h-8 bg-[#0b0f17]/90 border-b border-slate-800 z-30 pointer-events-none overflow-hidden font-mono">
-            {/* Center tick indicator */}
-            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-amber-500 z-40" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-amber-500 text-slate-950 text-[9px] font-bold z-40">
-              {Math.round(normalizedAz)}° {getCardinal(normalizedAz)}
-            </div>
-
-            {/* Moving compass ticks */}
-            <div className="relative w-full h-full">
-              {compassTicks.map((tick) => {
-                const dAz = getAngleDelta(tick.deg, normalizedAz);
-                if (Math.abs(dAz) > halfFovX + 10) return null;
-                const screenX = 50 + (dAz / halfFovX) * 50;
-                return (
-                  <div
-                    key={tick.deg}
-                    style={{ left: `${screenX}%` }}
-                    className="absolute bottom-0 -translate-x-1/2 flex flex-col items-center"
-                  >
-                    <span className="text-[8px] text-slate-400 font-bold leading-none mb-0.5">
-                      {tick.label}
-                    </span>
-                    <span className="w-px h-2 bg-slate-600" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* LAYER 2: 360° MARS TERRAIN HORIZON & PANORAMA (MODE A vs MODE B) */}
-          {povMode === "panorama" ? (
-            <div
-              className="absolute inset-0 overflow-hidden"
-              style={{
-                transform: `translateY(${bgPitchOffset}px)`,
-                transition: isDraggingRef.current ? "none" : "transform 0.1s ease-out",
-              }}
-            >
-              {/* Sky Dome (Flat solid Mars Ochre/Dust sky) */}
-              <div className="absolute inset-0 bg-[#2b1712]" />
-
-              {/* Distant Gale Crater Rim & Aeolis Mons Mountain Silhouette (Parallax Layer 1) */}
-              <div
-                className="absolute bottom-16 w-[300%] h-56 flex"
-                style={{
-                  left: `${bgHorizonShiftX}%`,
-                  transition: isDraggingRef.current ? "none" : "left 0.1s ease-out",
-                }}
-              >
-                {[0, 1, 2].map((idx) => (
-                  <svg
-                    key={idx}
-                    className="w-1/3 h-full shrink-0 text-[#4a221a]"
-                    viewBox="0 0 1000 200"
-                    preserveAspectRatio="none"
-                  >
-                    <polygon
-                      points="0,200 80,130 180,150 290,90 410,135 520,65 640,115 760,85 880,140 1000,105 1000,200"
-                      fill="currentColor"
-                    />
-                  </svg>
-                ))}
-              </div>
-
-              {/* Midground Sulfate Ridge / Boxwork Layer (Parallax Layer 2) */}
-              <div
-                className="absolute bottom-6 w-[300%] h-44 flex"
-                style={{
-                  left: `${bgMidgroundShiftX}%`,
-                  transition: isDraggingRef.current ? "none" : "left 0.1s ease-out",
-                }}
-              >
-                {[0, 1, 2].map((idx) => (
-                  <svg
-                    key={idx}
-                    className="w-1/3 h-full shrink-0 text-[#210e0b]"
-                    viewBox="0 0 1000 160"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d="M0,160 L0,105 Q120,70 240,95 T480,75 T720,100 T1000,80 L1000,160 Z"
-                      fill="currentColor"
-                    />
-                    {/* Sulfate Ridge Lattice Strata */}
-                    <path
-                      d="M150,110 L230,85 L320,100 M450,90 L520,70 L610,95 M780,105 L870,85 L950,95"
-                      stroke="#8c4738"
-                      strokeWidth="1.5"
-                      fill="none"
-                    />
-                  </svg>
-                ))}
-              </div>
-
-              {/* Foreground Martian Surface Flat Plate */}
-              <div className="absolute bottom-0 left-0 right-0 h-16 bg-[#140806] border-t border-[#3d1b14]" />
-
-              {/* Real Mastcam/Navcam Image Frustum (If inside FOV) */}
-              {isRoverImageVisible && roverImage && (
-                <div
-                  style={{
-                    left: `${roverImgScreenX}%`,
-                    top: `${roverImgScreenY}%`,
-                    width: `${340 * zoom}px`,
-                    height: `${210 * zoom}px`,
-                    transform: "translate(-50%, -50%)",
-                  }}
-                  className="absolute border-2 border-amber-500 bg-[#07090e] shadow-none z-20"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={roverImage.imageUrl}
-                    alt={roverImage.caption}
-                    onError={() => setImageFailed(true)}
-                    className="w-full h-full object-cover pointer-events-none"
-                  />
-                  <div className="absolute top-0 left-0 bg-[#07090e]/90 px-1.5 py-0.5 border-b border-r border-amber-500 font-mono text-[8px] text-amber-400 font-bold">
-                    NASA PDS // {roverImage.camera} [SOL {roverImage.sol}]
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-[#07090e]/90 px-2 py-0.5 font-mono text-[8px] text-slate-300 truncate">
-                    TARGET: {roverImage.targetName}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* MODE B: TACTICAL LIDAR / WIREFRAME TERRAIN VIEW */
-            <div
-              className="absolute inset-0 bg-[#07090e] overflow-hidden"
-              style={{
-                transform: `translateY(${bgPitchOffset}px)`,
-                transition: isDraggingRef.current ? "none" : "transform 0.1s ease-out",
-              }}
-            >
-              {/* Tactical Distance Grid */}
-              <svg className="absolute inset-0 w-full h-full opacity-20 text-cyan-500" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="lidarGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#lidarGrid)" />
-              </svg>
-
-              {/* Wireframe Mount Sharp Ridgeline */}
-              <div
-                className="absolute bottom-16 w-[300%] h-56 flex"
-                style={{
-                  left: `${bgHorizonShiftX}%`,
-                  transition: isDraggingRef.current ? "none" : "left 0.1s ease-out",
-                }}
-              >
-                {[0, 1, 2].map((idx) => (
-                  <svg
-                    key={idx}
-                    className="w-1/3 h-full shrink-0 text-cyan-600"
-                    viewBox="0 0 1000 200"
-                    preserveAspectRatio="none"
-                  >
-                    <polyline
-                      points="0,200 80,130 180,150 290,90 410,135 520,65 640,115 760,85 880,140 1000,105 1000,200"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <line x1="290" y1="90" x2="290" y2="200" stroke="#0891b2" strokeWidth="0.5" strokeDasharray="3 3" />
-                    <line x1="520" y1="65" x2="520" y2="200" stroke="#0891b2" strokeWidth="0.5" strokeDasharray="3 3" />
-                    <line x1="760" y1="85" x2="760" y2="200" stroke="#0891b2" strokeWidth="0.5" strokeDasharray="3 3" />
-                  </svg>
-                ))}
-              </div>
-
-              {/* Boxwork Polygonal Vein Mesh (If Curiosity Boxwork) */}
-              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-32 border border-dashed border-amber-500/60 bg-[#0b0f17]/40 p-2 font-mono text-[9px] text-amber-400">
-                <span className="font-bold block">[SUBTERRANEAN BOXWORK RIDGE LATTICE DETECTED]</span>
-                <span>FRACTURE DENSITY: 14.8/m | DIP: 78° NW</span>
-              </div>
+          {/* Teleporting In-Flight Notification */}
+          {teleportingNotice && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-[#0b0f17] border border-cyan-500/80 text-cyan-300 px-4 py-1.5 font-mono text-xs tracking-wider font-bold pointer-events-none shadow-md z-30 animate-pulse">
+              [ EVA TELEPORTING TO RETICLE COORDINATES... ]
             </div>
           )}
 
-          {/* LAYER 3: 360° SCIENCE HOTSPOTS (Pins positioned by Azimuth & Pitch) */}
-          <div className="absolute inset-0 pointer-events-none z-30">
-            {SCIENCE_HOTSPOTS.map((pin) => {
-              const dAz = getAngleDelta(pin.azimuth, normalizedAz);
-              const dPitch = pin.pitch - pitch;
+          {/* Center Vertical Divider for Stereoscopic Mode */}
+          {viewMode === "vr_stereo" && (
+            <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700 pointer-events-none z-20" />
+          )}
 
-              // Check if inside visible FOV
-              if (Math.abs(dAz) > halfFovX || Math.abs(dPitch) > halfFovY) return null;
-
-              const screenX = 50 + (dAz / halfFovX) * 50;
-              const screenY = 50 - (dPitch / halfFovY) * 50;
-              const isSelected = activePinId === pin.id;
-
-              return (
-                <div
-                  key={pin.id}
-                  style={{ left: `${screenX}%`, top: `${screenY}%` }}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
-                >
-                  <button
-                    onClick={() => setActivePinId(isSelected ? null : pin.id)}
-                    className={`flex items-center gap-1.5 px-2 py-1 border font-mono text-[9px] transition-colors ${
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 border-amber-300 font-bold"
-                        : "bg-[#07090e]/90 text-amber-400 border-amber-600 hover:bg-amber-600 hover:text-slate-950"
-                    }`}
-                  >
-                    <span className="w-1.5 h-1.5 bg-amber-400" />
-                    <span>{pin.code}</span>
-                    <span className="hidden sm:inline-block">[{pin.name}]</span>
-                  </button>
-
-                  {/* Target line down */}
-                  <div className="w-px h-4 bg-amber-500 mx-auto" />
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Tactical Crosshair Center Reticle */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-            <div className="w-8 h-8 border border-cyan-500/40 flex items-center justify-center">
-              <div className="w-1 h-1 bg-cyan-400" />
+          {/* Compass Rose Overlay (Top Left) */}
+          <div className="absolute top-4 left-4 bg-[#0b0f17]/90 border border-slate-800 p-2 font-mono text-[11px] text-slate-300 pointer-events-none z-20 space-y-1">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-500">BEARING:</span>
+              <span className="text-amber-400 font-bold tabular-nums">{camAzimuth}°</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-500">PITCH:</span>
+              <span className="text-slate-200 font-bold tabular-nums">{camPitch > 0 ? `+${camPitch}` : camPitch}°</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-500">FOV:</span>
+              <span className="text-cyan-400 font-bold tabular-nums">{camFov}°</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-slate-500">ATM TAU:</span>
+              <span className={`font-bold tabular-nums ${dustStormActive ? "text-rose-400" : "text-emerald-400"}`}>
+                {dustStormActive ? "2.4 (DUST STORM)" : "0.3 (CLEAR)"}
+              </span>
             </div>
           </div>
 
-          {/* Active Science Pin Floating Telemetry Card */}
+          {/* Landmark Hotspot Pin Card Popover */}
           {activePin && (
-            <div className="absolute bottom-10 left-3 right-3 sm:left-4 sm:right-auto sm:w-96 bg-[#07090e]/95 border border-amber-500 p-3 font-mono z-40">
-              <div className="flex justify-between items-start border-b border-slate-800 pb-1.5 mb-2">
-                <div>
-                  <span className="text-amber-400 font-bold text-[10px] block">
-                    {activePin.code} // {activePin.name}
-                  </span>
-                  <span className="text-[9px] text-slate-400">
-                    AZ: {activePin.azimuth}° | ELEV: {activePin.pitch}° | {activePin.instrument}
-                  </span>
-                </div>
+            <div className="absolute top-4 right-4 w-80 bg-[#0b0f17] border border-amber-500/80 p-3 font-mono text-xs text-slate-200 z-30 shadow-lg pointer-events-auto">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 mb-2">
+                <span className="text-amber-400 font-bold">{activePin.code} // {activePin.name}</span>
                 <button
-                  onClick={() => setActivePinId(null)}
-                  className="px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700"
+                  onClick={() => setActivePin(null)}
+                  className="text-slate-400 hover:text-white font-bold"
                 >
-                  [X]
+                  ✕
                 </button>
               </div>
-
-              <div className="space-y-1.5 text-[10px]">
-                <div className="flex justify-between bg-[#111827] px-2 py-1 border border-slate-800">
-                  <span className="text-slate-400 uppercase">{activePin.metricLabel}:</span>
-                  <span className="text-cyan-400 font-bold tabular-nums">{activePin.metricValue}</span>
+              <div className="space-y-2 text-[11px]">
+                <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                  <span className="text-slate-500">INSTRUMENT:</span>
+                  <span className="text-slate-200 font-bold">{activePin.instrument}</span>
                 </div>
-                <p className="text-slate-300 text-[10px] leading-relaxed">
+                <div className="flex justify-between border-b border-slate-800/60 pb-1">
+                  <span className="text-slate-500">{activePin.metricLabel}:</span>
+                  <span className="text-emerald-400 font-bold">{activePin.metricValue}</span>
+                </div>
+                <p className="text-slate-400 text-[10px] leading-relaxed pt-1">
                   {activePin.description}
                 </p>
               </div>
             </div>
           )}
-
-          {/* Viewport HUD Telemetry Overlay (Corners) */}
-          <div className="absolute top-10 left-3 font-mono text-[9px] text-slate-400 pointer-events-none z-20">
-            <span className="text-cyan-400 font-bold">AZIMUTH: <span className="tabular-nums">{Math.round(normalizedAz)}°</span></span>
-            <br />
-            <span>PITCH: <span className="tabular-nums">{pitch}°</span></span>
-            <br />
-            <span>OPTICAL ZOOM: <span className="tabular-nums">{zoom}x</span></span>
-          </div>
-
-          <div className="absolute top-10 right-3 font-mono text-[9px] text-right text-slate-400 pointer-events-none z-20">
-            <span className="text-amber-400 font-bold">REMS SENSORS</span>
-            <br />
-            <span>GROUND: <span className="text-slate-200 tabular-nums">+3°C</span></span>
-            <br />
-            <span>UV FLUX: <span className="text-emerald-400 tabular-nums">8.2 W/m²</span></span>
-          </div>
-
-          {/* Quick HUD Navigation & Zoom Controls (Bottom Right of Viewport) */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 z-30 font-mono text-[10px]">
-            <button
-              onClick={() => setZoom((prev) => Math.min(2.5, Math.round((prev + 0.2) * 10) / 10))}
-              title="Zoom In"
-              className="w-7 h-7 bg-[#111827] hover:bg-[#1f2937] text-white border border-slate-700 flex items-center justify-center font-bold"
-            >
-              +
-            </button>
-            <button
-              onClick={() => setZoom((prev) => Math.max(1.0, Math.round((prev - 0.2) * 10) / 10))}
-              title="Zoom Out"
-              className="w-7 h-7 bg-[#111827] hover:bg-[#1f2937] text-white border border-slate-700 flex items-center justify-center font-bold"
-            >
-              -
-            </button>
-            <button
-              onClick={resetPov}
-              title="Reset View to Rover Heading"
-              className="px-2 h-7 bg-[#111827] hover:bg-[#1f2937] text-amber-400 border border-slate-700 flex items-center justify-center font-bold text-[9px]"
-            >
-              RESET POV
-            </button>
-          </div>
-
-          {/* Drag instruction pill */}
-          <div className="absolute bottom-3 left-3 bg-[#07090e]/80 border border-slate-800 px-2 py-0.5 font-mono text-[9px] text-slate-400 pointer-events-none z-20">
-            [DRAG TO PAN 360° // SCROLL TO ZOOM]
-          </div>
         </div>
 
-        {/* Rover & Science Instrument Detail Cards */}
-        <div
-          className={`p-3 grid grid-cols-1 md:grid-cols-3 gap-2.5 overflow-y-auto ${
-            isDark ? "bg-[#0b0f17]" : "bg-slate-50"
-          }`}
-        >
-          {/* Geochemical Abundances */}
-          <div
-            className={`p-2.5 border font-mono ${
-              isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-            }`}
-          >
-            <span
-              className={`text-[10px] uppercase font-bold block mb-1 ${
-                isDark ? "text-cyan-400" : "text-cyan-800"
-              }`}
-            >
-              GEOCHEMISTRY (APXS / CHEMCAM)
-            </span>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex justify-between">
-                <span className="text-slate-400">SULFATES (SO3):</span>
-                <span className="font-bold text-amber-400 tabular-nums">{waypoint.mineralogy.sulfatePercent}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">HEMATITE (Fe2O3):</span>
-                <span className="font-bold text-red-400 tabular-nums">{waypoint.mineralogy.hematitePercent}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">CLAY (PHYLLOSILICATES):</span>
-                <span className="font-bold text-emerald-400 tabular-nums">{waypoint.mineralogy.phyllosilicateClayPercent}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">SILICA (SiO2):</span>
-                <span className="font-bold text-slate-300 tabular-nums">{waypoint.mineralogy.silicaPercent}%</span>
-              </div>
+        {/* BOTTOM TELEMETRY BAR: Zero Overlap & Aligned Grid */}
+        <div className="h-10 bg-[#0b0f17] border-t border-slate-800 px-3 flex items-center justify-between shrink-0 font-mono text-xs z-20">
+          {/* Slot Kiri: EVA Elevation & Target Reticle Readout */}
+          <div className="flex items-center gap-4 text-slate-300">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500">EVA CAM ELEV:</span>
+              <span className="text-amber-400 font-bold tabular-nums">{camElevation} m</span>
+            </div>
+            <span className="text-slate-700">|</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500">RETICLE TGT:</span>
+              {reticleCoords ? (
+                <span className="text-cyan-400 font-bold tabular-nums">
+                  X: {reticleCoords.x > 0 ? `+${reticleCoords.x}` : reticleCoords.x}m, Z: {reticleCoords.z > 0 ? `+${reticleCoords.z}` : reticleCoords.z}m ({reticleCoords.elev}m)
+                </span>
+              ) : (
+                <span className="text-slate-600">SEARCHING TERRAIN...</span>
+              )}
             </div>
           </div>
 
-          {/* Curiosity In-Situ Log */}
-          <div
-            className={`p-2.5 border font-mono ${
-              isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-            }`}
-          >
-            <span className="text-[10px] text-amber-500 uppercase font-bold block mb-1">
-              MSL GROUND TRUTH
-            </span>
-            <p className={`text-[10px] font-bold ${isDark ? "text-slate-200" : "text-slate-900"}`}>
-              {waypoint.roverGroundTruth?.instrument}: {waypoint.roverGroundTruth?.targetName}
-            </p>
-            <p className={`text-[10px] mt-1 leading-relaxed ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-              &quot;{waypoint.roverGroundTruth?.keyFinding}&quot;
-            </p>
+          {/* Slot Tengah: Navigation Guidance Tips */}
+          <div className="hidden lg:flex items-center gap-3 text-[11px] text-slate-500">
+            <span>[ DRAG: 360° PAN ]</span>
+            <span>•</span>
+            <span>[ CLICK GROUND: TELEPORT EVA (1.7M) ]</span>
+            <span>•</span>
+            <span>[ WHEEL: ZOOM ]</span>
           </div>
 
-          {/* Astronaut Suit Traverse Conditions */}
-          <div
-            className={`p-2.5 border font-mono flex flex-col justify-between ${
-              isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300"
-            }`}
-          >
-            <div>
-              <span className="text-[10px] text-emerald-500 uppercase font-bold block mb-1">
-                SUIT MOBILITY ENVELOPE
-              </span>
-              <p className={`text-[10px] ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                SLOPE: <span className="font-bold tabular-nums">{waypoint.meanSlopeDeg}°</span> (MAX:{" "}
-                <span className="tabular-nums">{waypoint.maxSlopeDeg}°</span>)
-              </p>
-              <p className={`text-[10px] mt-0.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                THERMAL INERTIA: <span className="tabular-nums">{waypoint.apparentThermalInertiaTiu} tiu</span>
-              </p>
-            </div>
-            <div className="mt-2">
-              <span
-                className={`inline-block px-1.5 py-0.5 text-[9px] font-bold border ${
-                  waypoint.evaSuitTraversable
-                    ? "bg-[#064e3b] text-[#34d399] border-[#059669]"
-                    : "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
-                }`}
-              >
-                {waypoint.evaSuitTraversable ? "[TRAVERSABLE]" : "[EXCEEDS SAFE ENVELOPE]"}
-              </span>
-            </div>
+          {/* Slot Kanan: Reset Origin Button */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetOrigin}
+              className="px-2.5 py-1 bg-[#111827] border border-slate-700 text-slate-300 hover:bg-[#1f2937] hover:text-white font-mono text-[11px] font-bold transition-colors"
+            >
+              [ RESET ORIGIN ]
+            </button>
           </div>
         </div>
 
-        {/* Footer Attribution */}
-        <div
-          className={`px-4 py-2 border-t text-[10px] font-mono flex items-center justify-between ${
-            isDark ? "bg-[#0b0f17] border-slate-800 text-slate-400" : "bg-slate-100 border-slate-300 text-slate-600"
-          }`}
-        >
-          <span>ATTRIBUTION: NASA / JPL-CALTECH / MSSS / PDS GEOSCIENCES</span>
-          <button
-            onClick={onClose}
-            className="px-3 py-1 bg-[#1f2937] hover:bg-[#374151] border border-slate-700 text-white font-mono text-[11px] font-bold transition-colors"
-          >
-            CLOSE
-          </button>
-        </div>
       </div>
     </div>
   );
