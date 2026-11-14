@@ -2,6 +2,7 @@
 
 import React from "react";
 import MarsForAllBadge from "../MarsForAllBadge";
+import { MARS_CESIUM_LAYERS } from "@/lib/services/cesiumAdapter";
 
 interface AresInfoModalProps {
   isOpen: boolean;
@@ -86,6 +87,12 @@ export const AresInfoModal: React.FC<AresInfoModalProps> = ({
               </li>
               <li>
                 <span className="text-amber-500 font-bold">[6] MSL CURIOSITY RAW IMAGES:</span> Official Mastcam/Navcam raw photos for astronaut eye-level Surface Point-of-View (POV) verification.
+              </li>
+              <li>
+                <span className="text-amber-500 font-bold">[7] NASA DONKI &amp; MSL RAD DOSIMETRY:</span> Real-time Solar Energetic Particle (SEP) alerts and calibrated Galactic Cosmic Ray surface radiation dosage.
+              </li>
+              <li>
+                <span className="text-amber-500 font-bold">[8] CESIUM ION 3D TERRAIN SERVICE:</span> Open 3D surface mesh adapter ({MARS_CESIUM_LAYERS.map(l => l.name).join(", ")}).
               </li>
             </ul>
           </section>

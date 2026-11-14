@@ -8,6 +8,7 @@ import {
   DEFAULT_ANALOGUE_WEIGHTS,
   AnalogueMatchRanking,
 } from "@/lib/martian/earthAnalogueMatcher";
+import { getGibsTileUrlTemplate, RECOMMENDED_ANALOGUE_GIBS_LAYERS } from "@/lib/services/worldviewAdapter";
 
 interface AnalogueMatcherPanelProps {
   waypoint: MountSharpWaypoint | null;
@@ -266,25 +267,30 @@ export const AnalogueMatcherPanel: React.FC<AnalogueMatcherPanelProps> = ({
             </p>
 
             {/* NASA Worldview GIBS Satellite Inspection Link */}
-            <div className={`mt-2 pt-1 border-t flex items-center justify-between ${
+            <div className={`mt-2 pt-1.5 border-t space-y-1 ${
               isDark ? "border-slate-800/80" : "border-slate-200"
             }`}>
-              <span className="font-mono text-[9px] text-slate-500 truncate max-w-[150px]">
-                GIBS: {item.site.nasaWorldviewLayer.productTitle}
-              </span>
-              <a
-                href={`https://worldview.earthdata.nasa.gov/?v=${item.site.coordinates[0] - 1.5},${item.site.coordinates[1] - 1.0},${item.site.coordinates[0] + 1.5},${item.site.coordinates[1] + 1.0}&l=${item.site.nasaWorldviewLayer.layerId}&t=${item.site.nasaWorldviewLayer.recommendedDate}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2 py-0.5 bg-[#161e2e] hover:bg-[#1f2937] border border-cyan-700 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-1 transition-colors"
-              >
-                <span>OPEN NASA WORLDVIEW GIBS</span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </a>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[9px] text-slate-500 truncate max-w-[150px]">
+                  GIBS: {item.site.nasaWorldviewLayer.productTitle}
+                </span>
+                <a
+                  href={`https://worldview.earthdata.nasa.gov/?v=${item.site.coordinates[0] - 1.5},${item.site.coordinates[1] - 1.0},${item.site.coordinates[0] + 1.5},${item.site.coordinates[1] + 1.0}&l=${item.site.nasaWorldviewLayer.layerId}&t=${item.site.nasaWorldviewLayer.recommendedDate}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2 py-0.5 bg-[#161e2e] hover:bg-[#1f2937] border border-cyan-700 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-1 transition-colors"
+                >
+                  <span>OPEN NASA WORLDVIEW GIBS</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
+              <div className="text-[8px] font-mono text-slate-500 truncate select-all">
+                WMTS: {getGibsTileUrlTemplate({ layer: item.site.nasaWorldviewLayer.layerId || RECOMMENDED_ANALOGUE_GIBS_LAYERS.MODIS_TRUE_COLOR, date: item.site.nasaWorldviewLayer.recommendedDate })}
+              </div>
             </div>
           </div>
         ))}

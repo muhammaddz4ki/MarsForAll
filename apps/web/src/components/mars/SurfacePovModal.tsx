@@ -143,6 +143,16 @@ function getTerrainHeight(x: number, z: number, waypointId: string): number {
   return regionalSlope + eolianRipples + macroHummocks + fineGravel;
 }
 
+// Deterministic pseudo-random generator (seeded LCG, 100% reproducible, zero Math.random)
+function createPrng(seed: number) {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
 // Generate procedural Martian regolith texture in memory (100% offline fallback)
 function createMartianRegolithTexture(): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -151,14 +161,16 @@ function createMartianRegolithTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
+  const nextRand = createPrng(418042);
+
   ctx.fillStyle = "#a84b2c";
   ctx.fillRect(0, 0, 512, 512);
 
   for (let i = 0; i < 350; i++) {
-    const px = Math.random() * 512;
-    const py = Math.random() * 512;
-    const pr = Math.random() * 35 + 8;
-    ctx.fillStyle = Math.random() > 0.45 ? "#ba5936" : "#87381e";
+    const px = nextRand() * 512;
+    const py = nextRand() * 512;
+    const pr = nextRand() * 35 + 8;
+    ctx.fillStyle = nextRand() > 0.45 ? "#ba5936" : "#87381e";
     ctx.beginPath();
     ctx.arc(px, py, pr, 0, Math.PI * 2);
     ctx.fill();
@@ -167,7 +179,7 @@ function createMartianRegolithTexture(): THREE.CanvasTexture {
   const imgData = ctx.getImageData(0, 0, 512, 512);
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
-    const grain = (Math.random() - 0.5) * 48;
+    const grain = (nextRand() - 0.5) * 48;
     data[i] = Math.max(0, Math.min(255, data[i] + grain));
     data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grain * 0.65));
     data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grain * 0.45));
@@ -189,13 +201,15 @@ function createMartianBumpTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
+  const nextRand = createPrng(849201);
+
   ctx.fillStyle = "#808080";
   ctx.fillRect(0, 0, 512, 512);
 
   const imgData = ctx.getImageData(0, 0, 512, 512);
   const data = imgData.data;
   for (let i = 0; i < data.length; i += 4) {
-    const val = 128 + Math.floor((Math.random() - 0.5) * 85);
+    const val = 128 + Math.floor((nextRand() - 0.5) * 85);
     const clamped = Math.max(0, Math.min(255, val));
     data[i] = clamped;
     data[i + 1] = clamped;
