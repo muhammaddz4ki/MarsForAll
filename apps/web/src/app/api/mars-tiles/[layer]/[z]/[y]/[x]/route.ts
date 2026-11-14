@@ -51,7 +51,36 @@ export async function GET(
   { params }: RouteParams
 ) {
   const { layer, z, y, x } = params;
-  const cacheKey = `${layer}/${z}/${y}/${x}`;
+  const isDirectTrek = request.nextUrl.searchParams.get("raw") === "trek";
+
+  const numZ = parseInt(z, 10);
+  const numY = parseInt(y, 10);
+  const numX = parseInt(x, 10);
+
+  let trekZ = numZ;
+  let trekX = numX;
+  let trekY = numY;
+
+  if (!isDirectTrek) {
+    // MapLibre Web Mercator (z, x, y) -> NASA Mars Trek Equirectangular (default028mm) conversion
+    // Note: in our route folder segment [layer]/[z]/[y]/[x]:
+    // numX represents the horizontal tile column (x), numY represents vertical tile row (y)
+    const lonDeg = ((numX + 0.5) / Math.pow(2, numZ)) * 360 - 180;
+    const n = Math.PI - (2 * Math.PI * (numY + 0.5)) / Math.pow(2, numZ);
+    const latDeg = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+
+    trekZ = Math.max(0, Math.min(numZ - 1, 13));
+    const maxCols = Math.pow(2, trekZ + 1);
+    const maxRows = Math.pow(2, trekZ);
+
+    trekX = Math.floor(((lonDeg + 180) / 360) * maxCols);
+    trekY = Math.floor(((90 - latDeg) / 180) * maxRows);
+
+    trekX = Math.max(0, Math.min(trekX, maxCols - 1));
+    trekY = Math.max(0, Math.min(trekY, maxRows - 1));
+  }
+
+  const cacheKey = `${layer}/${trekZ}/${trekY}/${trekX}`;
 
   // Serve from In-Memory LRU Cache instantly (< 2ms) without touching NASA upstream
   const cached = getCachedTile(cacheKey);
@@ -68,21 +97,26 @@ export async function GET(
   }
 
   let remoteUrl = "";
+  let isCtx = false;
+
   if (layer === "viking-mdim21" || layer === "viking") {
     // NASA JPL Mars Trek Viking MDIM 2.1 Colorized Global Mosaic (232m/px)
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
   } else if (layer === "mola-clrshade" || layer === "mola") {
     // NASA MOLA + HRSC Colorized Shaded Relief Hillshade
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
   } else if (layer === "themis-day-ir" || layer === "themis-day") {
     // NASA 2001 Mars Odyssey THEMIS Daytime IR Global Mosaic (100m/px)
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Day_mosaic_global_100m_v2/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Day_mosaic_global_100m_v2/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
   } else if (layer === "themis-night-ir" || layer === "themis-night") {
     // NASA 2001 Mars Odyssey THEMIS Nighttime IR Global Mosaic (Thermal Inertia, 100m/px)
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Night_mosaic_global_100m_v2/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
-  } else if (layer === "gale-hirise" || layer === "gale-ctx") {
-    // NASA JPL Mars Trek Gale Crater CTX / HiRISE Orthomosaic (6m/px)
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/${z}/${y}/${x}.png`;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Night_mosaic_global_100m_v2/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
+  } else if (layer === "gale-ctx" || layer === "gale-hirise" || layer === "hirise-gale") {
+    isCtx = true;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.png`;
+  } else if (layer === "jezero-ctx") {
+    isCtx = true;
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Jezero_CTX_BlockAdj_dd/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.png`;
   } else {
     return new NextResponse(TRANSPARENT_1X1_PNG as unknown as BodyInit, {
       status: 200,
@@ -96,9 +130,9 @@ export async function GET(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-    const upstreamRes = await fetch(remoteUrl, {
+    let upstreamRes = await fetch(remoteUrl, {
       signal: controller.signal,
       headers: {
         "User-Agent": "MarsForAll/1.0 (NASA Space Apps Challenge 2026; Team MarsForAll)",
@@ -108,8 +142,26 @@ export async function GET(
 
     clearTimeout(timeoutId);
 
+    // If CTX is out-of-bounds (404), gracefully fallback to global Viking MDIM 2.1
+    if (!upstreamRes.ok && isCtx) {
+      const fallbackVikingUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
+      try {
+        const fbRes = await fetch(fallbackVikingUrl, {
+          headers: {
+            "User-Agent": "MarsForAll/1.0 (NASA Space Apps Challenge 2026; Team MarsForAll)",
+          },
+          next: { revalidate: 86400 },
+        });
+        if (fbRes.ok) {
+          upstreamRes = fbRes;
+        }
+      } catch (_fbErr) {
+        // Fallback fetch failed, proceed to transparent tile
+      }
+    }
+
     if (!upstreamRes.ok) {
-      // 404 or out-of-bounds tile -> return transparent 1x1 png gracefully
+      // Return transparent 1x1 png gracefully
       return new NextResponse(TRANSPARENT_1X1_PNG as unknown as BodyInit, {
         status: 200,
         headers: {

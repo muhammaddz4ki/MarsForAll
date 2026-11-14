@@ -73,8 +73,7 @@ const MarsGlobeViewer = dynamic(() => import("./MarsGlobeViewer"), {
 });
 
 export type ViewMode = "mission_control" | "visor_hud" | "planet_globe";
-export type LeftDockTab = "layers" | "marswalk";
-export type RightDockTab = "prospector" | "earth_analogue";
+export type ActiveDrawerTool = "layers" | "marswalk" | "prospector" | "analogue" | null;
 
 export const AresMartianApp: React.FC = () => {
   const router = useRouter();
@@ -93,11 +92,8 @@ export const AresMartianApp: React.FC = () => {
   );
   const [customPin, setCustomPin] = useState<MountSharpWaypoint | null>(null);
 
-  // Left & Right Symmetrical Dock Tabs
-  const [leftTab, setLeftTab] = useState<LeftDockTab>("layers");
-  const [rightTab, setRightTab] = useState<RightDockTab>("prospector");
-  const [isLeftDockCollapsed, setIsLeftDockCollapsed] = useState<boolean>(false);
-  const [isRightDockCollapsed, setIsRightDockCollapsed] = useState<boolean>(false);
+  // MMGIS Left Tool Rail Active Drawer State (null = full-canvas map/globe)
+  const [activeTool, setActiveTool] = useState<ActiveDrawerTool>("layers");
 
   // Sol & Atmospheric Simulation State
   const [currentSol, setCurrentSol] = useState<number>(4180);
@@ -233,9 +229,13 @@ export const AresMartianApp: React.FC = () => {
     setIsPovOpen(true);
   }, []);
 
+  const handleToggleTool = useCallback((tool: "layers" | "marswalk" | "prospector" | "analogue") => {
+    setActiveTool((prev) => (prev === tool ? null : tool));
+  }, []);
+
   const handlePlanRouteToWaypoint = useCallback((wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
-    setLeftTab("marswalk");
+    setActiveTool("marswalk");
   }, []);
 
   // Click-anywhere custom coordinate pin
@@ -368,64 +368,50 @@ export const AresMartianApp: React.FC = () => {
     <div className={`relative w-screen h-screen overflow-hidden ${
       isDark ? "bg-[#07090e] text-slate-100" : "bg-[#f8fafc] text-slate-900"
     } flex flex-col font-sans select-none`}>
-      {/* 1. TOP NAVIGATION BAR (h-14, px-3, tight Apple-grade symmetric grid) */}
-      <header className={`h-14 ${
+      {/* 1. TOP NAVIGATION BAR (h-11, px-3, MMGIS Compact Single-Row Layout) */}
+      <header className={`h-11 ${
         isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
-      } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-hidden`}>
-        {/* SLOT KIRI: Badge + Active Coordinates */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <MarsForAllBadge size={32} showSubtext />
-          <div className={`hidden 2xl:flex items-center gap-2 pl-2.5 border-l ${
-            isDark ? "border-slate-800 text-slate-400" : "border-slate-300 text-slate-600"
-          } text-[10px] font-mono`}>
-            <span className={isDark ? "text-slate-500" : "text-slate-400"}>TARGET:</span>
-            <span className={`${isDark ? "text-slate-200" : "text-slate-800"} uppercase font-medium truncate max-w-[130px]`}>
-              {selectedWaypoint.name.split(" ")[0]}
-            </span>
-            <span className={isDark ? "text-slate-600" : "text-slate-400"}>/</span>
-            <span className="text-amber-500 tabular-nums">
-              LAT {selectedWaypoint.coordinates[1].toFixed(4)}° LON {selectedWaypoint.coordinates[0].toFixed(4)}°
-            </span>
+      } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-x-auto gap-2`}>
+        {/* SLOT KIRI: Badge + Segmented Mission Site Selector */}
+        <div className="flex items-center gap-2 shrink-0">
+          <MarsForAllBadge size={26} showSubtext={false} />
+          <div className={`flex items-center ${
+            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+          } border p-0.5 font-mono text-[10px]`}>
+            <button
+              onClick={() => handleSwitchSite("gale_crater")}
+              className={`px-2 py-0.5 font-bold transition-colors ${
+                currentSite === "gale_crater"
+                  ? "bg-amber-600 text-slate-950"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              {tNav("siteGale")}
+            </button>
+            <button
+              onClick={() => handleSwitchSite("jezero_crater")}
+              className={`px-2 py-0.5 font-bold transition-colors ${
+                currentSite === "jezero_crater"
+                  ? "bg-amber-600 text-slate-950"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              {tNav("siteJezero")}
+            </button>
           </div>
         </div>
 
-        {/* SLOT MISI: Symmetrical Segmented Mission Site Control [ SITE-01: GALE (MSL) | SITE-02: JEZERO (M2020) ] */}
-        <div className={`hidden md:flex items-center ${
-          isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-        } border p-0.5 font-mono text-[10px] shrink-0`}>
-          <button
-            onClick={() => handleSwitchSite("gale_crater")}
-            className={`px-2.5 py-1 font-bold transition-colors ${
-              currentSite === "gale_crater"
-                ? "bg-amber-600 text-slate-950"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            {tNav("siteGale")}
-          </button>
-          <button
-            onClick={() => handleSwitchSite("jezero_crater")}
-            className={`px-2.5 py-1 font-bold transition-colors ${
-              currentSite === "jezero_crater"
-                ? "bg-amber-600 text-slate-950"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            {tNav("siteJezero")}
-          </button>
-        </div>
-
-        {/* SLOT TENGAH: Symmetrical Segmented Mode Control */}
+        {/* SLOT TENGAH: Symmetrical Segmented Mode Control [ 2D MAP | 3D GLOBE | VISOR HUD ] */}
         <div className={`flex items-center ${
           isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-        } border p-0.5 font-mono text-xs shrink-0`}>
+        } border p-0.5 font-mono text-[11px] shrink-0`}>
           <button
             onClick={() => setViewMode("mission_control")}
-            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
               viewMode === "mission_control"
                 ? "bg-amber-600 text-slate-950 font-bold"
                 : isDark
@@ -433,7 +419,7 @@ export const AresMartianApp: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -442,24 +428,8 @@ export const AresMartianApp: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setViewMode("visor_hud")}
-            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
-              viewMode === "visor_hud"
-                ? "bg-cyan-600 text-slate-950 font-bold"
-                : isDark
-                ? "text-slate-400 hover:text-slate-200"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
-            </svg>
-            <span>{tNav("helmetVisor")}</span>
-          </button>
-
-          <button
             onClick={() => setViewMode("planet_globe")}
-            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
               viewMode === "planet_globe"
                 ? "bg-purple-700 text-slate-100 font-bold"
                 : isDark
@@ -467,12 +437,28 @@ export const AresMartianApp: React.FC = () => {
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
               <path d="M2 12h20" />
             </svg>
             <span>{tNav("planetGlobe")}</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode("visor_hud")}
+            className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
+              viewMode === "visor_hud"
+                ? "bg-cyan-600 text-slate-950 font-bold"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
+            </svg>
+            <span>{tNav("helmetVisor")}</span>
           </button>
         </div>
 
@@ -503,7 +489,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={handleToggleTheme}
             title="Toggle Dark / Light Theme"
-            className={`px-2 py-1 ${
+            className={`px-1.5 py-0.5 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -513,7 +499,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setPitch3D(!pitch3D)}
             title="Toggle 2.5D / 3D Terrain Pitch"
-            className={`flex items-center gap-1 px-2 py-1 ${
+            className={`flex items-center gap-1 px-1.5 py-0.5 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -523,7 +509,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setResetNorthTrigger((n) => n + 1)}
             title="Reset North Heading"
-            className={`flex items-center gap-1 px-2 py-1 ${
+            className={`flex items-center gap-1 px-1.5 py-0.5 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -533,7 +519,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={handleExportEvaManifest}
             title="Export EVA Mission Manifest (JSON)"
-            className="flex items-center gap-1 px-2 py-1 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-2 py-0.5 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -546,7 +532,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setIsInfoOpen(true)}
             title="Scientific Attribution & Mission Brief"
-            className={`flex items-center justify-center px-2.5 py-1 ${
+            className={`flex items-center justify-center px-2 py-0.5 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -557,13 +543,215 @@ export const AresMartianApp: React.FC = () => {
 
       {/* Export Confirmation Toast */}
       {exportNotification && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#064e3b] border border-[#10b981] px-4 py-1.5 text-xs font-mono text-[#a7f3d0] font-bold">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-50 bg-[#064e3b] border border-[#10b981] px-4 py-1.5 text-xs font-mono text-[#a7f3d0] font-bold">
           {exportNotification}
         </div>
       )}
 
-      {/* 2. MAIN WORKSPACE AREA */}
-      <div className="relative flex-1 w-full h-full overflow-hidden">
+      {/* 2. MAIN WORKSPACE AREA WITH MMGIS VERTICAL LEFT RAIL */}
+      <div className="relative flex-1 w-full h-full overflow-hidden flex">
+        {/* MMGIS VERTICAL LEFT TOOL RAIL (w-11 = 44px) */}
+        <nav className={`w-11 h-full ${
+          isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+        } border-r flex flex-col items-center py-2 z-30 shrink-0 select-none font-mono`}>
+          {/* Tool 1: Scientific Layers */}
+          <button
+            onClick={() => handleToggleTool("layers")}
+            title="Scientific Layers & WMTS Catalog"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              activeTool === "layers" && viewMode === "mission_control"
+                ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </button>
+
+          {/* Tool 2: Marswalk Route Planner */}
+          <button
+            onClick={() => handleToggleTool("marswalk")}
+            title="Marswalk EVA Route Planner (Dijkstra A*)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              activeTool === "marswalk" && viewMode === "mission_control"
+                ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="6" cy="19" r="3" />
+              <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
+            </svg>
+          </button>
+
+          {/* Tool 3: Prospector ML 35-Parameter Fusion */}
+          <button
+            onClick={() => handleToggleTool("prospector")}
+            title="Prospector ML Fusion (35 Martian Parameters)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              activeTool === "prospector" && viewMode === "mission_control"
+                ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </button>
+
+          {/* Tool 4: Earth Analogue Matcher */}
+          <button
+            onClick={() => handleToggleTool("analogue")}
+            title="Earth Analogue Matcher (Terrestrial Testbeds)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              activeTool === "analogue" && viewMode === "mission_control"
+                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                : isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+            </svg>
+          </button>
+
+          <div className="w-6 h-[1px] bg-slate-800 my-2" />
+
+          {/* Action 5: 360° Real Rover Panorama */}
+          <button
+            onClick={() => handleOpenPovModal(selectedWaypoint)}
+            title="Open 360° Real Rover Panorama (Mastcam-Z / MSL)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              isDark
+                ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
+                : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+          </button>
+
+          {/* Action 6: 3D Planet Globe */}
+          <button
+            onClick={() => setViewMode("planet_globe")}
+            title="3D Planet Globe View (Three.js 2048px Sphere)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              viewMode === "planet_globe"
+                ? "bg-purple-700 text-slate-100 font-bold border-purple-400"
+                : isDark
+                ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-transparent"
+                : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
+          </button>
+
+          {/* Action 7: Astronaut Visor HUD */}
+          <button
+            onClick={() => setViewMode("visor_hud")}
+            title="Astronaut Helmet Visor HUD"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
+              viewMode === "visor_hud"
+                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                : isDark
+                ? "text-cyan-400 hover:text-cyan-300 hover:bg-[#161e2e] border-transparent"
+                : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
+            }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
+            </svg>
+          </button>
+        </nav>
+
+        {/* MMGIS SINGLE CLEAN DRAWER PANEL (w-[350px], left-11) */}
+        {viewMode === "mission_control" && activeTool !== null && (
+          <aside className={`absolute left-11 top-0 bottom-14 w-[350px] z-20 pointer-events-auto ${
+            isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
+          } border-r flex flex-col shadow-2xl`}>
+            {/* Drawer Header with Title and Close Button */}
+            <div className={`flex items-center justify-between px-3 py-2 border-b ${
+              isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
+            } shrink-0 font-mono text-xs`}>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-400" />
+                <span className="font-bold uppercase tracking-wider text-slate-200">
+                  {activeTool === "layers" && tDocks("layers")}
+                  {activeTool === "marswalk" && tDocks("marswalk")}
+                  {activeTool === "prospector" && tDocks("prospector")}
+                  {activeTool === "analogue" && tDocks("earthAnalogues")}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveTool(null)}
+                title={tNav("collapse")}
+                className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${
+                  isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
+                } font-mono text-[10px] font-bold`}
+              >
+                [ X ]
+              </button>
+            </div>
+
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto">
+              {activeTool === "layers" && (
+                <ScientificLayersPanel
+                  activeLayers={activeLayers}
+                  onToggleLayer={handleToggleLayer}
+                  theme={theme}
+                  orbitalSource={orbitalSource}
+                  onSelectOrbitalSource={setOrbitalSource}
+                  wmtsStatus={wmtsStatus}
+                  layerOpacities={layerOpacities}
+                  onChangeLayerOpacity={handleChangeLayerOpacity}
+                />
+              )}
+              {activeTool === "marswalk" && (
+                <MarswalkPlannerPanel
+                  selectedWaypoint={selectedWaypoint}
+                  onRouteCalculated={setActiveRoute}
+                  availableWaypoints={allWaypoints}
+                  theme={theme}
+                />
+              )}
+              {activeTool === "prospector" && (
+                <ProspectorPanel
+                  waypoint={selectedWaypoint}
+                  onOpenPovModal={handleOpenPovModal}
+                  onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+                  dustStormActive={dustStormActive}
+                  theme={theme}
+                />
+              )}
+              {activeTool === "analogue" && (
+                <AnalogueMatcherPanel
+                  waypoint={selectedWaypoint}
+                  theme={theme}
+                />
+              )}
+            </div>
+          </aside>
+        )}
         {/* Full-width Map Viewport */}
         <AresMapViewer
           currentSite={currentSite}
@@ -635,180 +823,8 @@ export const AresMartianApp: React.FC = () => {
           />
         )}
 
-        {/* MODE: HABITAT MISSION CONTROL (Symmetrical Dual Dock Layout with Collapsible Docks) */}
-        {viewMode === "mission_control" && (
-          <>
-            {/* PANEL KIRI: Scientific Layers & Marswalk Planner (Collapsible ala MMGIS) */}
-            {isLeftDockCollapsed ? (
-              <button
-                onClick={() => setIsLeftDockCollapsed(false)}
-                title={tNav("expand")}
-                className={`absolute left-4 top-16 z-10 px-2.5 py-1.5 font-mono text-[11px] font-bold border flex items-center gap-1.5 transition-colors ${
-                  isDark
-                    ? "bg-[#0b0f17] text-amber-400 border-slate-800 hover:border-amber-500/80"
-                    : "bg-white text-amber-700 border-slate-300 hover:border-amber-600 shadow-sm"
-                }`}
-              >
-                <span>[ &gt; ]</span>
-                <span>{leftTab === "layers" ? tDocks("layers") : tDocks("marswalk")}</span>
-              </button>
-            ) : (
-              <aside className={`absolute left-4 top-16 bottom-16 w-[340px] ${
-                isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-md"
-              } border flex flex-col z-10 pointer-events-auto`}>
-                {/* Tab Header with Collapse Button */}
-                <div className={`flex border-b items-center ${
-                  isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
-                } p-1 gap-1 shrink-0 font-mono text-[11px]`}>
-                  <button
-                    onClick={() => setLeftTab("layers")}
-                    className={`flex-1 py-1.5 text-center border transition-colors ${
-                      leftTab === "layers"
-                        ? isDark
-                          ? "bg-[#161e2e] text-slate-100 font-bold border-slate-700"
-                          : "bg-white text-slate-900 font-bold border-slate-300 shadow-sm"
-                        : isDark
-                        ? "border-transparent text-slate-400 hover:text-slate-200"
-                        : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {tDocks("layers")}
-                  </button>
-                  <button
-                    onClick={() => setLeftTab("marswalk")}
-                    className={`flex-1 py-1.5 text-center border transition-colors ${
-                      leftTab === "marswalk"
-                        ? isDark
-                          ? "bg-[#161e2e] text-emerald-400 font-bold border-slate-700"
-                          : "bg-white text-emerald-600 font-bold border-slate-300 shadow-sm"
-                        : isDark
-                        ? "border-transparent text-slate-400 hover:text-slate-200"
-                        : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {tDocks("marswalk")}
-                  </button>
-                  <button
-                    onClick={() => setIsLeftDockCollapsed(true)}
-                    title={tNav("collapse")}
-                    className={`px-2 py-1 text-slate-400 hover:text-slate-200 border-l font-mono text-xs ${
-                      isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-200 hover:bg-slate-200"
-                    }`}
-                  >
-                    [ &lt; ]
-                  </button>
-                </div>
-
-                {/* Tab Body */}
-                <div className="flex-1 overflow-y-auto">
-                  {leftTab === "layers" ? (
-                    <ScientificLayersPanel
-                      activeLayers={activeLayers}
-                      onToggleLayer={handleToggleLayer}
-                      theme={theme}
-                      orbitalSource={orbitalSource}
-                      onSelectOrbitalSource={setOrbitalSource}
-                      wmtsStatus={wmtsStatus}
-                      layerOpacities={layerOpacities}
-                      onChangeLayerOpacity={handleChangeLayerOpacity}
-                    />
-                  ) : (
-                    <MarswalkPlannerPanel
-                      selectedWaypoint={selectedWaypoint}
-                      onRouteCalculated={setActiveRoute}
-                      availableWaypoints={allWaypoints}
-                      theme={theme}
-                    />
-                  )}
-                </div>
-              </aside>
-            )}
-
-            {/* PANEL KANAN: Prospector ML Fusion & Earth Analogues (Collapsible ala MMGIS) */}
-            {isRightDockCollapsed ? (
-              <button
-                onClick={() => setIsRightDockCollapsed(false)}
-                title={tNav("expand")}
-                className={`absolute right-4 top-16 z-10 px-2.5 py-1.5 font-mono text-[11px] font-bold border flex items-center gap-1.5 transition-colors ${
-                  isDark
-                    ? "bg-[#0b0f17] text-amber-400 border-slate-800 hover:border-amber-500/80"
-                    : "bg-white text-amber-700 border-slate-300 hover:border-amber-600 shadow-sm"
-                }`}
-              >
-                <span>{rightTab === "prospector" ? tDocks("prospector") : tDocks("earthAnalogues")}</span>
-                <span>[ &lt; ]</span>
-              </button>
-            ) : (
-              <aside className={`absolute right-4 top-16 bottom-16 w-[360px] ${
-                isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-md"
-              } border flex flex-col z-10 pointer-events-auto`}>
-                {/* Tab Header with Collapse Button */}
-                <div className={`flex border-b items-center ${
-                  isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
-                } p-1 gap-1 shrink-0 font-mono text-[11px]`}>
-                  <button
-                    onClick={() => setIsRightDockCollapsed(true)}
-                    title={tNav("collapse")}
-                    className={`px-2 py-1 text-slate-400 hover:text-slate-200 border-r font-mono text-xs ${
-                      isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-200 hover:bg-slate-200"
-                    }`}
-                  >
-                    [ &gt; ]
-                  </button>
-                  <button
-                    onClick={() => setRightTab("prospector")}
-                    className={`flex-1 py-1.5 text-center border transition-colors ${
-                      rightTab === "prospector"
-                        ? isDark
-                          ? "bg-[#161e2e] text-amber-400 font-bold border-slate-700"
-                          : "bg-white text-amber-600 font-bold border-slate-300 shadow-sm"
-                        : isDark
-                        ? "border-transparent text-slate-400 hover:text-slate-200"
-                        : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {tDocks("prospector")}
-                  </button>
-                  <button
-                    onClick={() => setRightTab("earth_analogue")}
-                    className={`flex-1 py-1.5 text-center border transition-colors ${
-                      rightTab === "earth_analogue"
-                        ? isDark
-                          ? "bg-[#161e2e] text-cyan-400 font-bold border-slate-700"
-                          : "bg-white text-cyan-600 font-bold border-slate-300 shadow-sm"
-                        : isDark
-                        ? "border-transparent text-slate-400 hover:text-slate-200"
-                        : "border-transparent text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {tDocks("earthAnalogues")}
-                  </button>
-                </div>
-
-                {/* Tab Body */}
-                <div className="flex-1 overflow-y-auto">
-                  {rightTab === "prospector" ? (
-                    <ProspectorPanel
-                      waypoint={selectedWaypoint}
-                      onOpenPovModal={handleOpenPovModal}
-                      onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
-                      dustStormActive={dustStormActive}
-                      theme={theme}
-                    />
-                  ) : (
-                    <AnalogueMatcherPanel
-                      waypoint={selectedWaypoint}
-                      theme={theme}
-                    />
-                  )}
-                </div>
-              </aside>
-            )}
-          </>
-        )}
-
-        {/* 3. UNIFIED BOTTOM TELEMETRY BAR (Simetris h-9, bottom-4 left-4 right-4, zero overlap) */}
-        <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-center gap-3 pointer-events-none select-none">
+        {/* 3. UNIFIED BOTTOM TELEMETRY BAR (Simetris h-9, bottom-4 left-14 right-4, zero overlap with left rail) */}
+        <div className="absolute bottom-4 left-14 right-4 z-20 flex justify-between items-center gap-3 pointer-events-none select-none">
           {/* Slot Kiri Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums) */}
           <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
             isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"

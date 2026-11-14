@@ -32,7 +32,7 @@ const MARTIAN_LANDMARKS: Landmark[] = [
     name: "Gale Crater — Mount Sharp (Aeolis Mons)",
     tag: "SITE-01: GALE (MSL)",
     lat: -4.74,
-    lon: 137.40,
+    lon: 137.4,
     elevationM: -4501,
     siteId: "gale_crater",
     description: "Curiosity Rover exploration zone. Ancient fluvio-lacustrine mudstone strata and sulfate boxwork crystal lattices.",
@@ -56,12 +56,12 @@ const MARTIAN_LANDMARKS: Landmark[] = [
     lat: 18.65,
     lon: 226.2,
     elevationM: 21287,
-    description: "Highest volcano and mountain in the Solar System. Massive basaltic shield volcano with an 80 km wide central caldera complex.",
-    geologicUnit: "Amazonian Basaltic Volcanic Caldera & Scarp",
+    description: "Tallest planetary volcano in the Solar System. 600 km wide shield with 8 km cliffs and complex caldera summit.",
+    geologicUnit: "Amazonian Basaltic Lava Flows & Flank Scarps",
   },
   {
     id: "valles_marineris",
-    name: "Valles Marineris",
+    name: "Valles Marineris (Coprates Chasma)",
     tag: "CANYON SYSTEM",
     lat: -13.9,
     lon: 300.8,
@@ -91,8 +91,18 @@ function latLonToVector3(lat: number, lon: number, radius: number): THREE.Vector
   return new THREE.Vector3(x, y, z);
 }
 
-// Procedural Equirectangular Mars Texture Generators
-function createProceduralVikingCanvas(): HTMLCanvasElement {
+// In-Memory Cache for stitched 2048x1024 real NASA Mars Trek satellite textures
+const globalRealTextureCache = new Map<string, HTMLCanvasElement>();
+
+// Build 2048x1024 Real Mars Satellite Equirectangular Texture by stitching 32 Trek tiles (8 cols x 4 rows at z=2)
+function buildRealMarsSphereTexture(
+  mode: GlobeTextureMode,
+  onTileDrawn?: () => void
+): HTMLCanvasElement {
+  if (globalRealTextureCache.has(mode)) {
+    return globalRealTextureCache.get(mode)!;
+  }
+
   const width = 2048;
   const height = 1024;
   const canvas = document.createElement("canvas");
@@ -101,244 +111,56 @@ function createProceduralVikingCanvas(): HTMLCanvasElement {
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
 
-  // Base Martian ferric oxide rust tone
-  ctx.fillStyle = "#8c381e";
-  ctx.fillRect(0, 0, width, height);
+  // Base natural Martian tone while 32 satellite tiles stream in
+  if (mode === "viking") {
+    ctx.fillStyle = "#8a361c";
+    ctx.fillRect(0, 0, width, height);
+  } else if (mode === "mola") {
+    ctx.fillStyle = "#0c4a6e";
+    ctx.fillRect(0, 0, width, height);
+  } else {
+    ctx.fillStyle = "#090d16";
+    ctx.fillRect(0, 0, width, height);
+  }
 
-  // Subtle global albedo bands
-  const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, "#c46849");
-  grad.addColorStop(0.3, "#963d20");
-  grad.addColorStop(0.5, "#7b2f15");
-  grad.addColorStop(0.7, "#994324");
-  grad.addColorStop(1, "#c46849");
-  ctx.fillStyle = grad;
-  ctx.globalAlpha = 0.6;
-  ctx.fillRect(0, 0, width, height);
-  ctx.globalAlpha = 1.0;
+  globalRealTextureCache.set(mode, canvas);
 
-  // Syrtis Major Dark Basaltic Region (Lon ~70°, Lat ~10°N)
-  const xSyrtis = (70 / 360) * width;
-  const ySyrtis = ((90 - 10) / 180) * height;
-  const rSyrtis = ctx.createRadialGradient(xSyrtis, ySyrtis, 10, xSyrtis, ySyrtis, 130);
-  rSyrtis.addColorStop(0, "#2c170d");
-  rSyrtis.addColorStop(0.6, "#452214");
-  rSyrtis.addColorStop(1, "transparent");
-  ctx.fillStyle = rSyrtis;
-  ctx.beginPath();
-  ctx.arc(xSyrtis, ySyrtis, 130, 0, Math.PI * 2);
-  ctx.fill();
+  const trekLayer =
+    mode === "viking"
+      ? "viking-mdim21"
+      : mode === "mola"
+      ? "mola-clrshade"
+      : "themis-night-ir";
 
-  // Sinus Sabaeus / Southern Dark Belt
-  ctx.fillStyle = "rgba(40, 20, 12, 0.45)";
-  ctx.beginPath();
-  ctx.ellipse((100 / 360) * width, ((90 - -15) / 180) * height, 220, 60, -0.1, 0, Math.PI * 2);
-  ctx.fill();
+  const directTrekPath =
+    mode === "viking"
+      ? "Mars_Viking_MDIM21_ClrMosaic_global_232m"
+      : mode === "mola"
+      ? "Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw"
+      : "Mars_MO_THEMIS-IR-Night_mosaic_global_100m_v2";
 
-  // Acidalia Planitia (Northern dark basin, Lon 330°, Lat 50°N)
-  ctx.fillStyle = "rgba(45, 24, 15, 0.5)";
-  ctx.beginPath();
-  ctx.ellipse((330 / 360) * width, ((90 - 50) / 180) * height, 180, 80, 0.1, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Valles Marineris Canyon Gash (Lon 270° to 310°, Lat -14°)
-  ctx.strokeStyle = "#1f1008";
-  ctx.lineWidth = 14;
-  ctx.beginPath();
-  ctx.moveTo((260 / 360) * width, ((90 - -12) / 180) * height);
-  ctx.quadraticCurveTo(
-    (285 / 360) * width,
-    ((90 - -16) / 180) * height,
-    (315 / 360) * width,
-    ((90 - -13) / 180) * height
-  );
-  ctx.stroke();
-
-  // Olympus Mons Volcano & Caldera (Lon 226°, Lat 19°N)
-  const xOly = (226 / 360) * width;
-  const yOly = ((90 - 19) / 180) * height;
-  const rOly = ctx.createRadialGradient(xOly, yOly, 5, xOly, yOly, 55);
-  rOly.addColorStop(0, "#4a2113");
-  rOly.addColorStop(0.5, "#a14829");
-  rOly.addColorStop(1, "transparent");
-  ctx.fillStyle = rOly;
-  ctx.beginPath();
-  ctx.arc(xOly, yOly, 55, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hellas Basin Bright Dust Reservoir (Lon 70°, Lat -43°)
-  const xHel = (70 / 360) * width;
-  const yHel = ((90 - -43) / 180) * height;
-  const rHel = ctx.createRadialGradient(xHel, yHel, 10, xHel, yHel, 90);
-  rHel.addColorStop(0, "#be5c38");
-  rHel.addColorStop(0.7, "#a84c2a");
-  rHel.addColorStop(1, "transparent");
-  ctx.fillStyle = rHel;
-  ctx.beginPath();
-  ctx.arc(xHel, yHel, 90, 0, Math.PI * 2);
-  ctx.fill();
-
-  // North Polar Cap (Planum Boreum - CO2/Water Ice White)
-  ctx.fillStyle = "#f1f5f9";
-  ctx.beginPath();
-  ctx.ellipse(width / 2, 0, width / 2, 45, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // South Polar Cap (Planum Australe)
-  ctx.fillStyle = "#e2e8f0";
-  ctx.beginPath();
-  ctx.ellipse(width / 2, height, width / 3, 35, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  return canvas;
-}
-
-function createProceduralMolaCanvas(): HTMLCanvasElement {
-  const width = 2048;
-  const height = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-
-  // Hypsometric elevation tint: Northern Lowlands (Blue) vs Southern Highlands (Orange/Red)
-  const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, "#ffffff"); // North pole ice cap
-  grad.addColorStop(0.12, "#1d4ed8"); // Northern lowlands basin
-  grad.addColorStop(0.35, "#0284c7"); // Vastitas Borealis
-  grad.addColorStop(0.48, "#10b981"); // Equatorial transition
-  grad.addColorStop(0.65, "#f59e0b"); // Southern cratered highlands
-  grad.addColorStop(0.85, "#dc2626"); // High volcanic plateau
-  grad.addColorStop(1, "#ffffff"); // South pole ice cap
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, width, height);
-
-  // Olympus Mons Peak (Extreme High Elevation - White/Red Peak)
-  const xOly = (226 / 360) * width;
-  const yOly = ((90 - 19) / 180) * height;
-  const rOly = ctx.createRadialGradient(xOly, yOly, 4, xOly, yOly, 60);
-  rOly.addColorStop(0, "#ffffff");
-  rOly.addColorStop(0.3, "#f43f5e");
-  rOly.addColorStop(0.7, "#ea580c");
-  rOly.addColorStop(1, "transparent");
-  ctx.fillStyle = rOly;
-  ctx.beginPath();
-  ctx.arc(xOly, yOly, 60, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hellas Basin (Extreme Deep Depression - Deep Indigo/Purple)
-  const xHel = (70 / 360) * width;
-  const yHel = ((90 - -43) / 180) * height;
-  const rHel = ctx.createRadialGradient(xHel, yHel, 10, xHel, yHel, 110);
-  rHel.addColorStop(0, "#1e1b4b");
-  rHel.addColorStop(0.5, "#1e3a8a");
-  rHel.addColorStop(1, "transparent");
-  ctx.fillStyle = rHel;
-  ctx.beginPath();
-  ctx.arc(xHel, yHel, 110, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Valles Marineris Canyon Deep Trench
-  ctx.strokeStyle = "#1e1b4b";
-  ctx.lineWidth = 12;
-  ctx.beginPath();
-  ctx.moveTo((260 / 360) * width, ((90 - -12) / 180) * height);
-  ctx.quadraticCurveTo(
-    (285 / 360) * width,
-    ((90 - -16) / 180) * height,
-    (315 / 360) * width,
-    ((90 - -13) / 180) * height
-  );
-  ctx.stroke();
-
-  return canvas;
-}
-
-function createProceduralThemisCanvas(): HTMLCanvasElement {
-  const width = 2048;
-  const height = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-
-  // THEMIS Night IR: Cold low-TI dust (deep purple/blue) vs Warm high-TI bedrock (amber/cyan)
-  ctx.fillStyle = "#0f172a";
-  ctx.fillRect(0, 0, width, height);
-
-  const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, "#020617");
-  grad.addColorStop(0.2, "#1e1b4b");
-  grad.addColorStop(0.5, "#312e81");
-  grad.addColorStop(0.8, "#1e1b4b");
-  grad.addColorStop(1, "#020617");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, width, height);
-
-  // Warm bedrock thermal anomalies
-  ctx.fillStyle = "rgba(6, 182, 212, 0.4)";
-  ctx.beginPath();
-  ctx.ellipse((70 / 360) * width, ((90 - 10) / 180) * height, 140, 70, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(245, 158, 11, 0.45)";
-  ctx.beginPath();
-  ctx.ellipse((226 / 360) * width, ((90 - 19) / 180) * height, 70, 70, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  return canvas;
-}
-
-function createProceduralBumpCanvas(): HTMLCanvasElement {
-  const width = 1024;
-  const height = 512;
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return canvas;
-
-  ctx.fillStyle = "#777777";
-  ctx.fillRect(0, 0, width, height);
-
-  // Olympus Mons Bump (High white peak)
-  const xOly = (226 / 360) * width;
-  const yOly = ((90 - 19) / 180) * height;
-  const rOly = ctx.createRadialGradient(xOly, yOly, 2, xOly, yOly, 40);
-  rOly.addColorStop(0, "#ffffff");
-  rOly.addColorStop(0.4, "#cccccc");
-  rOly.addColorStop(1, "#777777");
-  ctx.fillStyle = rOly;
-  ctx.beginPath();
-  ctx.arc(xOly, yOly, 40, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hellas Basin (Deep black depression)
-  const xHel = (70 / 360) * width;
-  const yHel = ((90 - -43) / 180) * height;
-  const rHel = ctx.createRadialGradient(xHel, yHel, 5, xHel, yHel, 50);
-  rHel.addColorStop(0, "#111111");
-  rHel.addColorStop(0.6, "#444444");
-  rHel.addColorStop(1, "#777777");
-  ctx.fillStyle = rHel;
-  ctx.beginPath();
-  ctx.arc(xHel, yHel, 50, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Valles Marineris Deep Trench
-  ctx.strokeStyle = "#111111";
-  ctx.lineWidth = 8;
-  ctx.beginPath();
-  ctx.moveTo((260 / 360) * width, ((90 - -12) / 180) * height);
-  ctx.quadraticCurveTo(
-    (285 / 360) * width,
-    ((90 - -16) / 180) * height,
-    (315 / 360) * width,
-    ((90 - -13) / 180) * height
-  );
-  ctx.stroke();
+  // Stream full 8 cols x 4 rows matrix = 32 tiles at z=2 (2048x1024 px total)
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 8; col++) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, col * 256, row * 256, 256, 256);
+        if (onTileDrawn) onTileDrawn();
+      };
+      img.onerror = () => {
+        // Fallback directly to NASA Trek upstream
+        const fbImg = new Image();
+        fbImg.crossOrigin = "anonymous";
+        fbImg.onload = () => {
+          ctx.drawImage(fbImg, col * 256, row * 256, 256, 256);
+          if (onTileDrawn) onTileDrawn();
+        };
+        fbImg.src = `https://trek.nasa.gov/tiles/Mars/EQ/${directTrekPath}/1.0.0/default/default028mm/2/${row}/${col}.jpg`;
+      };
+      img.src = `/api/mars-tiles/${trekLayer}/2/${row}/${col}?raw=trek`;
+    }
+  }
 
   return canvas;
 }
@@ -372,12 +194,13 @@ export const MarsGlobeViewer: React.FC<MarsGlobeViewerProps> = ({
     mola: null,
     themis: null,
   });
+  const bumpTextureRef = useRef<THREE.CanvasTexture | null>(null);
 
   const isDragging = useRef<boolean>(false);
   const previousMousePosition = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const targetRotation = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Initialize Three.js Scene, Globe Sphere, Atmosphere, and Lighting
+  // Initialize Three.js Scene, 3D Globe Sphere, Atmosphere, and Lighting
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
@@ -401,30 +224,38 @@ export const MarsGlobeViewer: React.FC<MarsGlobeViewerProps> = ({
 
     container.appendChild(renderer.domElement);
 
-    // Build procedural equirectangular textures
-    const vikingCanvas = createProceduralVikingCanvas();
-    const molaCanvas = createProceduralMolaCanvas();
-    const themisCanvas = createProceduralThemisCanvas();
-    const bumpCanvas = createProceduralBumpCanvas();
+    // Build real 2048x1024 satellite textures for Viking, MOLA, and THEMIS
+    const notifyTileDrawn = () => {
+      if (texturesMap.current.viking) texturesMap.current.viking.needsUpdate = true;
+      if (texturesMap.current.mola) texturesMap.current.mola.needsUpdate = true;
+      if (texturesMap.current.themis) texturesMap.current.themis.needsUpdate = true;
+      if (bumpTextureRef.current) bumpTextureRef.current.needsUpdate = true;
+    };
+
+    const vikingCanvas = buildRealMarsSphereTexture("viking", notifyTileDrawn);
+    const molaCanvas = buildRealMarsSphereTexture("mola", notifyTileDrawn);
+    const themisCanvas = buildRealMarsSphereTexture("themis", notifyTileDrawn);
 
     const vikingTex = new THREE.CanvasTexture(vikingCanvas);
     const molaTex = new THREE.CanvasTexture(molaCanvas);
     const themisTex = new THREE.CanvasTexture(themisCanvas);
-    const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+    // Real MOLA elevation texture used as bump map
+    const bumpTex = new THREE.CanvasTexture(molaCanvas);
 
     texturesMap.current = {
       viking: vikingTex,
       mola: molaTex,
       themis: themisTex,
     };
+    bumpTextureRef.current = bumpTex;
 
-    // 1. Martian Globe Sphere (Radius = 3.0)
+    // 1. Martian Globe Sphere (Radius = 3.0) with Real Satellite Texture & MOLA 3D Bump
     const globeGeo = new THREE.SphereGeometry(3.0, 64, 64);
     const globeMat = new THREE.MeshStandardMaterial({
       map: vikingTex,
       bumpMap: bumpTex,
-      bumpScale: 0.04,
-      roughness: 0.88,
+      bumpScale: 0.25,
+      roughness: 0.85,
       metalness: 0.05,
     });
     const globeMesh = new THREE.Mesh(globeGeo, globeMat);
@@ -451,95 +282,110 @@ export const MarsGlobeViewer: React.FC<MarsGlobeViewerProps> = ({
       blending: THREE.AdditiveBlending,
       side: THREE.BackSide,
       transparent: true,
-      depthWrite: false,
     });
     const atmoMesh = new THREE.Mesh(atmoGeo, atmoMat);
     scene.add(atmoMesh);
 
-    // 3. Distant Space Starfield Particles
+    // 3. Realistic Lighting Rig (Solar Directional Light + Subtle Ambient)
+    const sunLight = new THREE.DirectionalLight(0xfff6ea, 2.2);
+    sunLight.position.set(5, 3, 5);
+    scene.add(sunLight);
+
+    const ambientLight = new THREE.AmbientLight(0x2d3748, 0.45);
+    scene.add(ambientLight);
+
+    const rimLight = new THREE.DirectionalLight(0xc2410c, 0.85);
+    rimLight.position.set(-6, -2, -4);
+    scene.add(rimLight);
+
+    // 4. Background Starfield
+    const starCount = 800;
     const starGeo = new THREE.BufferGeometry();
-    const starCount = 1200;
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
-      const radius = 30 + Math.random() * 40;
-      const u = Math.random();
-      const v = Math.random();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
-      starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
-      starPositions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-      starPositions[i + 2] = radius * Math.cos(phi);
+      starPositions[i] = (Math.random() - 0.5) * 80;
+      starPositions[i + 1] = (Math.random() - 0.5) * 80;
+      starPositions[i + 2] = (Math.random() - 0.5) * 80;
     }
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-    const starMat = new THREE.PointsMaterial({ color: 0xcfd8dc, size: 0.15, sizeAttenuation: true });
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, transparent: true, opacity: 0.75 });
     const starField = new THREE.Points(starGeo, starMat);
     scene.add(starField);
 
-    // 4. Lighting Rig
-    const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.8);
-    sunLight.position.set(7, 3, 6);
-    scene.add(sunLight);
-
-    const ambientLight = new THREE.AmbientLight(0x334155, 0.6);
-    scene.add(ambientLight);
-
-    // 5. Interactive 3D Pins Group
+    // 5. 3D Landmark Pins
     const pinsGroup = new THREE.Group();
     MARTIAN_LANDMARKS.forEach((lm) => {
       const pos = latLonToVector3(lm.lat, lm.lon, 3.03);
 
-      // Pin Needle
-      const pinGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.22, 12);
-      const isSite = Boolean(lm.siteId);
-      const pinMat = new THREE.MeshBasicMaterial({
-        color: isSite ? (lm.siteId === "gale_crater" ? 0x06b6d4 : 0x10b981) : 0xf59e0b,
-      });
+      const pinGeo = new THREE.CylinderGeometry(0.02, 0.005, 0.35, 8);
+      pinGeo.rotateX(Math.PI / 2);
+
+      const isSite = lm.siteId !== undefined;
+      const pinColor = isSite ? 0xf59e0b : 0x06b6d4;
+      const pinMat = new THREE.MeshBasicMaterial({ color: pinColor });
       const pinMesh = new THREE.Mesh(pinGeo, pinMat);
 
-      // Position & align cylinder normal to sphere surface
       pinMesh.position.copy(pos);
-      pinMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
+      pinMesh.lookAt(new THREE.Vector3(0, 0, 0));
+      pinMesh.rotateY(Math.PI);
 
-      // Pin Head / Marker Sphere
-      const headGeo = new THREE.SphereGeometry(0.065, 16, 16);
+      const headGeo = new THREE.SphereGeometry(0.07, 16, 16);
       const headMat = new THREE.MeshBasicMaterial({
-        color: isSite ? 0x38bdf8 : 0xfbbf24,
+        color: isSite ? 0xfbbf24 : 0x22d3ee,
       });
       const headMesh = new THREE.Mesh(headGeo, headMat);
-      headMesh.position.set(0, 0.13, 0);
-      pinMesh.add(headMesh);
+      headMesh.position.copy(latLonToVector3(lm.lat, lm.lon, 3.22));
 
-      // Store landmark metadata directly in user data
-      headMesh.userData = { landmark: lm };
-      pinMesh.userData = { landmark: lm };
+      const landmarkHolder = new THREE.Group();
+      landmarkHolder.name = `landmark_${lm.id}`;
+      landmarkHolder.userData = { landmark: lm };
+      landmarkHolder.add(pinMesh);
+      landmarkHolder.add(headMesh);
 
-      pinsGroup.add(pinMesh);
+      pinsGroup.add(landmarkHolder);
     });
-    globeMesh.add(pinsGroup);
+    scene.add(pinsGroup);
     pinsGroupRef.current = pinsGroup;
 
-    // Initial orientation: focus on selected site
-    const initLm = MARTIAN_LANDMARKS.find((l) => l.siteId === currentSite) || MARTIAN_LANDMARKS[0];
-    const targetLonRad = -(initLm.lon + 180) * (Math.PI / 180);
-    globeMesh.rotation.y = targetLonRad;
-    globeMesh.rotation.x = (initLm.lat * Math.PI) / 180 * 0.4;
+    // Initial camera alignment to active site
+    const initTarget = MARTIAN_LANDMARKS.find((l) => l.siteId === currentSite) || MARTIAN_LANDMARKS[0];
+    const initialTargetPos = latLonToVector3(initTarget.lat, initTarget.lon, 3.0);
+    targetRotation.current = {
+      x: Math.atan2(initialTargetPos.z, initialTargetPos.x) - Math.PI / 2,
+      y: (initTarget.lat * Math.PI) / 180,
+    };
+    globeMesh.rotation.y = targetRotation.current.x;
+    globeMesh.rotation.x = -targetRotation.current.y * 0.5;
+    pinsGroup.rotation.y = globeMesh.rotation.y;
+    pinsGroup.rotation.x = globeMesh.rotation.x;
 
-    // Animation & Render Loop
-    let animId: number;
+    // Animation Loop
+    let animationFrameId: number;
     const animate = () => {
-      animId = requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
 
-      if (isAutoRotate && !isDragging.current) {
-        globeMesh.rotation.y += 0.0012;
+      if (globeMeshRef.current && pinsGroupRef.current) {
+        if (!isDragging.current) {
+          if (isAutoRotate) {
+            globeMeshRef.current.rotation.y += 0.0012;
+            pinsGroupRef.current.rotation.y = globeMeshRef.current.rotation.y;
+          } else {
+            // Smooth dampening to target rotation
+            globeMeshRef.current.rotation.y += (targetRotation.current.x - globeMeshRef.current.rotation.y) * 0.08;
+            globeMeshRef.current.rotation.x += (-targetRotation.current.y * 0.5 - globeMeshRef.current.rotation.x) * 0.08;
+            pinsGroupRef.current.rotation.y = globeMeshRef.current.rotation.y;
+            pinsGroupRef.current.rotation.x = globeMeshRef.current.rotation.x;
+          }
+        }
       }
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // Window Resize Handler
+    // Resize Handler
     const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current || !cameraRef.current) return;
+      if (!containerRef.current || !cameraRef.current || !rendererRef.current) return;
       const w = containerRef.current.clientWidth;
       const h = containerRef.current.clientHeight;
       cameraRef.current.aspect = w / h;
@@ -549,77 +395,65 @@ export const MarsGlobeViewer: React.FC<MarsGlobeViewerProps> = ({
     window.addEventListener("resize", handleResize);
 
     return () => {
-      cancelAnimationFrame(animId);
       window.removeEventListener("resize", handleResize);
-      if (renderer.domElement && container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
+      cancelAnimationFrame(animationFrameId);
+      if (renderer.domElement.parentElement) {
+        renderer.domElement.parentElement.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      globeGeo.dispose();
-      globeMat.dispose();
-      atmoGeo.dispose();
-      atmoMat.dispose();
-      starGeo.dispose();
-      starMat.dispose();
-      vikingTex.dispose();
-      molaTex.dispose();
-      themisTex.dispose();
-      bumpTex.dispose();
     };
   }, []);
 
-  // Update Active Texture Mode on Globe Material
+  // Update globe material when texture mode changes
   useEffect(() => {
     if (!globeMeshRef.current) return;
     const mat = globeMeshRef.current.material as THREE.MeshStandardMaterial;
-    const tex = texturesMap.current[activeTextureMode];
-    if (tex && mat) {
-      mat.map = tex;
+    const nextTex = texturesMap.current[activeTextureMode];
+    if (nextTex) {
+      mat.map = nextTex;
+      if (bumpTextureRef.current) {
+        mat.bumpMap = bumpTextureRef.current;
+        mat.bumpScale = 0.25;
+      }
       mat.needsUpdate = true;
     }
   }, [activeTextureMode]);
 
-  // Orbit / Drag Controls Event Listeners
+  // Pointer Interaction Handlers for Interactive Rotation
   const handlePointerDown = (e: React.PointerEvent) => {
     isDragging.current = true;
     previousMousePosition.current = { x: e.clientX, y: e.clientY };
+    setIsAutoRotate(false);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!containerRef.current || !cameraRef.current || !globeMeshRef.current) return;
+    if (!isDragging.current || !globeMeshRef.current || !pinsGroupRef.current) return;
 
-    // Track mouse coordinate for hover raycasting
-    const rect = containerRef.current.getBoundingClientRect();
-    mouseRef.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouseRef.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    const deltaX = e.clientX - previousMousePosition.current.x;
+    const deltaY = e.clientY - previousMousePosition.current.y;
 
-    if (isDragging.current) {
-      const deltaX = e.clientX - previousMousePosition.current.x;
-      const deltaY = e.clientY - previousMousePosition.current.y;
+    globeMeshRef.current.rotation.y += deltaX * 0.005;
+    globeMeshRef.current.rotation.x += deltaY * 0.005;
 
-      globeMeshRef.current.rotation.y += deltaX * 0.005;
-      globeMeshRef.current.rotation.x = Math.max(
-        -1.1,
-        Math.min(1.1, globeMeshRef.current.rotation.x + deltaY * 0.005)
-      );
+    // Clamp pitch to prevent gimbal flip
+    globeMeshRef.current.rotation.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, globeMeshRef.current.rotation.x));
 
-      previousMousePosition.current = { x: e.clientX, y: e.clientY };
-    }
+    pinsGroupRef.current.rotation.y = globeMeshRef.current.rotation.y;
+    pinsGroupRef.current.rotation.x = globeMeshRef.current.rotation.x;
+
+    targetRotation.current.x = globeMeshRef.current.rotation.y;
+    targetRotation.current.y = -globeMeshRef.current.rotation.x * 2.0;
+
+    previousMousePosition.current = { x: e.clientX, y: e.clientY };
   };
 
   const handlePointerUp = () => {
     isDragging.current = false;
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (!cameraRef.current) return;
-    const zoomDelta = e.deltaY * 0.004;
-    cameraRef.current.position.z = Math.max(4.2, Math.min(14.0, cameraRef.current.position.z + zoomDelta));
-  };
-
-  // Click on globe pins to select mission or inspect landmark
-  const handleClick = (e: React.MouseEvent) => {
-    if (!containerRef.current || !cameraRef.current || !globeMeshRef.current || !pinsGroupRef.current) return;
+  // Landmark Click Raycasting
+  const handleGlobeClick = (e: React.MouseEvent) => {
+    if (!containerRef.current || !cameraRef.current || !pinsGroupRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
     mouseRef.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -629,197 +463,216 @@ export const MarsGlobeViewer: React.FC<MarsGlobeViewerProps> = ({
     const intersects = raycasterRef.current.intersectObjects(pinsGroupRef.current.children, true);
 
     if (intersects.length > 0) {
-      let obj: THREE.Object3D | null = intersects[0].object;
-      while (obj && !obj.userData?.landmark && obj.parent) {
-        obj = obj.parent;
+      let currentObj: THREE.Object3D | null = intersects[0].object;
+      while (currentObj && !currentObj.name.startsWith("landmark_") && currentObj.parent) {
+        currentObj = currentObj.parent;
       }
-      if (obj && obj.userData?.landmark) {
-        const lm = obj.userData.landmark as Landmark;
+      if (currentObj && currentObj.userData.landmark) {
+        const lm: Landmark = currentObj.userData.landmark;
         setSelectedLandmark(lm);
-
-        // Smoothly rotate globe towards landmark
-        const targetLonRad = -(lm.lon + 180) * (Math.PI / 180);
-        const targetLatRad = (lm.lat * Math.PI) / 180 * 0.4;
-        globeMeshRef.current.rotation.y = targetLonRad;
-        globeMeshRef.current.rotation.x = targetLatRad;
+        handleFlyToLandmark(lm);
       }
     }
   };
 
-  // Fly / Rotate to specific landmark programmatically
-  const focusLandmark = (lm: Landmark) => {
+  // Focus and orient camera towards clicked landmark
+  const handleFlyToLandmark = (lm: Landmark) => {
     setSelectedLandmark(lm);
-    if (globeMeshRef.current) {
-      const targetLonRad = -(lm.lon + 180) * (Math.PI / 180);
-      const targetLatRad = (lm.lat * Math.PI) / 180 * 0.4;
-      globeMeshRef.current.rotation.y = targetLonRad;
-      globeMeshRef.current.rotation.x = targetLatRad;
-    }
+    setIsAutoRotate(false);
+
+    const pos = latLonToVector3(lm.lat, lm.lon, 3.0);
+    targetRotation.current = {
+      x: Math.atan2(pos.z, pos.x) - Math.PI / 2,
+      y: (lm.lat * Math.PI) / 180,
+    };
   };
 
   return (
-    <div
-      className={`relative w-full h-full select-none overflow-hidden ${
-        theme === "dark" ? "bg-[#050811] text-slate-200" : "bg-slate-900 text-white"
-      } font-mono`}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onWheel={handleWheel}
-      onClick={handleClick}
-    >
-      {/* Three.js Canvas Container */}
-      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+    <div className="relative w-full h-full bg-[#050811] overflow-hidden select-none font-mono">
+      {/* Three.js Interactive Canvas Container */}
+      <div
+        ref={containerRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onClick={handleGlobeClick}
+        className="w-full h-full cursor-grab active:cursor-grabbing"
+      />
 
-      {/* Top Left: Navigation Bar & 2D Return */}
-      <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2 text-xs">
-        <button
-          onClick={onExitGlobe}
-          className="px-3 py-1.5 bg-[#0b0f17] hover:bg-[#161e2e] border border-cyan-500 text-cyan-400 font-bold flex items-center gap-2 transition-colors"
-        >
-          <span>◄</span>
-          <span>[ RETURN TO 2D TACTICAL MAP ]</span>
-        </button>
-
-        <div className="px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 text-slate-300 font-bold">
-          [ 3D PLANET GLOBE // NASA-AMMOS ARCHITECTURE ]
+      {/* Top Left MMGIS Telemetry Card */}
+      <div className="absolute top-4 left-4 z-10 pointer-events-auto bg-[#07090e]/95 border border-slate-800 p-3 text-xs w-[320px]">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-purple-500 animate-pulse" />
+            <span className="text-purple-400 font-bold uppercase tracking-wider">
+              {t("planetGlobe")} // IAU-2000
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-bold">R=3,396.19 KM</span>
         </div>
 
+        {/* Layer Mode Switcher (Viking True Color vs MOLA vs THEMIS IR) */}
+        <div className="flex flex-col gap-1.5 mb-3">
+          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+            NASA MARS TREK EQUIRECTANGULAR (2048x1024):
+          </span>
+          <div className="grid grid-cols-3 gap-1 text-[10px]">
+            <button
+              onClick={() => setActiveTextureMode("viking")}
+              className={`py-1 px-1.5 border font-bold transition-colors ${
+                activeTextureMode === "viking"
+                  ? "bg-[#8a361c] text-slate-100 border-amber-500"
+                  : "bg-[#0b0f17] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              VIKING MDIM
+            </button>
+            <button
+              onClick={() => setActiveTextureMode("mola")}
+              className={`py-1 px-1.5 border font-bold transition-colors ${
+                activeTextureMode === "mola"
+                  ? "bg-[#0369a1] text-slate-100 border-cyan-400"
+                  : "bg-[#0b0f17] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              MOLA COLOR
+            </button>
+            <button
+              onClick={() => setActiveTextureMode("themis")}
+              className={`py-1 px-1.5 border font-bold transition-colors ${
+                activeTextureMode === "themis"
+                  ? "bg-[#4338ca] text-slate-100 border-indigo-400"
+                  : "bg-[#0b0f17] text-slate-400 border-slate-800 hover:text-slate-200"
+              }`}
+            >
+              THEMIS NIGHT
+            </button>
+          </div>
+        </div>
+
+        {/* Auto-Rotation Toggle */}
+        <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-[10px]">
+          <span className="text-slate-400">PLANETARY SPIN:</span>
+          <button
+            onClick={() => setIsAutoRotate(!isAutoRotate)}
+            className={`px-2 py-0.5 border font-bold transition-colors ${
+              isAutoRotate
+                ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                : "bg-[#111827] text-slate-400 border-slate-800"
+            }`}
+          >
+            {isAutoRotate ? "[SPIN ON]" : "[SPIN OFF]"}
+          </button>
+        </div>
+      </div>
+
+      {/* Top Right Exit Button */}
+      <div className="absolute top-4 right-4 z-10 pointer-events-auto">
         <button
-          onClick={() => setIsAutoRotate((prev) => !prev)}
-          className={`px-2.5 py-1.5 border font-bold transition-colors ${
-            isAutoRotate
-              ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4]"
-              : "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
-          }`}
+          onClick={onExitGlobe}
+          className="px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 hover:border-amber-500 text-slate-200 hover:text-amber-400 font-mono text-xs font-bold transition-colors flex items-center gap-2"
         >
-          {isAutoRotate ? "[ AUTO-ROTATE: ON ]" : "[ AUTO-ROTATE: OFF ]"}
+          <span>[ 2D TACTICAL MAP ]</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       </div>
 
-      {/* Top Right: Global Texture Switcher (Viking MDIM, MOLA Hypsometric, THEMIS IR) */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 text-[10px]">
-        {(
-          [
-            { id: "viking", label: "VIKING MDIM 2.1 (TRUE COLOR)" },
-            { id: "mola", label: "MOLA CLRSHADE (ELEVATION)" },
-            { id: "themis", label: "THEMIS NIGHT IR (THERMAL)" },
-          ] as const
-        ).map((item) => {
-          const isSelected = activeTextureMode === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveTextureMode(item.id);
-              }}
-              className={`px-2.5 py-1.5 border font-bold transition-colors ${
-                isSelected
-                  ? "bg-amber-600 text-slate-950 border-amber-400"
-                  : "bg-[#0b0f17]/95 text-slate-400 border-slate-700 hover:text-slate-200"
-              }`}
-            >
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Bottom Left: Quick Planetary Landmarks Switcher */}
-      <div className="absolute bottom-4 left-4 z-20 flex flex-wrap items-center gap-1.5 text-[10px]">
-        <span className="px-2 py-1 bg-[#07090e]/95 border border-slate-800 text-slate-400 font-bold uppercase">
-          PLANETARY TARGETS:
-        </span>
+      {/* Bottom Center Landmark Quick-Bar */}
+      <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 pointer-events-auto flex items-center gap-1.5 bg-[#07090e]/95 border border-slate-800 p-1 text-[10px]">
         {MARTIAN_LANDMARKS.map((lm) => {
           const isSelected = selectedLandmark?.id === lm.id;
           return (
             <button
               key={lm.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                focusLandmark(lm);
-              }}
-              className={`px-2 py-1 border transition-colors font-bold ${
+              onClick={() => handleFlyToLandmark(lm)}
+              className={`px-2 py-1 border transition-colors ${
                 isSelected
                   ? lm.siteId
-                    ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4]"
-                    : "bg-[#78350f] text-[#fef3c7] border-[#f59e0b]"
-                  : "bg-[#0b0f17]/90 text-slate-400 border-slate-800 hover:text-white"
+                    ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+                    : "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                  : "bg-[#0b0f17] text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700"
               }`}
             >
-              {lm.tag}
+              {lm.id === "gale_crater"
+                ? "GALE CRATER"
+                : lm.id === "jezero_crater"
+                ? "JEZERO CRATER"
+                : lm.name.split(" ")[0].toUpperCase()}
             </button>
           );
         })}
       </div>
 
-      {/* Bottom Right: MMGIS Scientific Feature Inspector Card */}
+      {/* Selected Landmark Details Card */}
       {selectedLandmark && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-4 right-4 z-20 w-80 p-3 bg-[#07090e]/98 border border-slate-700 text-xs shadow-none space-y-2 select-text"
-        >
-          {/* Card Header */}
-          <div className="flex items-start justify-between border-b border-slate-800 pb-1.5">
-            <div>
-              <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest block">
+        <aside className="absolute right-4 top-16 bottom-20 w-[340px] z-10 pointer-events-auto bg-[#07090e]/95 border border-slate-800 p-4 text-xs flex flex-col justify-between">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">
                 {selectedLandmark.tag}
               </span>
-              <h4 className="font-bold text-white text-xs leading-snug">
-                {selectedLandmark.name}
-              </h4>
-            </div>
-            <button
-              onClick={() => setSelectedLandmark(null)}
-              className="text-slate-400 hover:text-white px-1 text-sm font-bold"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Coordinate & Elevation Telemetry */}
-          <div className="grid grid-cols-2 gap-1.5 text-[10px] tabular-nums">
-            <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
-              <span className="text-slate-500 block text-[8px] uppercase">COORDINATES</span>
-              <span className="font-bold text-cyan-400">
-                {selectedLandmark.lat}°N, {selectedLandmark.lon}°E
+              <span className="text-[10px] text-slate-500 font-mono">
+                IAU: {selectedLandmark.lat >= 0 ? `${selectedLandmark.lat.toFixed(2)}°N` : `${Math.abs(selectedLandmark.lat).toFixed(2)}°S`},{" "}
+                {selectedLandmark.lon.toFixed(2)}°E
               </span>
             </div>
-            <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
-              <span className="text-slate-500 block text-[8px] uppercase">MOLA ELEVATION</span>
-              <span className="font-bold text-amber-400">
-                {selectedLandmark.elevationM >= 0 ? `+${selectedLandmark.elevationM}` : selectedLandmark.elevationM} M
-              </span>
+
+            <h3 className="text-slate-100 font-bold text-sm leading-snug">
+              {selectedLandmark.name}
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2 p-2 bg-[#0b0f17] border border-slate-800 text-[10px]">
+              <div>
+                <span className="text-slate-500 block">DATUM ELEVATION:</span>
+                <span className="text-slate-200 font-bold tabular-nums">
+                  {selectedLandmark.elevationM >= 0 ? `+${selectedLandmark.elevationM}` : selectedLandmark.elevationM} M
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">GEOLOGIC EPOCH:</span>
+                <span className="text-amber-400 font-bold">
+                  {selectedLandmark.id === "olympus_mons" ? "AMAZONIAN" : selectedLandmark.id === "gale_crater" ? "HESPERIAN" : "NOACHIAN"}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-slate-300 text-[11px] leading-relaxed">
+              {selectedLandmark.description}
+            </p>
+
+            <div className="p-2 border border-slate-800 bg-[#090d15] text-[10px]">
+              <span className="text-slate-500 block mb-1">REGIONAL GEOLOGIC UNIT:</span>
+              <span className="text-cyan-300 font-medium">{selectedLandmark.geologicUnit}</span>
             </div>
           </div>
 
-          {/* Geologic Description */}
-          <div className="text-[10px] text-slate-300 leading-relaxed font-sans">
-            <p>{selectedLandmark.description}</p>
-          </div>
-
-          <div className="text-[9px] text-slate-400 border-t border-slate-800/80 pt-1">
-            <span className="text-slate-500 uppercase font-bold">GEOLOGY: </span>
-            <span>{selectedLandmark.geologicUnit}</span>
-          </div>
-
-          {/* Action Button: If it is an active mission site (Gale or Jezero), activate in 2D Map */}
-          {selectedLandmark.siteId && (
+          {/* Action Button: Transition into 2D Tactical Map if Mission Site */}
+          {selectedLandmark.siteId ? (
             <button
               onClick={() => {
-                onSelectSite(selectedLandmark.siteId!);
-                onExitGlobe();
+                if (selectedLandmark.siteId) {
+                  onSelectSite(selectedLandmark.siteId);
+                }
               }}
-              className="w-full py-1.5 mt-1 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors uppercase tracking-wider text-center block"
+              className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold uppercase tracking-wider text-xs border border-amber-400 transition-colors flex items-center justify-center gap-2 mt-4"
             >
-              [ ENTER 2D TACTICAL MAP FOR {selectedLandmark.siteId === "gale_crater" ? "GALE" : "JEZERO"} ]
+              <span>[ ENTER {selectedLandmark.siteId === "jezero_crater" ? "JEZERO" : "GALE"} TACTICAL MAP ]</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
+          ) : (
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 text-center text-slate-500 text-[10px] mt-4">
+              [ GLOBAL ORBITAL REFERENCE LANDMARK ]
+            </div>
           )}
-        </div>
+        </aside>
       )}
     </div>
   );
 };
 
-export default React.memo(MarsGlobeViewer);
+export default MarsGlobeViewer;

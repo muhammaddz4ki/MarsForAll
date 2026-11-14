@@ -259,25 +259,29 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       style: {
         version: 8,
         sources: {
-          mars_hirise_gale: {
+          mars_viking_basemap: {
             type: "raster",
-            tiles: ["/api/mars-tiles/hirise-gale/{z}/{x}/{y}"],
+            tiles: ["/api/mars-tiles/viking-mdim21/{z}/{y}/{x}"],
             tileSize: 256,
-            attribution: "NASA / JPL / University of Arizona",
+            attribution: "NASA / JPL / USGS Viking MDIM 2.1 Mosaic",
+          },
+          mars_ctx_gale: {
+            type: "raster",
+            tiles: ["/api/mars-tiles/gale-ctx/{z}/{y}/{x}"],
+            tileSize: 256,
+            attribution: "NASA / JPL / MSSS (Gale CTX 6m Mosaic)",
+          },
+          mars_ctx_jezero: {
+            type: "raster",
+            tiles: ["/api/mars-tiles/jezero-ctx/{z}/{y}/{x}"],
+            tileSize: 256,
+            attribution: "NASA / JPL / Caltech (Jezero CTX 6m Mosaic)",
           },
           mars_mola_shaded: {
             type: "raster",
-            tiles: ["/api/mars-tiles/mola-clrshade/{z}/{x}/{y}"],
+            tiles: ["/api/mars-tiles/mola-clrshade/{z}/{y}/{x}"],
             tileSize: 256,
             attribution: "NASA / GSFC / MOLA Team",
-          },
-          mars_opm_basemap: {
-            type: "raster",
-            tiles: [
-              "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "OpenPlanetary / CARTO / USGS",
           },
         },
         layers: [
@@ -295,18 +299,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             },
           },
           {
-            id: "mars-raster-opm",
+            id: "mars-raster-viking",
             type: "raster",
-            source: "mars_opm_basemap",
+            source: "mars_viking_basemap",
             layout: {
-              visibility: orbitalSource !== "local_vector" && tileMode === "live_trek" ? "visible" : "none",
+              visibility: tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.82,
-              "raster-contrast": 0.22,
-              "raster-brightness-min": 0.08,
-              "raster-brightness-max": 0.95,
-              "raster-saturation": 0.20,
+              "raster-opacity": 1.0,
+              "raster-contrast": 0.25,
+              "raster-saturation": 0.15,
             },
           },
           {
@@ -317,21 +319,42 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "mola_hrsc" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.90,
+              "raster-opacity": 0.85,
               "raster-contrast": 0.35,
             },
           },
           {
-            id: "mars-raster-hirise",
+            id: "mars-raster-ctx-gale",
             type: "raster",
-            source: "mars_hirise_gale",
+            source: "mars_ctx_gale",
             layout: {
-              visibility: orbitalSource === "jpl_hirise" && tileMode === "live_trek" ? "visible" : "none",
+              visibility:
+                orbitalSource === "jpl_hirise" &&
+                currentSite === "gale_crater" &&
+                tileMode === "live_trek"
+                  ? "visible"
+                  : "none",
             },
             paint: {
-              "raster-opacity": 0.88,
-              "raster-contrast": 0.22,
-              "raster-saturation": -0.70,
+              "raster-opacity": 1.0,
+              "raster-contrast": 0.25,
+            },
+          },
+          {
+            id: "mars-raster-ctx-jezero",
+            type: "raster",
+            source: "mars_ctx_jezero",
+            layout: {
+              visibility:
+                orbitalSource === "jpl_hirise" &&
+                currentSite === "jezero_crater" &&
+                tileMode === "live_trek"
+                  ? "visible"
+                  : "none",
+            },
+            paint: {
+              "raster-opacity": 1.0,
+              "raster-contrast": 0.25,
             },
           },
         ],
@@ -631,7 +654,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         errText.includes("cors")
       ) {
         if (onWmtsStatusChange) onWmtsStatusChange("fallback");
-        ["mars-raster-hirise", "mars-raster-mola", "mars-raster-opm"].forEach((id) => {
+        ["mars-raster-ctx-gale", "mars-raster-ctx-jezero", "mars-raster-mola"].forEach((id) => {
           if (map.getLayer(id)) {
             map.setLayoutProperty(id, "visibility", "none");
           }
@@ -1023,6 +1046,54 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       );
     }
   }, [activeLayers]);
+
+  // Reactive NASA Mars Trek Satellite Imagery Synchronization
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const isLive = tileMode === "live_trek";
+
+    // 1. Viking MDIM 2.1 Basemap (always visible when live_trek is on)
+    if (map.getLayer("mars-raster-viking")) {
+      map.setLayoutProperty("mars-raster-viking", "visibility", isLive ? "visible" : "none");
+    }
+
+    // 2. MOLA Shaded Relief
+    if (map.getLayer("mars-raster-mola")) {
+      map.setLayoutProperty(
+        "mars-raster-mola",
+        "visibility",
+        isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
+      );
+    }
+
+    // 3. Gale CTX Mosaic (6m/px)
+    if (map.getLayer("mars-raster-ctx-gale")) {
+      map.setLayoutProperty(
+        "mars-raster-ctx-gale",
+        "visibility",
+        isLive &&
+          currentSite === "gale_crater" &&
+          orbitalSource === "jpl_hirise"
+          ? "visible"
+          : "none"
+      );
+    }
+
+    // 4. Jezero CTX Mosaic (6m/px)
+    if (map.getLayer("mars-raster-ctx-jezero")) {
+      map.setLayoutProperty(
+        "mars-raster-ctx-jezero",
+        "visibility",
+        isLive &&
+          currentSite === "jezero_crater" &&
+          orbitalSource === "jpl_hirise"
+          ? "visible"
+          : "none"
+      );
+    }
+  }, [orbitalSource, tileMode, currentSite]);
 
   // Sync Curiosity Historical Traverse Visibility
   useEffect(() => {
