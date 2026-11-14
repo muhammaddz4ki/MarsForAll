@@ -18,7 +18,9 @@ import {
   WmtsStreamStatus,
 } from "@/lib/martian/scientificParams";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+
+export type SupportedLocale = "en" | "id" | "es" | "fr" | "zh";
 
 // Lazy-loaded heavy modules with zero-SSR to optimize initial bundle size & load speed
 const SurfacePovModal = dynamic(() => import("./SurfacePovModal"), {
@@ -58,6 +60,10 @@ export const AresMartianApp: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const currentLocale = useLocale();
+
+  const tNav = useTranslations("nav");
+  const tDocks = useTranslations("docks");
+  const tScrubber = useTranslations("scrubber");
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [viewMode, setViewMode] = useState<ViewMode>("mission_control");
@@ -123,7 +129,7 @@ export const AresMartianApp: React.FC = () => {
     applyThemeToDom(next);
   };
 
-  const handleChangeLanguage = (newLocale: "en" | "id" | "es") => {
+  const handleChangeLanguage = (newLocale: SupportedLocale) => {
     if (newLocale !== currentLocale) {
       router.replace(pathname, { locale: newLocale });
     }
@@ -324,7 +330,7 @@ export const AresMartianApp: React.FC = () => {
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
-            <span>HABITAT CONTROL</span>
+            <span>{tNav("missionControl")}</span>
           </button>
 
           <button
@@ -340,17 +346,17 @@ export const AresMartianApp: React.FC = () => {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
             </svg>
-            <span>ASTRONAUT VISOR HUD</span>
+            <span>{tNav("helmetVisor")}</span>
           </button>
         </div>
 
         {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Multi-Language Selector [ EN | ID | ES ] */}
+          {/* Multi-Language Selector [ EN | ID | ES | FR | ZH ] */}
           <div className={`flex items-center ${
             isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
           } border p-0.5 font-mono text-[9px]`}>
-            {(["en", "id", "es"] as const).map((loc) => (
+            {(["en", "id", "es", "fr", "zh"] as const).map((loc) => (
               <button
                 key={loc}
                 onClick={() => handleChangeLanguage(loc)}
@@ -375,7 +381,7 @@ export const AresMartianApp: React.FC = () => {
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
-            {theme === "dark" ? "[DARK]" : "[LIGHT]"}
+            {theme === "dark" ? `[${tNav("themeDark")}]` : `[${tNav("themeLight")}]`}
           </button>
 
           <button
@@ -385,7 +391,7 @@ export const AresMartianApp: React.FC = () => {
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
-            <span>{pitch3D ? "2.5D" : "2D"}</span>
+            <span>{pitch3D ? tNav("pitch3D") : tNav("pitch2D")}</span>
           </button>
 
           <button
@@ -395,7 +401,7 @@ export const AresMartianApp: React.FC = () => {
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
-            <span>RESET N</span>
+            <span>{tNav("resetNorth")}</span>
           </button>
 
           <button
@@ -408,7 +414,7 @@ export const AresMartianApp: React.FC = () => {
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>EXPORT EVA</span>
+            <span>{tNav("exportEva")}</span>
           </button>
 
           <button
@@ -418,7 +424,7 @@ export const AresMartianApp: React.FC = () => {
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
-            INFO
+            {tNav("info")}
           </button>
         </div>
       </header>
@@ -484,7 +490,7 @@ export const AresMartianApp: React.FC = () => {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  LAYERS (4)
+                  {tDocks("layers")}
                 </button>
                 <button
                   onClick={() => setLeftTab("marswalk")}
@@ -498,7 +504,7 @@ export const AresMartianApp: React.FC = () => {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  MARSWALK TRAVERSE
+                  {tDocks("marswalk")}
                 </button>
               </div>
 
@@ -544,7 +550,7 @@ export const AresMartianApp: React.FC = () => {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  PROSPECTOR ML
+                  {tDocks("prospector")}
                 </button>
                 <button
                   onClick={() => setRightTab("earth_analogue")}
@@ -558,7 +564,7 @@ export const AresMartianApp: React.FC = () => {
                       : "border-transparent text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  EARTH ANALOGUES
+                  {tDocks("earthAnalogues")}
                 </button>
               </div>
 
@@ -676,7 +682,7 @@ export const AresMartianApp: React.FC = () => {
             {/* Sol Clock Selector */}
             <div className="flex items-center gap-1">
               <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
-                SOL CLOCK:
+                {tScrubber("solClock")}:
               </span>
               {[4180, 4181, 4182, 4183, 4184, 4185].map((sol) => (
                 <button
@@ -709,7 +715,7 @@ export const AresMartianApp: React.FC = () => {
                     : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
                 }`}
               >
-                CLEAR SKY (TAU 0.3)
+                {tScrubber("clearSky")}
               </button>
               <button
                 onClick={() => setDustStormActive(true)}
@@ -721,7 +727,7 @@ export const AresMartianApp: React.FC = () => {
                     : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
                 }`}
               >
-                DUST STORM (TAU 2.4)
+                {tScrubber("dustStorm")}
               </button>
             </div>
           </div>

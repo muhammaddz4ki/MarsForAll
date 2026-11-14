@@ -43,3 +43,8 @@
 - **Slider Smoothness:** Isolate Earth Analogue MCDA calculation with `useDeferredValue` ensuring 60 FPS slider manipulation.
 - **WebGL GPU Cap:** Bound pixel ratio to `Math.min(window.devicePixelRatio, 1.5)`, optimize terrain geometry (80x80 segments), and throttle raycasting to ~30Hz (32ms).
 - **Server-Side In-Memory Cache:** 300-tile in-memory LRU cache on `/api/mars-tiles` (<2ms response) and 15-minute TTL cache on `/api/curiosity-photos` and `/api/space-weather`.
+
+---
+
+## 6. STRICT I18N SYNC POLICY (THE 5-LANGUAGE RULE)
+Every time a new feature, UI component, panel, button, or text label is added or modified in the project, the AI Agent MUST automatically update all 5 localization dictionaries (`en.json`, `id.json`, `es.json`, `fr.json`, `zh.json`) simultaneously. No UI string shall be hardcoded in the components. All texts must use `next-intl` translations (`useTranslations`). The AI Agent must never complete a UI task without verifying that all 5 JSON files are 100% synced with the new keys.

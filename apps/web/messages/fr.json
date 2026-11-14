@@ -1,0 +1,39 @@
+{
+  "mission": {
+    "codename": "MARSFORALL // GALE-01",
+    "challenge": "NASA Space Apps Challenge 2026",
+    "theme": "Guide de Survie Interplanétaire : Carte Martienne",
+    "targetSite": "Mont Sharp (Aeolis Mons), Cratère Gale, Mars",
+    "coordinates": "Lat : -5.4453°, Lon : 137.8414°",
+    "boxworkFocus": "Crête de Fractures Cristallines en Boxwork Curiosity 2025"
+  },
+  "nav": {
+    "missionControl": "CONTRÔLE HABITAT",
+    "helmetVisor": "HUD VISIÈRE ASTRONAUTE",
+    "pitch3D": "INCLINAISON 2.5D",
+    "pitch2D": "VUE DU DESSUS",
+    "resetNorth": "RÉINITIALISER NORD",
+    "exportEva": "EXPORTER EVA",
+    "info": "INFO",
+    "themeDark": "SOMBRE",
+    "themeLight": "CLAIR"
+  },
+  "docks": {
+    "layers": "COUCHES OPÉRATIONNELLES (5)",
+    "marswalk": "TRAVERSÉE MARSWALK",
+    "prospector": "PROSPECTOR ML",
+    "earthAnalogues": "ANALOGUES TERRESTRES"
+  },
+  "scrubber": {
+    "solClock": "HORLOGE SOL",
+    "clearSky": "CIEL DÉGAGÉ (TAU 0.3)",
+    "dustStorm": "TEMPÊTE DE POUSSIÈRE (TAU 2.4)"
+  },
+  "status": {
+    "safe": "[SÛR <15 DEG]",
+    "caution": "[ATTENTION 15-25 DEG]",
+    "hazard": "[DANGER >25 DEG]",
+    "nominal": "[NOMINAL]",
+    "locked": "[VERROUILLÉ]"
+  }
+}

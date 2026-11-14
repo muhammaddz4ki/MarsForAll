@@ -1,0 +1,39 @@
+{
+  "mission": {
+    "codename": "MARSFORALL // GALE-01",
+    "challenge": "NASA Space Apps Challenge 2026",
+    "theme": "星际生存指南：火星地图",
+    "targetSite": "夏普山（埃俄利斯山），盖尔撞击坑，火星",
+    "coordinates": "纬度: -5.4453°, 经度: 137.8414°",
+    "boxworkFocus": "好奇号 2025 箱状网脉结晶裂隙脊"
+  },
+  "nav": {
+    "missionControl": "栖息舱主控",
+    "helmetVisor": "宇航员面罩 HUD",
+    "pitch3D": "2.5D 俯仰",
+    "pitch2D": "俯视平面",
+    "resetNorth": "指北复位",
+    "exportEva": "导出出舱清单",
+    "info": "信息",
+    "themeDark": "暗色",
+    "themeLight": "亮色"
+  },
+  "docks": {
+    "layers": "科学作业图层 (5)",
+    "marswalk": "舱外火星漫步路线",
+    "prospector": "勘探者机器学习",
+    "earthAnalogues": "地球类比试验场"
+  },
+  "scrubber": {
+    "solClock": "火星日时钟",
+    "clearSky": "晴朗天空 (TAU 0.3)",
+    "dustStorm": "尘暴预警 (TAU 2.4)"
+  },
+  "status": {
+    "safe": "[安全 <15度]",
+    "caution": "[注意 15-25度]",
+    "hazard": "[危险 >25度]",
+    "nominal": "[正常标称]",
+    "locked": "[已锁定]"
+  }
+}

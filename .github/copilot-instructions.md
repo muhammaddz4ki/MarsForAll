@@ -23,3 +23,7 @@ Target: Mount Sharp (Aeolis Mons), Gale Crater, Mars (-5.4453°, 137.8414°)
 
 4. Curiosity Historical Traverse:
    - Bradbury Landing Ellipse to 2025 Boxwork Formations path overlay.
+
+5. Strict i18n Sync Policy (The 5-Language Rule):
+   - Whenever UI elements or text strings are added or modified, update all 5 localization dictionaries (`en.json`, `id.json`, `es.json`, `fr.json`, `zh.json`) simultaneously.
+   - Use `next-intl` translations (`useTranslations`). Zero untranslated or missing keys allowed across the 5 languages.

@@ -1,11 +1,17 @@
 import { defineRouting } from "next-intl/routing";
 
 export const routing = defineRouting({
-  locales: ["id", "en", "es"],
-  defaultLocale: "id",
+  locales: ["en", "id", "es", "fr", "zh"],
+  defaultLocale: "en",
   pathnames: {
     "/": "/",
-    "/peta": { id: "/peta", en: "/map", es: "/mapa" },
+    "/peta": {
+      en: "/map",
+      id: "/peta",
+      es: "/mapa",
+      fr: "/carte",
+      zh: "/ditu",
+    },
   },
 });
 
