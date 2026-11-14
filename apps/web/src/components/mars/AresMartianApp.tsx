@@ -238,18 +238,18 @@ export const AresMartianApp: React.FC = () => {
     <div className={`relative w-screen h-screen overflow-hidden ${
       isDark ? "bg-[#07090e] text-slate-100" : "bg-[#f8fafc] text-slate-900"
     } flex flex-col font-sans select-none`}>
-      {/* 1. TOP NAVIGATION BAR (h-14, px-4, Apple-grade symmetric grid) */}
+      {/* 1. TOP NAVIGATION BAR (h-14, px-3, tight Apple-grade symmetric grid) */}
       <header className={`h-14 ${
         isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
-      } border-b px-4 flex items-center justify-between z-20 shrink-0 overflow-hidden`}>
+      } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-hidden`}>
         {/* SLOT KIRI: Badge + Active Coordinates */}
-        <div className="flex items-center gap-3">
-          <AresMissionBadge size={32} showSubtext />
-          <div className={`hidden xl:flex items-center gap-2 pl-3 border-l ${
+        <div className="flex items-center gap-2.5 shrink-0">
+          <AresMissionBadge size={30} showSubtext />
+          <div className={`hidden 2xl:flex items-center gap-2 pl-2.5 border-l ${
             isDark ? "border-slate-800 text-slate-400" : "border-slate-300 text-slate-600"
-          } text-[11px] font-mono`}>
+          } text-[10px] font-mono`}>
             <span className={isDark ? "text-slate-500" : "text-slate-400"}>TARGET:</span>
-            <span className={`${isDark ? "text-slate-200" : "text-slate-800"} uppercase font-medium truncate max-w-[150px]`}>
+            <span className={`${isDark ? "text-slate-200" : "text-slate-800"} uppercase font-medium truncate max-w-[130px]`}>
               {selectedWaypoint.name.split(" ")[0]}
             </span>
             <span className={isDark ? "text-slate-600" : "text-slate-400"}>/</span>
@@ -262,10 +262,10 @@ export const AresMartianApp: React.FC = () => {
         {/* SLOT TENGAH: Symmetrical Segmented Mode Control */}
         <div className={`flex items-center ${
           isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-        } border p-0.5 font-mono text-xs`}>
+        } border p-0.5 font-mono text-xs shrink-0`}>
           <button
             onClick={() => setViewMode("mission_control")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
               viewMode === "mission_control"
                 ? "bg-amber-600 text-slate-950 font-bold"
                 : isDark
@@ -283,7 +283,7 @@ export const AresMartianApp: React.FC = () => {
 
           <button
             onClick={() => setViewMode("visor_hud")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1 transition-colors ${
               viewMode === "visor_hud"
                 ? "bg-cyan-600 text-slate-950 font-bold"
                 : isDark
@@ -299,16 +299,16 @@ export const AresMartianApp: React.FC = () => {
         </div>
 
         {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 shrink-0">
           {/* Multi-Language Selector [ EN | ID | ES ] */}
           <div className={`flex items-center ${
             isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
-          } border p-0.5 font-mono text-[10px]`}>
+          } border p-0.5 font-mono text-[9px]`}>
             {(["en", "id", "es"] as const).map((loc) => (
               <button
                 key={loc}
                 onClick={() => handleChangeLanguage(loc)}
-                className={`px-1.5 py-0.5 uppercase font-bold transition-colors ${
+                className={`px-1 py-0.5 uppercase font-bold transition-colors ${
                   currentLocale === loc
                     ? "bg-amber-600 text-slate-950"
                     : isDark
@@ -325,7 +325,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={handleToggleTheme}
             title="Toggle Dark / Light Theme"
-            className={`px-2 py-1.5 ${
+            className={`px-2 py-1 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -335,17 +335,17 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setPitch3D(!pitch3D)}
             title="Toggle 2.5D / 3D Terrain Pitch"
-            className={`flex items-center gap-1 px-2 py-1.5 ${
+            className={`flex items-center gap-1 px-2 py-1 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
-            <span>{pitch3D ? "2.5D PITCH" : "TOP-DOWN"}</span>
+            <span>{pitch3D ? "2.5D" : "2D"}</span>
           </button>
 
           <button
             onClick={() => setResetNorthTrigger((n) => n + 1)}
             title="Reset North Heading"
-            className={`flex items-center gap-1 px-2 py-1.5 ${
+            className={`flex items-center gap-1 px-2 py-1 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
@@ -355,9 +355,9 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={handleExportEvaManifest}
             title="Export EVA Mission Manifest (JSON)"
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-2 py-1 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
@@ -368,7 +368,7 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setIsInfoOpen(true)}
             title="Scientific Attribution & Mission Brief"
-            className={`flex items-center justify-center px-2 py-1.5 ${
+            className={`flex items-center justify-center px-2.5 py-1 ${
               isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
             } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >

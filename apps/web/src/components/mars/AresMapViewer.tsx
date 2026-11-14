@@ -120,19 +120,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           mars_hirise_gale: {
             type: "raster",
             tiles: [
-              "https://trek.nasa.gov/tiles/Mars/EQ/Gale_HiRISE_Mosaic/1.0.0/default/default028mm/{z}/{y}/{x}.png",
+              "/api/mars-tiles/gale-hirise/{z}/{y}/{x}",
             ],
             tileSize: 256,
             maxzoom: 18,
-            attribution: "NASA/JPL/Univ. of Arizona / Mars Trek WMTS",
+            attribution: "NASA/JPL/Univ. of Arizona / Mars Trek WMTS (Server Proxy)",
           },
           mars_mola_shaded: {
             type: "raster",
             tiles: [
-              "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
+              "/api/mars-tiles/mola-clrshade/{z}/{y}/{x}",
             ],
             tileSize: 256,
-            attribution: "NASA/JPL/DLR / USGS Astrogeology",
+            attribution: "NASA/JPL/DLR / USGS Astrogeology (Server Proxy)",
           },
           mars_opm_basemap: {
             type: "raster",
@@ -150,21 +150,21 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "background",
             paint: { "background-color": isDark ? "#07090e" : "#e2e8f0" },
           },
-          // 1. Regional Shaded Relief Basemap
+          // 1. Permanent Global Mars Basemap (Ensures NO BLACK AREAS outside Gale)
           {
             id: "mars-raster-opm",
             type: "raster",
             source: "mars_opm_basemap",
             layout: {
-              visibility: orbitalSource === "opm_basemap" && tileMode === "live_trek" ? "visible" : "none",
+              visibility: "visible",
             },
             paint: {
-              "raster-opacity": 0.55,
-              "raster-contrast": 0.35,
-              "raster-hue-rotate": 12,
+              "raster-opacity": 0.65,
+              "raster-contrast": 0.25,
+              "raster-hue-rotate": 10,
             },
           },
-          // 2. MOLA + HRSC Colorized Hillshade Blend
+          // 2. MOLA + HRSC Colorized Hillshade Blend (Overlaid via Next.js Proxy)
           {
             id: "mars-raster-mola",
             type: "raster",
@@ -173,11 +173,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "mola_hrsc" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.60,
+              "raster-opacity": 0.65,
               "raster-contrast": 0.30,
             },
           },
-          // 3. HiRISE Gale Crater High-Resolution Orthomosaic (0.25m/px)
+          // 3. HiRISE Gale Crater High-Resolution Orthomosaic (Overlaid via Next.js Proxy)
           {
             id: "mars-raster-hirise",
             type: "raster",
@@ -186,7 +186,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "jpl_hirise" && tileMode === "live_trek" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.70,
+              "raster-opacity": 0.75,
               "raster-contrast": 0.35,
             },
           },
@@ -416,6 +416,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     const isLive = tileMode === "live_trek";
 
+    // Global permanent basemap: always visible to prevent black voids outside Gale
+    if (map.getLayer("mars-raster-opm")) {
+      map.setLayoutProperty(
+        "mars-raster-opm",
+        "visibility",
+        isLive ? "visible" : "none"
+      );
+    }
     if (map.getLayer("mars-raster-hirise")) {
       map.setLayoutProperty(
         "mars-raster-hirise",
@@ -428,13 +436,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         "mars-raster-mola",
         "visibility",
         isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
-      );
-    }
-    if (map.getLayer("mars-raster-opm")) {
-      map.setLayoutProperty(
-        "mars-raster-opm",
-        "visibility",
-        isLive && orbitalSource === "opm_basemap" ? "visible" : "none"
       );
     }
 

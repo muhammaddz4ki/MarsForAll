@@ -298,9 +298,9 @@ export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPrese
     sublabel: "Mount Sharp High-Resolution Orthomosaic (0.25m/px)",
     resolution: "0.25 m/px",
     tiles: [
-      "https://trek.nasa.gov/tiles/Mars/EQ/Gale_HiRISE_Mosaic/1.0.0/default/default028mm/{z}/{y}/{x}.png",
+      "/api/mars-tiles/gale-hirise/{z}/{y}/{x}",
     ],
-    attribution: "NASA/JPL/University of Arizona / Mars Trek WMTS",
+    attribution: "NASA/JPL/University of Arizona / Mars Trek WMTS (Server Proxy)",
   },
   mola_hrsc: {
     id: "mola_hrsc",
@@ -308,9 +308,9 @@ export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPrese
     sublabel: "Mars Global Colorized Hillshade Blend (200m/px)",
     resolution: "200 m/px",
     tiles: [
-      "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/{z}/{y}/{x}.jpg",
+      "/api/mars-tiles/mola-clrshade/{z}/{y}/{x}",
     ],
-    attribution: "NASA/JPL/DLR / USGS Astrogeology",
+    attribution: "NASA/JPL/DLR / USGS Astrogeology (Server Proxy)",
   },
   opm_basemap: {
     id: "opm_basemap",

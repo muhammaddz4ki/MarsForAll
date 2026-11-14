@@ -27,6 +27,33 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
 }) => {
   const isDark = theme === "dark";
   const activePreset = ORBITAL_WMTS_PRESETS[orbitalSource] || ORBITAL_WMTS_PRESETS.jpl_hirise;
+  const [probeSuccess, setProbeSuccess] = React.useState<boolean | null>(null);
+
+  // Probe tile health check to /api/mars-tiles/mola-clrshade/4/8/10
+  React.useEffect(() => {
+    let isMounted = true;
+    const probe = async () => {
+      try {
+        const res = await fetch("/api/mars-tiles/mola-clrshade/4/8/10", {
+          method: "HEAD",
+        });
+        if (isMounted) {
+          const isFallback = res.headers.get("X-Tile-Fallback");
+          setProbeSuccess(res.ok && !isFallback);
+        }
+      } catch (_e) {
+        if (isMounted) {
+          setProbeSuccess(false);
+        }
+      }
+    };
+    probe();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const isProxyActive = (probeSuccess !== false) && wmtsStatus === "streaming" && orbitalSource !== "local_vector";
 
   return (
     <div className={`flex flex-col h-full overflow-y-auto ${
@@ -110,14 +137,14 @@ export const ScientificLayersPanel: React.FC<ScientificLayersPanelProps> = ({
                         {/* Live / Fallback Status Badge */}
                         <span
                           className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums ${
-                            wmtsStatus === "streaming" && orbitalSource !== "local_vector"
+                            isProxyActive
                               ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
                               : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
                           }`}
                         >
-                          {wmtsStatus === "streaming" && orbitalSource !== "local_vector"
-                            ? "[JPL WMTS STREAMING]"
-                            : "[LOCAL VECTOR FALLBACK]"}
+                          {isProxyActive
+                            ? "[JPL WMTS PROXY ACTIVE]"
+                            : "[LOCAL + OPM FALLBACK]"}
                         </span>
                       </div>
 
