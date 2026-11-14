@@ -13,8 +13,8 @@ interface CachedTile {
   contentType: string;
 }
 
-// In-Memory LRU Tile Cache (Cap at 300 tiles in Node.js server RAM ~15-20MB max)
-const MAX_LRU_TILES = 300;
+// In-Memory LRU Tile Cache (Cap at 500 tiles in Node.js server RAM ~25-35MB max)
+const MAX_LRU_TILES = 500;
 const tileCache = new Map<string, CachedTile>();
 
 function getCachedTile(key: string): CachedTile | undefined {
@@ -68,11 +68,21 @@ export async function GET(
   }
 
   let remoteUrl = "";
-  if (layer === "gale-hirise" || layer === "gale-ctx") {
-    // Official NASA JPL Mars Trek Gale Crater CTX Mosaic endpoint
-    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/${z}/${y}/${x}.png`;
-  } else if (layer === "mola-clrshade") {
+  if (layer === "viking-mdim21" || layer === "viking") {
+    // NASA JPL Mars Trek Viking MDIM 2.1 Colorized Global Mosaic (232m/px)
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+  } else if (layer === "mola-clrshade" || layer === "mola") {
+    // NASA MOLA + HRSC Colorized Shaded Relief Hillshade
     remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+  } else if (layer === "themis-day-ir" || layer === "themis-day") {
+    // NASA 2001 Mars Odyssey THEMIS Daytime IR Global Mosaic (100m/px)
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Day_mosaic_global_100m_v2/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+  } else if (layer === "themis-night-ir" || layer === "themis-night") {
+    // NASA 2001 Mars Odyssey THEMIS Nighttime IR Global Mosaic (Thermal Inertia, 100m/px)
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_MO_THEMIS-IR-Night_mosaic_global_100m_v2/1.0.0/default/default028mm/${z}/${y}/${x}.jpg`;
+  } else if (layer === "gale-hirise" || layer === "gale-ctx") {
+    // NASA JPL Mars Trek Gale Crater CTX / HiRISE Orthomosaic (6m/px)
+    remoteUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0/default/default028mm/${z}/${y}/${x}.png`;
   } else {
     return new NextResponse(TRANSPARENT_1X1_PNG as unknown as BodyInit, {
       status: 200,
@@ -111,7 +121,11 @@ export async function GET(
       });
     }
 
-    const contentType = upstreamRes.headers.get("content-type") || (layer === "gale-hirise" ? "image/png" : "image/jpeg");
+    const contentType =
+      upstreamRes.headers.get("content-type") ||
+      (layer.includes("hirise") || layer.includes("ctx")
+        ? "image/png"
+        : "image/jpeg");
     const arrayBuffer = await upstreamRes.arrayBuffer();
     const uint8Arr = new Uint8Array(arrayBuffer);
 

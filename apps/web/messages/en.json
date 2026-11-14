@@ -18,7 +18,10 @@
     "exportEva": "EXPORT EVA",
     "info": "INFO",
     "themeDark": "DARK",
-    "themeLight": "LIGHT"
+    "themeLight": "LIGHT",
+    "planetGlobe": "3D GLOBE",
+    "collapse": "COLLAPSE",
+    "expand": "EXPAND"
   },
   "docks": {
     "layers": "LAYERS (5)",

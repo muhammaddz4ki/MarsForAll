@@ -24,6 +24,9 @@ const en = {
     info: "INFO",
     themeDark: "DARK",
     themeLight: "LIGHT",
+    planetGlobe: "3D GLOBE",
+    collapse: "COLLAPSE",
+    expand: "EXPAND",
   },
   docks: {
     layers: "LAYERS (5)",
@@ -323,6 +326,9 @@ const id = {
     info: "INFO",
     themeDark: "GELAP",
     themeLight: "TERANG",
+    planetGlobe: "GLOBE 3D",
+    collapse: "LIPAT",
+    expand: "BUKA",
   },
   docks: {
     layers: "LAPISAN OPERASIONAL (5)",
@@ -622,6 +628,9 @@ const es = {
     info: "INFO",
     themeDark: "OSCURO",
     themeLight: "CLARO",
+    planetGlobe: "GLOBO 3D",
+    collapse: "PLEGAR",
+    expand: "EXPANDIR",
   },
   docks: {
     layers: "CAPAS OPERATIVAS (5)",
@@ -921,6 +930,9 @@ const fr = {
     info: "INFO",
     themeDark: "SOMBRE",
     themeLight: "CLAIR",
+    planetGlobe: "GLOBE 3D",
+    collapse: "RÉDUIRE",
+    expand: "DÉVELOPPER",
   },
   docks: {
     layers: "COUCHES OPÉRATIONNELLES (5)",
@@ -1220,6 +1232,9 @@ const zh = {
     info: "任务详情",
     themeDark: "暗黑",
     themeLight: "明亮",
+    planetGlobe: "3D 行星仪",
+    collapse: "收起",
+    expand: "展开",
   },
   docks: {
     layers: "科学观测图层 (5)",

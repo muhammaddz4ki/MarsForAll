@@ -18,7 +18,10 @@
     "exportEva": "EXPORTER EVA",
     "info": "INFO",
     "themeDark": "SOMBRE",
-    "themeLight": "CLAIR"
+    "themeLight": "CLAIR",
+    "planetGlobe": "GLOBE 3D",
+    "collapse": "RÉDUIRE",
+    "expand": "DÉVELOPPER"
   },
   "docks": {
     "layers": "COUCHES OPÉRATIONNELLES (5)",

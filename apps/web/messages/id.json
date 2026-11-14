@@ -18,7 +18,10 @@
     "exportEva": "EKSPOR EVA",
     "info": "INFO",
     "themeDark": "GELAP",
-    "themeLight": "TERANG"
+    "themeLight": "TERANG",
+    "planetGlobe": "GLOBE 3D",
+    "collapse": "LIPAT",
+    "expand": "BUKA"
   },
   "docks": {
     "layers": "LAPISAN OPERASIONAL (5)",

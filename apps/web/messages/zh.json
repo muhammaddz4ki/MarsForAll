@@ -18,7 +18,10 @@
     "exportEva": "导出 EVA 清单",
     "info": "任务详情",
     "themeDark": "暗黑",
-    "themeLight": "明亮"
+    "themeLight": "明亮",
+    "planetGlobe": "3D 行星仪",
+    "collapse": "收起",
+    "expand": "展开"
   },
   "docks": {
     "layers": "科学观测图层 (5)",

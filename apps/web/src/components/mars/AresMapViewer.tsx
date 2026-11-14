@@ -56,6 +56,7 @@ interface AresMapViewerProps {
   zoiList?: ZoiFeature[];
   onAddZoi?: (zoi: ZoiFeature) => void;
   onExportGeoJson?: () => void;
+  onOpenPlanetGlobe?: () => void;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -169,6 +170,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   zoiList = [],
   onAddZoi,
   onExportGeoJson,
+  onOpenPlanetGlobe,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -1235,15 +1237,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         {/* Global Mars Globe Focus */}
         <button
           onClick={() => {
-            const map = mapRef.current;
-            if (!map) return;
-            map.flyTo({
-              center: [137.4, -4.74],
-              zoom: 1.8,
-              pitch: 62,
-              bearing: -12,
-              duration: 1200,
-            });
+            if (onOpenPlanetGlobe) {
+              onOpenPlanetGlobe();
+            } else {
+              const map = mapRef.current;
+              if (!map) return;
+              map.flyTo({
+                center: [137.4, -4.74],
+                zoom: 1.8,
+                pitch: 62,
+                bearing: -12,
+                duration: 1200,
+              });
+            }
           }}
           title={t("planetGlobeTitle")}
           className={`flex items-center gap-1 px-2.5 py-1 border transition-colors ${

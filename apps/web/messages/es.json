@@ -18,7 +18,10 @@
     "exportEva": "EXPORTAR EVA",
     "info": "INFO",
     "themeDark": "OSCURO",
-    "themeLight": "CLARO"
+    "themeLight": "CLARO",
+    "planetGlobe": "GLOBO 3D",
+    "collapse": "PLEGAR",
+    "expand": "EXPANDIR"
   },
   "docks": {
     "layers": "CAPAS OPERATIVAS (5)",
