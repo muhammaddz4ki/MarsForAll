@@ -588,13 +588,21 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   // Load and blend spherical station panorama textures
   const loadStationPanorama = useCallback(
-    (stationIdx: number) => {
+    (stationOrUrl?: number | string) => {
       const site = isJezero ? "jezero" : "gale";
+      const customUrl =
+        typeof stationOrUrl === "string"
+          ? stationOrUrl
+          : waypoint?.panoramaUrl || (waypoint as any)?.customPanoramaUrl;
+
+      const naturalSrc = customUrl
+        ? customUrl
+        : `/api/panorama-proxy?site=${site}&station=${typeof stationOrUrl === "number" ? stationOrUrl : activeStationIdxRef.current}&variant=natural`;
 
       // 1. Natural Color Texture
       const naturalImg = new Image();
       naturalImg.crossOrigin = "anonymous";
-      naturalImg.src = `/api/panorama-proxy?site=${site}&station=${stationIdx}&variant=natural`;
+      naturalImg.src = naturalSrc;
       naturalImg.onload = () => {
         try {
           const blendedTex = blendMartianZenithAndNadir(naturalImg, dustStormActive, "natural");
@@ -610,7 +618,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       // 2. Enhanced Geological Color Texture
       const enhancedImg = new Image();
       enhancedImg.crossOrigin = "anonymous";
-      enhancedImg.src = `/api/panorama-proxy?site=${site}&station=${stationIdx}&variant=enhanced`;
+      enhancedImg.src = customUrl
+        ? customUrl
+        : `/api/panorama-proxy?site=${site}&station=${typeof stationOrUrl === "number" ? stationOrUrl : activeStationIdxRef.current}&variant=enhanced`;
       enhancedImg.onload = () => {
         try {
           const blendedTex = blendMartianZenithAndNadir(enhancedImg, dustStormActive, "enhanced");
@@ -623,7 +633,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         } catch (_err) {}
       };
     },
-    [isJezero, dustStormActive]
+    [isJezero, dustStormActive, waypoint]
   );
 
   // Handle station jump
@@ -785,7 +795,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     panoMeshEnhancedRef.current = panoMeshEnhanced;
 
     // Load initial panorama textures
-    loadStationPanorama(activeStationIdxRef.current);
+    const initialSource =
+      waypoint?.panoramaUrl || (waypoint as any)?.customPanoramaUrl || activeStationIdxRef.current;
+    loadStationPanorama(initialSource);
+
+    if (waypoint?.headingOffsetDeg !== undefined) {
+      yawRef.current = (waypoint.headingOffsetDeg * Math.PI) / 180;
+      setCamAzimuth(Math.round(waypoint.headingOffsetDeg));
+    }
 
     // 6. 3D Terrain Geometry with Sharp MOLA Contour Relief Texture (100% Free of Camo Oranye)
     const terrainGeom = new THREE.PlaneGeometry(120, 120, 80, 80);
@@ -1279,7 +1296,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
             </span>
             <span className="text-slate-600">|</span>
             <span className="text-emerald-400 font-bold whitespace-nowrap">
-              STN-0{activeStationIdx + 1}: {currentStation.title} (SOL {currentStation.sol})
+              {waypoint?.has360Pov || waypoint?.panoramaUrl
+                ? `${waypoint.name} [360° POV]`
+                : `STN-0${activeStationIdx + 1}: ${currentStation.title} (SOL ${currentStation.sol})`}
             </span>
           </div>
         </div>

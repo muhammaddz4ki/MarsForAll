@@ -76,7 +76,8 @@ export type WaypointCategory =
   | "clay_trough"
   | "ridge_escarpment"
   | "habitat_landing"
-  | "hazard_zone";
+  | "hazard_zone"
+  | "custom_user_pov";
 
 export interface ChemCamOxides {
   sio2: number; // Silicon Dioxide
@@ -163,6 +164,13 @@ export interface MountSharpWaypoint {
   muleRoverTraversable: boolean;
   scientificPriority: 1 | 2 | 3 | 4 | 5; // 5 = highest
   briefDescription: string;
+
+  // 360° Surface Panorama POV Extension
+  has360Pov?: boolean;
+  panoramaUrl?: string;
+  customPanoramaUrl?: string;
+  panoramaFilename?: string;
+  headingOffsetDeg?: number;
 }
 
 export const MOUNT_SHARP_WAYPOINTS: MountSharpWaypoint[] = [

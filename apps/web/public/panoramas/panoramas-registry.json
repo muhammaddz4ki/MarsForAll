@@ -1,0 +1,54 @@
+[
+  {
+    "id": "pano_boxwork_sol4180",
+    "filename": "sol4180_boxwork_equirectangular_2k.jpg",
+    "title": "Sol 4180: Penemuan Urat Mineral Boxwork 2025",
+    "site": "gale_crater",
+    "coordinates": [137.3820, -4.7315],
+    "elevationM": -3840,
+    "sol": 4180,
+    "description": "POV 360° permukaan Mount Sharp memperlihatkan jaringan kisi-kisi poligonal urat mineral sulfat (Boxwork) yang membentang 10-20 kilometer, terbentuk dari sirkulasi fluida hidrotermal purba.",
+    "category": "boxwork_formation",
+    "headingOffsetDeg": 240,
+    "credit": "Curiosity Mastcam Equirectangular Surface Projection (USGS Astrogeology / NASA JPL Raw Archive)"
+  },
+  {
+    "id": "pano_glen_torridon_sol2300",
+    "filename": "sol2300_glen_torridon_360.jpg",
+    "title": "Sol 2300: Glen Torridon Clay Trough",
+    "site": "gale_crater",
+    "coordinates": [137.3912, -4.7456],
+    "elevationM": -4120,
+    "sol": 2300,
+    "description": "Lembah sedimen kaya mineral lempung smektit (phyllosilicates) di kaki Mount Sharp yang menjadi bukti lingkungan basah paleodanau purba yang ramah kehidupan.",
+    "category": "clay_trough",
+    "headingOffsetDeg": 195,
+    "credit": "Curiosity Mastcam-34 Surface Mosaic (NASA/JPL-Caltech/MSSS)"
+  },
+  {
+    "id": "pano_vera_rubin_sol1800",
+    "filename": "sol1800_vera_rubin_360.jpg",
+    "title": "Sol 1800: Punggungan Hematit Vera Rubin Ridge",
+    "site": "gale_crater",
+    "coordinates": [137.3885, -4.7521],
+    "elevationM": -4050,
+    "sol": 1800,
+    "description": "Tebing tinggi resisten erosi kaya akan mineral hematit kristal abu-abu, terbentuk pada zona transisi air tanah purba bersuhu hangat.",
+    "category": "ridge_escarpment",
+    "headingOffsetDeg": 215,
+    "credit": "Curiosity Mastcam High-Resolution Panorama (NASA/JPL-Caltech/MSSS)"
+  },
+  {
+    "id": "pano_bradbury_landing_sol0",
+    "filename": "sol0_bradbury_landing_360.jpg",
+    "title": "Sol 0: Bradbury Landing & Pemandangan Awal Mount Sharp",
+    "site": "gale_crater",
+    "coordinates": [137.4417, -4.5895],
+    "elevationM": -4501,
+    "sol": 0,
+    "description": "Titik pendaratan bersejarah Curiosity di dasar Kawah Gale, memperlihatkan dataran kerikil aluvial dan siluet lereng bertingkat Aeolis Mons di kejauhan.",
+    "category": "habitat_landing",
+    "headingOffsetDeg": 180,
+    "credit": "Curiosity Mastcam First Touchdown Mosaic (NASA/JPL-Caltech/MSSS)"
+  }
+]

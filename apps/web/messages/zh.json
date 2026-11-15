@@ -509,5 +509,25 @@
       "viewportTitle": "交互式视口选择",
       "close": "关闭"
     }
+  },
+  "custom360": {
+    "headerTitle": "360° 全景图与航路点管理系统",
+    "tabAdd": "添加 360° 航路点",
+    "tabList": "照片与航路点列表",
+    "tabGuide": "文件夹指引",
+    "folderNoticeTitle": "360° 全景 JPEG 存储文件夹",
+    "folderNoticeDesc": "将您的 360° 等矩形全景照片（.jpg / .jpeg / .png）放入文件夹",
+    "folderNoticeDesc2": "图片将由 WebGL 360° 引擎实时渲染，无需重启服务器。",
+    "labelSourceFile": "选择全景照片文件",
+    "labelDefaultFiles": "默认/已检测文件",
+    "labelOrUploadLocal": "或从电脑选择本地文件",
+    "labelOrTypeFilename": "或手动输入文件名",
+    "labelCoordinates": "确定火星坐标与空间位置",
+    "btnPickFromMap": "点击地图拾取坐标",
+    "labelDetails": "航路点详情与相机朝向",
+    "btnSaveOnly": "保存航路点",
+    "btnSaveAndOpen360": "保存并开启 360° 视口",
+    "btnFocusMap": "聚焦地图",
+    "btnOpen360": "开启 360°"
   }
 }

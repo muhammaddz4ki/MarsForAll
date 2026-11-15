@@ -15,6 +15,7 @@ import {
   MissionSiteId,
   getWaypointsForSite,
 } from "@/lib/martian/mountSharpWaypoints";
+import { get360WaypointsAsMountSharp } from "@/lib/martian/customPanoramas";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import {
   OrbitalImagerySource,
@@ -70,6 +71,10 @@ const MarsGlobeViewer = dynamic(() => import("./MarsGlobeViewer"), {
       </div>
     </div>
   ),
+});
+
+const Custom360ManagerModal = dynamic(() => import("./Custom360ManagerModal"), {
+  ssr: false,
 });
 
 export type ViewMode = "mission_control" | "visor_hud" | "planet_globe";
@@ -144,6 +149,10 @@ export const AresMartianApp: React.FC = () => {
   const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
+  const [is360ManagerOpen, setIs360ManagerOpen] = useState<boolean>(false);
+  const [pickedCoordsFor360, setPickedCoordsFor360] = useState<[number, number] | null>(null);
+  const [pickedElevFor360, setPickedElevFor360] = useState<number | undefined>(undefined);
+  const [isPicking360Coord, setIsPicking360Coord] = useState<boolean>(false);
   const [exportNotification, setExportNotification] = useState<string | null>(null);
 
   // Theme Sync on Mount & Toggle
@@ -187,13 +196,24 @@ export const AresMartianApp: React.FC = () => {
     setSelectedWaypoint(siteWaypoints[1] || siteWaypoints[0]);
   }, []);
 
-  // Pool of waypoints including any user-dropped custom pin
+  const custom360List = useMemo(() => {
+    return get360WaypointsAsMountSharp(currentSite);
+  }, [currentSite, is360ManagerOpen]);
+
+  // Pool of waypoints including any user-dropped custom pin and 360 panorama waypoints
   const allWaypoints = useMemo(() => {
     const siteBase = getWaypointsForSite(currentSite);
-    return customPin
-      ? [...siteBase, customPin]
-      : siteBase;
-  }, [currentSite, customPin]);
+    const combined = [...siteBase];
+    custom360List.forEach((cwp) => {
+      const idx = combined.findIndex((w) => w.id === cwp.id);
+      if (idx >= 0) {
+        combined[idx] = { ...combined[idx], ...cwp };
+      } else {
+        combined.push(cwp);
+      }
+    });
+    return customPin ? [...combined, customPin] : combined;
+  }, [currentSite, customPin, custom360List]);
 
   const handleExportGeoJson = useCallback(() => {
     const geojsonStr = exportGisGeoJson({
@@ -245,6 +265,16 @@ export const AresMartianApp: React.FC = () => {
 
   // Click-anywhere custom coordinate pin
   const handleMapClickCoordinate = useCallback((coords: [number, number], elevation: number) => {
+    if (isPicking360Coord) {
+      setPickedCoordsFor360(coords);
+      setPickedElevFor360(elevation);
+      setIsPicking360Coord(false);
+      setIs360ManagerOpen(true);
+      setExportNotification(`KOORDINAT DIAMBIL: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`);
+      setTimeout(() => setExportNotification(null), 3000);
+      return;
+    }
+
     const customWp: MountSharpWaypoint = {
       id: "custom_target_pin",
       name: `Custom Tactical Pin (Lat ${coords[1]}°, Lon ${coords[0]}°)`,
@@ -754,6 +784,8 @@ export const AresMartianApp: React.FC = () => {
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
           onOpenPovModal={handleOpenPovModal}
           onAnalyzeProspector={handleAnalyzeProspector}
+          onOpen360Manager={() => setIs360ManagerOpen(true)}
+          custom360Waypoints={custom360List}
         />
 
         {/* 3D PLANET GLOBE ENGINE (MMGIS Architecture) */}
@@ -959,6 +991,63 @@ export const AresMartianApp: React.FC = () => {
           onClose={() => setIsPovOpen(false)}
           theme={theme}
           dustStormActive={dustStormActive}
+        />
+      )}
+
+      {/* Custom 360 Panorama Manager Modal */}
+      {is360ManagerOpen && (
+        <Custom360ManagerModal
+          isOpen={is360ManagerOpen}
+          onClose={() => setIs360ManagerOpen(false)}
+          currentSite={currentSite}
+          pickedCoords={pickedCoordsFor360}
+          pickedElevation={pickedElevFor360}
+          onStartPickCoordinate={() => {
+            setIsPicking360Coord(true);
+            setExportNotification("KLIK TITIK DI PETA UNTUK KOORDINAT 360°");
+            setTimeout(() => setExportNotification(null), 3000);
+          }}
+          onSelectAndOpen360={(wp) => {
+            setSelectedWaypoint(wp);
+            setIsPovOpen(true);
+          }}
+          onFlyToCoordinate={(coords) => {
+            const customWp: MountSharpWaypoint = {
+              id: `fly_${Date.now()}`,
+              name: "Focus Target",
+              category: "custom_user_pov" as any,
+              coordinates: coords,
+              elevationM: -4000,
+              geologicUnit: "Mars Flank",
+              stratigraphicAge: "Hesperian",
+              apparentThermalInertiaTiu: 380,
+              consistencyIndexCT: 0,
+              meanSlopeDeg: 8,
+              maxSlopeDeg: 14,
+              roughnessHapkeThetaDeg: 20,
+              craterDensityBeta: 0.2,
+              surfaceRadiationMSvSol: 0.7,
+              windExposureRisk: "moderate",
+              crustalMagneticFieldNt: 50,
+              themisNightTempK: 185,
+              sandTrapRisk: "LOW",
+              surfaceFirmness: "BEDROCK FIRM",
+              waterEquivalentHydrogenPercent: 4.5,
+              dominantHydratedMineral: "Sulfates",
+              mineralogy: {
+                sulfatePercent: 25,
+                hematitePercent: 10,
+                phyllosilicateClayPercent: 15,
+                silicaPercent: 30,
+                perchloratePercent: 0.5,
+              },
+              evaSuitTraversable: true,
+              muleRoverTraversable: true,
+              scientificPriority: 3,
+              briefDescription: "Tactical target focus",
+            };
+            setSelectedWaypoint(customWp);
+          }}
         />
       )}
 

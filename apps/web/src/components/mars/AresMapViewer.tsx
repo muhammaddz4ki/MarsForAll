@@ -63,6 +63,8 @@ interface AresMapViewerProps {
   isLeftDrawerOpen?: boolean;
   onOpenPovModal?: (wp: MountSharpWaypoint) => void;
   onAnalyzeProspector?: (wp: MountSharpWaypoint) => void;
+  onOpen360Manager?: () => void;
+  custom360Waypoints?: MountSharpWaypoint[];
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -238,6 +240,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   isLeftDrawerOpen = false,
   onOpenPovModal,
   onAnalyzeProspector,
+  onOpen360Manager,
+  custom360Waypoints = [],
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -1395,31 +1399,55 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    ALL_MARTIAN_WAYPOINTS.forEach((wp) => {
+    // Combine standard waypoints with custom 360 waypoints (avoiding duplicate IDs)
+    const combinedWaypoints = [...ALL_MARTIAN_WAYPOINTS];
+    custom360Waypoints.forEach((cwp) => {
+      const idx = combinedWaypoints.findIndex((w) => w.id === cwp.id);
+      if (idx >= 0) {
+        combinedWaypoints[idx] = { ...combinedWaypoints[idx], ...cwp };
+      } else {
+        combinedWaypoints.push(cwp);
+      }
+    });
+
+    combinedWaypoints.forEach((wp) => {
       const el = document.createElement("div");
       el.className = "cursor-pointer select-none group";
 
       const isSelected = selectedWaypoint?.id === wp.id;
-      const codeMeta = WAYPOINT_SHORT_CODES[wp.id] || {
-        code: "SCI",
-        color: "bg-[#1e293b]",
-        border: "border-[#94a3b8]",
-        text: "text-slate-200",
-      };
+      const has360 = wp.has360Pov || !!(wp as any).customPanoramaUrl;
+
+      const codeMeta = has360
+        ? {
+            code: "360",
+            color: "bg-[#083344]",
+            border: isSelected ? "border-cyan-300" : "border-[#06b6d4]",
+            text: "text-[#22d3ee]",
+          }
+        : WAYPOINT_SHORT_CODES[wp.id] || {
+            code: "SCI",
+            color: "bg-[#1e293b]",
+            border: "border-[#94a3b8]",
+            text: "text-slate-200",
+          };
 
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
-          <div class="flex items-center justify-center w-7 h-7 ${codeMeta.color} border ${codeMeta.border} ${codeMeta.text} text-[10px] font-mono font-bold shadow-none transition-transform group-hover:scale-105">
+          <div class="flex items-center justify-center w-7 h-7 ${codeMeta.color} border ${codeMeta.border} ${codeMeta.text} text-[10px] font-mono font-bold shadow-none transition-transform group-hover:scale-105 ${
+            has360 ? "ring-1 ring-cyan-400/40" : ""
+          }">
             ${codeMeta.code}
           </div>
           <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
             isSelected
               ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
+              : has360
+              ? "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4]"
               : isDark
               ? "bg-[#0b0f17] text-slate-300 border border-slate-700"
               : "bg-white text-slate-800 border border-slate-300 shadow-sm"
           }">
-            ${wp.name.split(" ")[0]}
+            ${has360 ? "[360°] " : ""}${wp.name.split(" ")[0]}
           </div>
         </div>
       `;
@@ -1436,7 +1464,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [selectedWaypoint, onSelectWaypoint, isDark]);
+  }, [selectedWaypoint, onSelectWaypoint, isDark, custom360Waypoints]);
 
   // Render Custom Click Pin Marker
   useEffect(() => {
@@ -1556,6 +1584,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
           </svg>
           <span>RE-CENTER</span>
+        </button>
+
+        {/* 360° Waypoint Panorama Manager */}
+        <button
+          onClick={() => onOpen360Manager?.()}
+          className="h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold bg-[#083344] text-[#38bdf8] border-[#0284c7] hover:bg-[#0c4a6e]"
+          title="Kelola & Tambah Waypoint Foto Panorama 360° Permukaan Mars"
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+          <span>+ WAYPOINT 360°</span>
         </button>
 
         {/* Measure / Elevation Profile */}

@@ -509,5 +509,25 @@
       "viewportTitle": "Interactive Viewport Selection",
       "close": "Close"
     }
+  },
+  "custom360": {
+    "headerTitle": "360° PANORAMA & WAYPOINT MANAGEMENT",
+    "tabAdd": "ADD 360° WAYPOINT",
+    "tabList": "PANORAMAS & WAYPOINTS",
+    "tabGuide": "FOLDER GUIDE",
+    "folderNoticeTitle": "360° Panorama JPEG Storage Directory",
+    "folderNoticeDesc": "Drop your 360° equirectangular panoramas (.jpg / .jpeg / .png) into folder",
+    "folderNoticeDesc2": "Images are instantly processed by the WebGL 360° engine without restarting the server.",
+    "labelSourceFile": "SELECT PANORAMA PHOTO FILE",
+    "labelDefaultFiles": "Bundled / Discovered Files",
+    "labelOrUploadLocal": "Or Choose Local File From Disk",
+    "labelOrTypeFilename": "Or Enter File Name Manually",
+    "labelCoordinates": "SET MARTIAN POSITION & COORDINATES",
+    "btnPickFromMap": "CLICK MAP TO CAPTURE COORDS",
+    "labelDetails": "WAYPOINT DETAILS & CAMERA HEADING",
+    "btnSaveOnly": "Save Waypoint",
+    "btnSaveAndOpen360": "Save & Launch 360° POV",
+    "btnFocusMap": "Focus Map",
+    "btnOpen360": "Open 360°"
   }
 }

@@ -509,5 +509,25 @@
       "viewportTitle": "Pilihan Viewport Interaktif",
       "close": "Tutup"
     }
+  },
+  "custom360": {
+    "headerTitle": "MANAJEMEN WAYPOINT & PANORAMA 360°",
+    "tabAdd": "TAMBAH WAYPOINT 360°",
+    "tabList": "DAFTAR FOTO & WAYPOINT",
+    "tabGuide": "PANDUAN FOLDER",
+    "folderNoticeTitle": "Folder Penyimpanan Foto Panorama 360°",
+    "folderNoticeDesc": "Letakkan file gambar panorama 360° Anda (format .jpg / .jpeg / .png) ke dalam folder",
+    "folderNoticeDesc2": "File tersebut akan langsung diproses oleh penampil WebGL 360° tanpa perlu refresh server.",
+    "labelSourceFile": "PILIH FILE FOTO PANORAMA",
+    "labelDefaultFiles": "File Bawaan / Terdeteksi",
+    "labelOrUploadLocal": "Atau Pilih File Dari Komputer",
+    "labelOrTypeFilename": "Atau Ketik Nama File Manual",
+    "labelCoordinates": "TENTUKAN POSISI & KOORDINAT MARS",
+    "btnPickFromMap": "KLIK TITIK DI PETA",
+    "labelDetails": "DETAIL WAYPOINT & SUDUT PANDANG",
+    "btnSaveOnly": "Simpan Waypoint",
+    "btnSaveAndOpen360": "Simpan & Buka POV 360°",
+    "btnFocusMap": "Pusatkan Peta",
+    "btnOpen360": "Buka 360°"
   }
 }

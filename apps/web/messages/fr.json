@@ -509,5 +509,25 @@
       "viewportTitle": "Sélection de Vue Interactive",
       "close": "Fermer"
     }
+  },
+  "custom360": {
+    "headerTitle": "GESTION DES PANORAMAS ET WAYPOINTS 360°",
+    "tabAdd": "AJOUTER WAYPOINT 360°",
+    "tabList": "PHOTOS ET WAYPOINTS",
+    "tabGuide": "GUIDE DU DOSSIER",
+    "folderNoticeTitle": "Dossier de Stockage des Panoramas 360°",
+    "folderNoticeDesc": "Déposez vos images panoramiques 360° (.jpg / .jpeg / .png) dans le dossier",
+    "folderNoticeDesc2": "Les fichiers sont directement traités par le moteur WebGL 360° sans redémarrer.",
+    "labelSourceFile": "SÉLECTIONNER LE FICHIER PANORAMIQUE",
+    "labelDefaultFiles": "Fichiers Inclus / Détectés",
+    "labelOrUploadLocal": "Ou Choisir un Fichier Local",
+    "labelOrTypeFilename": "Ou Saisir le Nom du Fichier",
+    "labelCoordinates": "DÉTERMINER LA POSITION ET COORDONNÉES MARTIENNES",
+    "btnPickFromMap": "CLIQUER SUR LA CARTE POUR COORDONNÉES",
+    "labelDetails": "DÉTAILS DU POINT ET CAP CAMÉRA",
+    "btnSaveOnly": "Enregistrer Waypoint",
+    "btnSaveAndOpen360": "Enregistrer et Ouvrir POV 360°",
+    "btnFocusMap": "Centrer Carte",
+    "btnOpen360": "Ouvrir 360°"
   }
 }
