@@ -555,186 +555,165 @@ function CTAAndStatsSection() {
 /* ============================================
    7. EXPLORATION SITES & TERRESTRIAL ANALOGUES
 ============================================ */
-const impactGalleryData = [
+/* ============================================
+   7. EXPLORATION SITES & TERRESTRIAL ANALOGUES (FULL MAP SLIDER)
+============================================ */
+const analogueMaps = [
   {
-    id: "gale-boxwork",
-    title: "Mount Sharp — Gale Crater",
-    description: "Situs Misi MSL Curiosity.\nPenemuan urat kristal mineral Boxwork 2025 di lereng Aeolis Mons, Bradbury Landing Ellipse, dan Palung Lempung Glen Torridon.",
-    color: "bg-gradient-to-br from-amber-600 to-orange-800",
-    accent: "text-amber-400",
-    mainImg: "/images/page3-bg.jpg",
-    sideImgs: [
-      "/images/mars-surface-hd.jpg",
-      "/images/domains/domain-slope.jpg",
-      "/images/domains/domain-minerals.jpg",
-      "/images/domains/domain-thermal.jpg"
-    ]
+    id: "analogue-map-1",
+    title: "Planetary Analogue Map 01",
+    src: "/images/analogues/analogue-map-1.jpg",
+    tag: "MAP 01 // TERRESTRIAL ANALOGUE SITES",
   },
   {
-    id: "jezero-delta",
-    title: "Jezero Crater — Delta Front",
-    description: "Situs Misi M2020 Perseverance.\nKipas delta kuno Three Forks, unit Séítah Olivine, dan urat redoks penanda potensi biosignature Cheyava Falls di Lembah Neretva.",
-    color: "bg-gradient-to-br from-cyan-600 to-blue-800",
-    accent: "text-cyan-400",
-    mainImg: "/images/mars-surface-2k.jpg",
-    sideImgs: [
-      "/images/mars-hero-exact.jpg",
-      "/images/domains/domain-radar.jpg",
-      "/images/domains/domain-weather.jpg",
-      "/images/domains/domain-comms.jpg"
-    ]
+    id: "analogue-map-2",
+    title: "Planetary Analogue Map 02",
+    src: "/images/analogues/analogue-map-2.jpg",
+    tag: "MAP 02 // TACTICAL SURFACE MATRIX",
   },
-  {
-    id: "earth-analogue",
-    title: "Analogi Bumi (MCDA Matcher)",
-    description: "Validasi Lapangan Terestrial.\nKawah Haughton (Kanada, 76%), Death Valley (AS, 76%), Río Tinto (Spanyol, 72%), dan Gurun Atacama (Chili, 63%) dengan formula kemiripan: S_j = Σ (w_i · s_ij).",
-    color: "bg-gradient-to-br from-emerald-600 to-teal-800",
-    accent: "text-emerald-400",
-    mainImg: "/images/mars-expedition-walk.jpg",
-    sideImgs: [
-      "/images/domains/domain-radiation.jpg",
-      "/images/domains/domain-slope.jpg",
-      "/images/domains/domain-minerals.jpg",
-      "/images/mars-surface-hd.jpg"
-    ]
-  }
 ];
 
-function ImpactSection() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeItem = impactGalleryData[activeIndex];
+const analogueSlideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
+    opacity: 0,
+    scale: 0.98,
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: {
+      x: { type: "spring", stiffness: 300, damping: 30 },
+      opacity: { duration: 0.35 },
+    },
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? "100%" : "-100%",
+    opacity: 0,
+    scale: 0.98,
+    transition: {
+      x: { type: "spring", stiffness: 300, damping: 30 },
+      opacity: { duration: 0.35 },
+    },
+  }),
+};
 
-  const nextSlide = () => {
-    setActiveIndex((prev) => (prev + 1) % impactGalleryData.length);
+function ImpactSection() {
+  const [[page, direction], setPage] = useState([0, 0]);
+
+  const activeIndex = ((page % analogueMaps.length) + analogueMaps.length) % analogueMaps.length;
+
+  const paginate = (newDirection: number) => {
+    setPage([page + newDirection, newDirection]);
+  };
+
+  const setSlide = (newIndex: number) => {
+    const dir = newIndex > activeIndex ? 1 : -1;
+    setPage([newIndex, dir]);
   };
 
   return (
-    <section id="analogi" className="scroll-mt-20 py-24 md:py-32 w-full bg-[#05070b] relative overflow-hidden flex flex-col items-center select-none">
+    <section id="analogi" className="scroll-mt-20 py-20 md:py-28 w-full bg-[#05070b] relative overflow-hidden flex flex-col items-center select-none">
       {/* Top and Bottom Seamless Blending Gradients */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#05070b] to-transparent pointer-events-none z-[1]" />
-      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#05070b] to-transparent pointer-events-none z-[1]" />
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#05070b] to-transparent pointer-events-none z-[1]" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#05070b] to-transparent pointer-events-none z-[1]" />
 
-      <div className="absolute top-[30%] left-1/2 -translate-x-1/2 text-[15rem] md:text-[25rem] font-serif text-white/[0.02] tracking-tighter pointer-events-none select-none z-0 whitespace-nowrap">
-        MARS
-      </div>
-      
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto flex flex-col items-center">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-center text-white tracking-tight leading-[1.12] mb-8">
-          Planetary Analogue Sites.
-        </h2>
+      <div className="relative z-10 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-8 sm:mb-12">
+          <span className="text-[11px] font-mono tracking-widest uppercase text-[#f97316] font-semibold mb-2">
+            [TERRESTRIAL ANALOGUE TESTBEDS]
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white tracking-tight leading-[1.12]">
+            Planetary Analogue Sites.
+          </h2>
+        </div>
 
-        <div className="relative w-full h-[360px] sm:h-[400px] md:h-[500px] lg:h-[600px] flex justify-center items-center px-4 md:px-0">
-          <div 
-            className="flex items-center justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 w-full"
-            style={{ perspective: "2000px", transformStyle: "preserve-3d" }}
-          >
-            <AnimatePresence>
-              {/* Card -2 */}
-              <motion.div 
-                key={`c-2-${activeIndex}`}
-                initial={{ opacity: 0, rotateY: 0, z: -300, x: "300%" }}
-                whileInView={{ opacity: 1, rotateY: 25, z: -150, x: 20 }}
-                viewport={{ once: false, margin: "-60px" }}
-                exit={{ opacity: 0, rotateY: 0, z: -300, x: "300%" }}
-                transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
-                className="order-1 hidden md:block w-[100px] lg:w-[140px] xl:w-[180px] h-[220px] lg:h-[300px] xl:h-[380px] rounded-xl lg:rounded-2xl overflow-hidden grayscale brightness-50 flex-shrink-0 relative border border-white/10"
-              >
-                <img src={activeItem.sideImgs[0]} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40" />
-              </motion.div>
-
-              {/* Card -1 */}
-              <motion.div 
-                key={`c-1-${activeIndex}`}
-                initial={{ opacity: 0, rotateY: 0, z: -200, x: "150%" }}
-                whileInView={{ opacity: 1, rotateY: 15, z: -80, x: 10 }}
-                viewport={{ once: false, margin: "-60px" }}
-                exit={{ opacity: 0, rotateY: 0, z: -200, x: "150%" }}
-                transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
-                className="order-2 w-[80px] sm:w-[120px] md:w-[150px] lg:w-[180px] xl:w-[240px] h-[220px] sm:h-[280px] md:h-[320px] lg:h-[400px] xl:h-[480px] rounded-xl sm:rounded-2xl lg:rounded-3xl overflow-hidden grayscale brightness-75 flex-shrink-0 relative border border-white/10"
-              >
-                <img src={activeItem.sideImgs[1]} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/20" />
-              </motion.div>
-
-              {/* Card +1 */}
-              <motion.div 
-                key={`c1-${activeIndex}`}
-                initial={{ opacity: 0, rotateY: 0, z: -200, x: "-150%" }}
-                whileInView={{ opacity: 1, rotateY: -15, z: -80, x: -10 }}
-                viewport={{ once: false, margin: "-60px" }}
-                exit={{ opacity: 0, rotateY: 0, z: -200, x: "-150%" }}
-                transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
-                className="order-4 w-[80px] sm:w-[120px] md:w-[150px] lg:w-[180px] xl:w-[240px] h-[220px] sm:h-[280px] md:h-[320px] lg:h-[400px] xl:h-[480px] rounded-xl sm:rounded-2xl lg:rounded-3xl overflow-hidden grayscale brightness-75 flex-shrink-0 relative border border-white/10"
-              >
-                <img src={activeItem.sideImgs[2]} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/20" />
-              </motion.div>
-
-              {/* Card +2 */}
-              <motion.div 
-                key={`c2-${activeIndex}`}
-                initial={{ opacity: 0, rotateY: 0, z: -300, x: "-300%" }}
-                whileInView={{ opacity: 1, rotateY: -25, z: -150, x: -20 }}
-                viewport={{ once: false, margin: "-60px" }}
-                exit={{ opacity: 0, rotateY: 0, z: -300, x: "-300%" }}
-                transition={{ duration: 0.85, ease: [0.32, 0.72, 0, 1] }}
-                className="order-5 hidden md:block w-[100px] lg:w-[140px] xl:w-[180px] h-[220px] lg:h-[300px] xl:h-[380px] rounded-xl lg:rounded-2xl overflow-hidden grayscale brightness-50 flex-shrink-0 relative border border-white/10"
-              >
-                <img src={activeItem.sideImgs[3]} alt="" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40" />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Center Card 0 */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: false, margin: "-60px" }}
-              transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-              className={`order-3 relative w-[240px] sm:w-[280px] md:w-[350px] lg:w-[400px] h-[340px] sm:h-[380px] md:h-[480px] lg:h-[550px] rounded-[1.5rem] md:rounded-[2rem] lg:rounded-[3rem] p-3 md:p-5 flex flex-col ${activeItem.color} shadow-2xl z-20 flex-shrink-0 transform transition-colors duration-700 hover:scale-[1.02] border border-white/20`}
+        {/* Full Image Slider Frame */}
+        <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[750px] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 bg-[#07090e] shadow-2xl flex items-center justify-center group">
+          <AnimatePresence initial={false} custom={direction}>
+            <motion.div
+              key={page}
+              custom={direction}
+              variants={analogueSlideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.4}
+              onDragEnd={(_e, { offset, velocity }) => {
+                const swipe = Math.abs(offset.x) * velocity.x;
+                if (swipe < -10000 || offset.x < -100) {
+                  paginate(1);
+                } else if (swipe > 10000 || offset.x > 100) {
+                  paginate(-1);
+                }
+              }}
+              className="absolute inset-0 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
             >
-              <AnimatePresence mode="wait">
-                <motion.div 
-                  key={`center-content-${activeIndex}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full h-full flex flex-col"
-                >
-                  <div className="w-full h-[50%] md:h-[55%] rounded-[1.25rem] md:rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden bg-black/20 relative">
-                    <img src={activeItem.mainImg} alt={activeItem.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  </div>
-                  
-                  <div className="flex-1 mt-3 sm:mt-4 md:mt-6 px-1 sm:px-2 md:px-4 flex flex-col">
-                    <h3 className="text-white text-xl sm:text-2xl md:text-3xl font-serif font-bold leading-tight mb-1 sm:mb-2">{activeItem.title}</h3>
-                    <p className="text-white/90 text-[10px] sm:text-xs md:text-sm leading-relaxed font-sans font-light whitespace-pre-line line-clamp-3 sm:line-clamp-none">
-                      {activeItem.description}
-                    </p>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-
-              <button 
-                onClick={nextSlide} 
-                className="absolute -bottom-4 -left-4 sm:-bottom-5 sm:-left-5 md:-bottom-8 md:-left-8 w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform z-30 group cursor-pointer"
-                aria-label="Next site slide"
-              >
-                <ArrowUpRight className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-black transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              </button>
+              {/* Full Image with automatic .jpg <-> .png fallback */}
+              <img
+                src={analogueMaps[activeIndex].src}
+                alt={analogueMaps[activeIndex].title}
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src.endsWith(".jpg")) {
+                    target.src = target.src.replace(".jpg", ".png");
+                  }
+                }}
+                className="w-full h-full object-contain sm:object-cover select-none pointer-events-none"
+              />
             </motion.div>
+          </AnimatePresence>
+
+          {/* Floating Prev Button */}
+          <button
+            onClick={() => paginate(-1)}
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-xl group/btn"
+            aria-label="Previous map slide"
+          >
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform group-hover/btn:-translate-x-0.5" />
+          </button>
+
+          {/* Floating Next Button */}
+          <button
+            onClick={() => paginate(1)}
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-xl group/btn"
+            aria-label="Next map slide"
+          >
+            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform group-hover/btn:translate-x-0.5" />
+          </button>
+
+          {/* Top Tag Badge */}
+          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 pointer-events-none">
+            <span className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold tracking-wider bg-black/80 backdrop-blur-md text-[#f97316] border border-[#f97316]/40 shadow-lg">
+              {analogueMaps[activeIndex].tag}
+            </span>
+          </div>
+
+          {/* Top Slide Counter Badge */}
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 pointer-events-none">
+            <span className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold tracking-tight bg-black/80 backdrop-blur-md text-white border border-white/10 shadow-lg">
+              {String(activeIndex + 1).padStart(2, "0")} / {String(analogueMaps.length).padStart(2, "0")}
+            </span>
           </div>
         </div>
 
-        {/* Indicators */}
-        <div className="flex justify-center items-center gap-3 mt-16 md:mt-24">
-          {impactGalleryData.map((_, i) => (
-            <button 
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`h-2 md:h-2.5 rounded-full transition-all duration-500 cursor-pointer ${i === activeIndex ? `w-10 md:w-16 ${activeItem.color}` : 'w-2 md:w-2.5 bg-white/20 hover:bg-white/40'}`}
+        {/* Indicators (Dots / Pills) */}
+        <div className="flex justify-center items-center gap-3 mt-6 sm:mt-8">
+          {analogueMaps.map((map, i) => (
+            <button
+              key={map.id}
+              onClick={() => setSlide(i)}
+              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                i === activeIndex
+                  ? "w-12 bg-[#f97316] shadow-sm"
+                  : "w-3 bg-white/20 hover:bg-white/40"
+              }`}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
