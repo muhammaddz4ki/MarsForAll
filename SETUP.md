@@ -1,110 +1,94 @@
-# Setup guide
+# MARSFORALL // GALE-01 — Local Setup & Development Guide
 
-How to run Mine For All locally and, optionally, deploy it. For how the data
-actually moves through the system, see [DATA-FLOW.md](./DATA-FLOW.md).
+Project: **MARSFORALL // GALE-01** — Interplanetary Survival Guide: Martian Map  
+Event: **NASA Space Apps Challenge 2026**  
+Primary Target: **Mount Sharp (Aeolis Mons), Gale Crater, Mars** (`Lat: -5.4453°, Lon: 137.8414°`)  
+Secondary Site: **Jezero Crater, Mars** (`Lat: 18.4447°, Lon: 77.4508°`)
+
+---
 
 ## Prerequisites
 
 - **Node.js >= 20**
-- **pnpm 9** (`corepack enable` then `corepack prepare pnpm@9.15.0 --activate`,
-  or `npm i -g pnpm@9`)
-- **MongoDB**, local (`mongodb://localhost:27017`) or any hosted MongoDB. The web
-  app runs with whatever data you have, so this is the only thing you really need.
-- *(Optional)* an **S3-compatible object store**, only if you want to build and
-  serve your own PMTiles vector tiles.
-- *(Optional)* a **job scheduler** (cron, a CI schedule, a serverless cron),
-  only if you want to run the ingest pipeline on a cadence.
+- **pnpm >= 9** (`corepack enable` or `npm i -g pnpm@9`)
+- Modern web browser with WebGL 2.0 acceleration support (Chrome / Edge / Firefox)
 
-## 1. Install
+---
+
+## 1. Quickstart (Development)
+
+Clone repository and install monorepo dependencies:
 
 ```bash
-git clone https://github.com/Fadzkal/mine-for-all.git
-cd mine-for-all
+git clone https://github.com/muhammaddz4ki/MarsForAll.git
+cd MarsForAll
 pnpm install
 ```
 
-This is a [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
-
-| Package | What it is |
-| --- | --- |
-| `apps/web` | Next.js 14 (App Router), MapLibre GL, `next-intl` (ID / EN), Recharts |
-| `apps/api` | the read-only REST API **and** the ingest/tiles CLI jobs |
-| `packages/shared` | Shared TypeScript domain types |
-
-## 2. Environment
-
-Each app ships an `.env.example`. Copy them and fill what you have, anything left
-blank is skipped cleanly.
+Boot the Next.js Martian Navigation Cockpit:
 
 ```bash
-cp apps/api/.env.example apps/api/.env          # API + ingest
-cp apps/web/.env.example apps/web/.env.local    # web (NEXT_PUBLIC_* only)
+pnpm --filter @marsforall/web dev
 ```
 
-Minimum to boot locally:
+Open your browser at:
+- **Cockpit Map (Indonesian):** `http://localhost:3000/id/peta`
+- **Cockpit Map (English):** `http://localhost:3000/en/peta`
+- **Mission Landing Page:** `http://localhost:3000/en`
 
-- **`apps/api/.env`** -> `MONGODB_URI` (e.g. `mongodb://localhost:27017/forestwatch`).
-- **`apps/web/.env.local`** -> `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000`.
-  `NEXT_PUBLIC_TILES_BASE_URL` only matters once you have PMTiles in an object store.
+---
 
-Source API keys, object-store credentials, and optional dataset URLs are only
-needed when you run the matching ingest job; see the comments in each
-`.env.example`.
+## 2. 360° Panorama JPEG Storage Directory
 
-## 3. Run (development)
+User-supplied spherical panoramas should be placed directly inside:
+```
+apps/web/public/panoramas/
+```
+
+- **Format:** `.jpg` / `.jpeg` / `.png`
+- **Aspect Ratio:** **2:1 Equirectangular Spherical Projection** (e.g., `2048x1024`, `4096x2048`, `8192x4096`)
+- **Metadata Registration:**
+  - Files are automatically registered in `panoramas-registry.json` or can be added dynamically inside the application via the **`[+ WAYPOINT 360°]`** map toolbar button.
+  - Waypoints with 360° panoramas display an illuminated cyan camera badge on the map (`📷 360°`). Clicking or double-clicking launches the real-time Three.js spherical WebGL POV viewer.
+
+---
+
+## 3. Core Architecture & Features
+
+### A. 5 NASA Operational & Scientific Layers (Bioscape Data Portal Grouped Tree)
+1. **Layer 1: Optical & USGS Geologic Units:** HiRISE 25cm/px & CTX 6m/px orbital mosaics with USGS geological contacts.
+2. **Layer 2: Topographic Slope & 1m DTM Hazard Mask:** Slopes classified into `<15° Safe Walk`, `15°–25° Caution`, and `>25° Impassable Cliff Hazard`.
+3. **Layer 3: THEMIS Night IR & Sand Trap Detector:** Morgan et al. (2020) Apparent Thermal Inertia model separating firm bedrock (`[BEDROCK FIRM]`) from dangerous sinkage sand traps (`[SOFT SAND TRAP RISK]`).
+4. **Layer 4: CRISM Hydrated Minerals & GRS WEH:** 18m hyperspectral clay/sulfate mapping and water-equivalent hydrogen.
+5. **Layer 5: MGS MAG Crustal Magnetic Field & MSL RAD:** Localized remanent crustal magnetic deflection umbrella against ionizing cosmic radiation.
+
+### B. High-Density 5-Meter Marswalk Router & Docked Elevation Transect
+- Discrete sampling every **~5 meters** along EVA excursion paths (300–600 nodes).
+- Bottom docked elevation transect profile with synchronized interactive yellow needle scrubber.
+- Dynamic camera bounds auto-framing (`map.fitBounds`) ensuring close, crisp visualization of the active trajectory.
+
+---
+
+## 4. Useful Monorepo Commands
 
 ```bash
-pnpm dev          # web -> http://localhost:3000   ·   api -> http://localhost:4000
+# Run web development server
+pnpm --filter @marsforall/web dev
+
+# Check TypeScript types across packages
+pnpm typecheck
+
+# Lint codebase
+pnpm lint
+
+# Production build
+pnpm --filter @marsforall/web build
 ```
 
-Useful per-package commands:
+---
 
-```bash
-pnpm --filter @mineforall/web dev          # web only
-pnpm --filter @mineforall/api dev          # api only
-pnpm typecheck                              # all packages
-pnpm lint                                   # all packages
-pnpm build                                  # production build (turbo)
-```
+## 5. Offline-First Architecture & Tile Proxies
 
-The map renders immediately; layers backed by data you haven't ingested simply
-show "no data" rather than erroring.
-
-## 4. Loading data (optional)
-
-The ingest jobs are the API code run as CLI tasks. After `pnpm build`:
-
-```bash
-# from apps/api, after building:
-node dist/jobs-cli.js <job>     # e.g. species, wdpa, gfw-alerts, tiles, status
-```
-
-Seed administrative regions (needed for region pages / charts):
-
-```bash
-pnpm seed:regions
-```
-
-Available jobs: `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`,
-`modi-esdm`, `mining`, `wdpa`, `habitat`, `trase`, `species`, `nusantara-atlas`,
-then `tiles` and `status`.
-
-## 5. Production (optional)
-
-There's no required platform; deploy the pieces wherever you like:
-
-- **Web & API** -> build with `pnpm build` and host on any Node-capable platform.
-  Set the API's `MONGODB_URI` and the web's `NEXT_PUBLIC_*` vars. Keep
-  `CRON_ENABLED=false` on the serving instances.
-- **Scheduled ingest + tiles** -> the jobs above are plain CLI tasks
-  (`node dist/jobs-cli.js <job>`). Run them on any periodic scheduler at whatever
-  cadence you want; that's the only place scheduling should live.
-- **Tiles** -> point `NEXT_PUBLIC_TILES_BASE_URL` at your object store's public URL.
-
-## Troubleshooting
-
-- **Map is blank / "no data"**, expected without ingested data or a tiles URL;
-  the app degrades gracefully.
-- **API can't connect**, check `MONGODB_URI` and that the database is reachable.
-- **An ingest job no-ops**, its source key/URL is unset in `.env`; that's
-  intentional. Fill the relevant var to enable it.
+The application features 100% offline-first resilience:
+- External NASA Mars Trek WMTS endpoints are proxied through `/api/mars-tiles/*` with server-side LRU tile caching.
+- If external connectivity is unavailable, the application automatically falls back to procedural vector contours and embedded GeoJSON without breaking UI functionality.
