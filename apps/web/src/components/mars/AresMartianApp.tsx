@@ -215,6 +215,12 @@ export const AresMartianApp: React.FC = () => {
 
   // Theme Sync on Mount & Toggle
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("pov") === "true" || params.get("pov") === "1") {
+        setIsPovOpen(true);
+      }
+    }
     const savedTheme = localStorage.getItem("ares_theme") as "dark" | "light" | null;
     if (savedTheme === "light" || savedTheme === "dark") {
       setTheme(savedTheme);
@@ -281,9 +287,19 @@ export const AresMartianApp: React.FC = () => {
     const siteBase = getWaypointsForSite(currentSite);
     const combined = [...siteBase];
     custom360List.forEach((cwp) => {
-      const idx = combined.findIndex((w) => w.id === cwp.id);
+      const idx = combined.findIndex(
+        (w) =>
+          w.id === cwp.id ||
+          (Math.abs(w.coordinates[0] - cwp.coordinates[0]) < 0.002 &&
+            Math.abs(w.coordinates[1] - cwp.coordinates[1]) < 0.002)
+      );
       if (idx >= 0) {
-        combined[idx] = { ...combined[idx], ...cwp };
+        combined[idx] = {
+          ...combined[idx],
+          ...cwp,
+          has360Pov: true,
+          name: combined[idx].name,
+        };
       } else {
         combined.push(cwp);
       }

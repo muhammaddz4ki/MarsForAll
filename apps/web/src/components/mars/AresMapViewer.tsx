@@ -1814,12 +1814,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Combine standard waypoints with custom 360 waypoints (avoiding duplicate IDs)
-    const combinedWaypoints = [...ALL_MARTIAN_WAYPOINTS];
+    // Combine site waypoints with custom 360 waypoints (avoiding duplicate markers at same coordinates)
+    const siteWaypoints = getWaypointsForSite(currentSite);
+    const combinedWaypoints = [...siteWaypoints];
     custom360Waypoints.forEach((cwp) => {
-      const idx = combinedWaypoints.findIndex((w) => w.id === cwp.id);
+      const idx = combinedWaypoints.findIndex(
+        (w) =>
+          w.id === cwp.id ||
+          (Math.abs(w.coordinates[0] - cwp.coordinates[0]) < 0.002 &&
+            Math.abs(w.coordinates[1] - cwp.coordinates[1]) < 0.002)
+      );
       if (idx >= 0) {
-        combinedWaypoints[idx] = { ...combinedWaypoints[idx], ...cwp };
+        combinedWaypoints[idx] = {
+          ...combinedWaypoints[idx],
+          ...cwp,
+          has360Pov: true,
+          name: combinedWaypoints[idx].name, // Keep clean canonical name
+        };
       } else {
         combinedWaypoints.push(cwp);
       }
@@ -1883,7 +1894,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints, mapLoaded]);
+  }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints, currentSite, mapLoaded]);
 
   // Render Martian Topographic Landmarks & Geomorphic Formations (Ref Image 2 & 3 Standard)
   useEffect(() => {
@@ -1893,17 +1904,17 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     landmarkMarkersRef.current.forEach((m) => m.remove());
     landmarkMarkersRef.current = [];
 
-    const galeLandmarks = [
-      { name: "MOUNT SHARP", sub: "AEOLIS MONS // -3,912M", coords: [137.8414, -5.4453] as [number, number] },
-      { name: "BOXWORK VEINS 2025", sub: "MINERAL DISCOVERY SITE", coords: [137.8350, -5.4520] as [number, number] },
-      { name: "VERA RUBIN RIDGE", sub: "HEMATITE CAPROCK", coords: [137.5684, -4.9281] as [number, number] },
-      { name: "GLEN TORRIDON", sub: "SMECTITE CLAY TROUGH", coords: [137.4042, -4.7561] as [number, number] },
-      { name: "BRADBURY LANDING", sub: "TOUCHDOWN SOL 0 // -4,501M", coords: [137.4417, -4.5895] as [number, number] },
-      { name: "GEDIZ VALLIS", sub: "DEBRIS FLOW CHANNEL", coords: [137.7120, -5.2150] as [number, number] },
-      { name: "YELLOWKNIFE BAY", sub: "LACUSTRINE MUDSTONE", coords: [137.4520, -4.5950] as [number, number] },
-    ];
+    const landmarks = currentSite === "gale_crater"
+      ? [
+          { name: "MOUNT SHARP SUMMIT", sub: "AEOLIS MONS // -3,912M", coords: [137.8414, -5.4453] as [number, number] },
+          { name: "GEDIZ VALLIS CANYON", sub: "DEBRIS FLOW CHANNEL", coords: [137.7120, -5.2150] as [number, number] },
+        ]
+      : [
+          { name: "JEZERO DELTA SCARP", sub: "ANCIENT RIVER DELTA FRONT", coords: [77.4042, 18.4410] as [number, number] },
+          { name: "BELVA IMPACT CRATER", sub: "SUB-BASIN EXCAVATION", coords: [77.3620, 18.3840] as [number, number] },
+        ];
 
-    galeLandmarks.forEach((lm) => {
+    landmarks.forEach((lm) => {
       const el = document.createElement("div");
       el.className = "cursor-pointer select-none flex flex-col items-center group";
       el.innerHTML = `

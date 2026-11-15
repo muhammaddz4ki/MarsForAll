@@ -243,102 +243,173 @@ function createMartianReliefContourTexture(): THREE.CanvasTexture {
   return texture;
 }
 
-// Blend spherical 360° rover panorama photo with seamless Martian zenith sky dome and nadir
-// 100% Patch Black Holes & Spiral Zenith Gaps
+// Procedural Zenith Atmosphere Sky Cap Texture
+function createSkyCapTexture(dustStormActive: boolean, variant: "natural" | "enhanced"): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const isEnhanced = variant === "enhanced";
+    const centerColor = isEnhanced ? "#1e293b" : dustStormActive ? "#7c3514" : "#98674d";
+    const rimColor = isEnhanced ? "#334155" : dustStormActive ? "#9a441a" : "#b07c5e";
+
+    const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+    grad.addColorStop(0, centerColor);
+    grad.addColorStop(0.7, rimColor);
+    grad.addColorStop(1, rimColor);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// Procedural Nadir Ground Regolith Cap Texture
+function createGroundCapTexture(dustStormActive: boolean, variant: "natural" | "enhanced"): THREE.CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const isEnhanced = variant === "enhanced";
+    const centerColor = isEnhanced ? "#05080f" : dustStormActive ? "#1a0803" : "#341e13";
+    const rimColor = isEnhanced ? "#090d16" : dustStormActive ? "#260e06" : "#4a2c1d";
+
+    const grad = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+    grad.addColorStop(0, centerColor);
+    grad.addColorStop(0.75, rimColor);
+    grad.addColorStop(1, rimColor);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// Blend cylindrical 360° rover panorama photo with seamless Martian zenith sky dome and nadir
+// Aligns Martian horizon strictly at 50% vertical center (Y = 0 eye level) to eliminate all barrel/bowl distortion
 function blendMartianZenithAndNadir(
   sourceImg: HTMLImageElement,
   dustStormActive: boolean,
   variant: "natural" | "enhanced" = "natural"
 ): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
-  canvas.width = sourceImg.naturalWidth || 1536;
-  canvas.height = sourceImg.naturalHeight || 768;
+  const srcW = sourceImg.naturalWidth || 1920;
+  const srcH = sourceImg.naturalHeight || 550;
+
+  // In NASA rover mosaics, horizon is located at ~22% from top (78% ground, 22% sky/mountains)
+  const horizonFraction = 0.22;
+  const horizonInSource = srcH * horizonFraction;
+  const groundInSource = srcH - horizonInSource;
+
+  // Canvas height is sized so horizon is at exactly 50% (vertical center)
+  const canvasH = Math.round(groundInSource * 2);
+  const canvasW = srcW;
+  canvas.width = canvasW;
+  canvas.height = canvasH;
   const ctx = canvas.getContext("2d");
   if (!ctx) return new THREE.CanvasTexture(canvas);
 
-  ctx.drawImage(sourceImg, 0, 0, canvas.width, canvas.height);
-
   const isEnhanced = variant === "enhanced";
   const zenithSkyColor = isEnhanced
-    ? "#0f172a"
-    : dustStormActive
-    ? "#6b2e10"
-    : "#b87d56";
-  const horizonSkyColor = isEnhanced
     ? "#1e293b"
     : dustStormActive
     ? "#8c3b17"
-    : "#c78b64";
+    : "#b07c5e";
   const nadirColor = isEnhanced
-    ? "#090d16"
+    ? "#05080f"
     : dustStormActive
-    ? "#260e06"
-    : "#4a2c1d";
+    ? "#1a0803"
+    : "#341e13";
 
-  // Martian atmosphere RGB for pixel patching
-  const skyR = isEnhanced ? 15 : dustStormActive ? 107 : 184;
-  const skyG = isEnhanced ? 23 : dustStormActive ? 46 : 125;
-  const skyB = isEnhanced ? 42 : dustStormActive ? 16 : 86;
+  // Draw source image with its horizon placed strictly at canvasH / 2
+  const drawY = Math.round(canvasH / 2 - horizonInSource);
+  ctx.drawImage(sourceImg, 0, drawY, canvasW, srcH);
 
-  // Martian regolith nadir RGB for pixel patching (#4a2c1d = 74, 44, 29)
-  const groundR = isEnhanced ? 20 : 74;
-  const groundG = isEnhanced ? 24 : 44;
-  const groundB = isEnhanced ? 35 : 29;
-
-  // Scan entire image: replace unstitched black hole pixels (r < 14 && g < 14 && b < 14)
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const imgData = ctx.getImageData(0, 0, canvasW, canvasH);
   const data = imgData.data;
-  const w = canvas.width;
-  const h = canvas.height;
 
-  for (let y = 0; y < h; y++) {
-    const isUpper = y < h * 0.55;
-    const progress = isUpper ? y / (h * 0.55) : (y - h * 0.55) / (h * 0.45);
-    for (let x = 0; x < w; x++) {
-      const idx = (y * w + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-      const isBlackHole = r < 14 && g < 14 && b < 14;
-
-      if (isBlackHole) {
-        if (isUpper) {
-          // Fill sky atmosphere with smooth vertical gradient
-          const factor = 1 - progress * 0.2;
-          data[idx] = Math.round(skyR * factor);
-          data[idx + 1] = Math.round(skyG * factor);
-          data[idx + 2] = Math.round(skyB * factor);
-          data[idx + 3] = 255;
-        } else {
-          // Fill ground regolith seamlessly
-          const factor = 0.85 + progress * 0.25;
-          data[idx] = Math.round(groundR * factor);
-          data[idx + 1] = Math.round(groundG * factor);
-          data[idx + 2] = Math.round(groundB * factor);
-          data[idx + 3] = 255;
-        }
+  // 1. Sample average valid sky color
+  let sampleSkyR = 0, sampleSkyG = 0, sampleSkyB = 0, sampleCount = 0;
+  const sampleStartY = Math.max(0, drawY + Math.round(srcH * 0.05));
+  const sampleEndY = Math.min(canvasH, drawY + Math.round(srcH * 0.25));
+  for (let y = sampleStartY; y < sampleEndY; y += 4) {
+    for (let x = 0; x < canvasW; x += 8) {
+      const idx = (y * canvasW + x) * 4;
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+      if (r > 60 && g > 40 && r > b) {
+        sampleSkyR += r;
+        sampleSkyG += g;
+        sampleSkyB += b;
+        sampleCount++;
       }
     }
   }
+
+  const avgSkyR = sampleCount > 30 ? Math.round(sampleSkyR / sampleCount) : (isEnhanced ? 40 : dustStormActive ? 140 : 205);
+  const avgSkyG = sampleCount > 30 ? Math.round(sampleSkyG / sampleCount) : (isEnhanced ? 55 : dustStormActive ? 85 : 150);
+  const avgSkyB = sampleCount > 30 ? Math.round(sampleSkyB / sampleCount) : (isEnhanced ? 80 : dustStormActive ? 45 : 120);
+
+  // Atmospheric Zenith Sky tone
+  const zenithR = isEnhanced ? 30 : dustStormActive ? 124 : 140;
+  const zenithG = isEnhanced ? 41 : dustStormActive ? 53 : 95;
+  const zenithB = isEnhanced ? 59 : dustStormActive ? 20 : 70;
+
+  // 2. For each column x, scan down to find where valid sky begins, and smoothly fill all pixels above it
+  const scanLimitY = Math.min(canvasH, drawY + Math.round(srcH * 0.45));
+  for (let x = 0; x < canvasW; x++) {
+    let firstSkyY = -1;
+    let colSkyR = avgSkyR;
+    let colSkyG = avgSkyG;
+    let colSkyB = avgSkyB;
+
+    for (let y = drawY; y < scanLimitY; y++) {
+      const idx = (y * canvasW + x) * 4;
+      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+      if (r > 55 && g > 35 && r > b) {
+        firstSkyY = y;
+        const deeperY = Math.min(scanLimitY - 1, y + 4);
+        const dIdx = (deeperY * canvasW + x) * 4;
+        colSkyR = data[dIdx];
+        colSkyG = data[dIdx + 1];
+        colSkyB = data[dIdx + 2];
+        break;
+      }
+    }
+
+    const fillToY = firstSkyY >= 0 ? firstSkyY + 3 : drawY + 10;
+    for (let y = 0; y < fillToY; y++) {
+      const idx = (y * canvasW + x) * 4;
+      const t = y / Math.max(1, fillToY);
+      data[idx] = Math.round(zenithR + (colSkyR - zenithR) * t);
+      data[idx + 1] = Math.round(zenithG + (colSkyG - zenithG) * t);
+      data[idx + 2] = Math.round(zenithB + (colSkyB - zenithB) * t);
+      data[idx + 3] = 255;
+    }
+  }
+
+  // 3. Bottom Nadir & black cutout patch (bottom 50%)
+  const groundR = isEnhanced ? 20 : 74;
+  const groundG = isEnhanced ? 24 : 44;
+  const groundB = isEnhanced ? 35 : 29;
+  for (let y = Math.round(canvasH * 0.5); y < canvasH; y++) {
+    for (let x = 0; x < canvasW; x++) {
+      const idx = (y * canvasW + x) * 4;
+      if (data[idx] < 20 && data[idx + 1] < 20 && data[idx + 2] < 20) {
+        data[idx] = groundR;
+        data[idx + 1] = groundG;
+        data[idx + 2] = groundB;
+        data[idx + 3] = 255;
+      }
+    }
+  }
+
   ctx.putImageData(imgData, 0, 0);
-
-  // Smooth Zenith gradient overlay (upper 24%)
-  const zenithHeight = Math.round(canvas.height * 0.24);
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, zenithHeight);
-  skyGrad.addColorStop(0, zenithSkyColor);
-  skyGrad.addColorStop(0.45, horizonSkyColor);
-  skyGrad.addColorStop(1, "rgba(184, 125, 86, 0)");
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, canvas.width, zenithHeight);
-
-  // Smooth Nadir gradient overlay (bottom 14%)
-  const nadirStartY = Math.round(canvas.height * 0.86);
-  const nadirGrad = ctx.createLinearGradient(0, nadirStartY, 0, canvas.height);
-  nadirGrad.addColorStop(0, "rgba(74, 44, 29, 0)");
-  nadirGrad.addColorStop(0.5, nadirColor);
-  nadirGrad.addColorStop(1, nadirColor);
-  ctx.fillStyle = nadirGrad;
-  ctx.fillRect(0, nadirStartY, canvas.width, canvas.height - nadirStartY);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -514,16 +585,20 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   // Multi-Station Tour State
   const stationList = PANORAMA_STATIONS[siteKey];
-  const [activeStationIdx, setActiveStationIdx] = useState<number>(0);
+  const initialStnParam = typeof window !== "undefined"
+    ? parseInt(new URLSearchParams(window.location.search).get("stn") || new URLSearchParams(window.location.search).get("station") || "0", 10)
+    : 0;
+  const initialStnClamped = isNaN(initialStnParam) ? 0 : Math.max(0, Math.min(stationList.length - 1, initialStnParam));
+  const [activeStationIdx, setActiveStationIdx] = useState<number>(initialStnClamped);
   const [stationJumpingNotice, setStationJumpingNotice] = useState<boolean>(false);
-  const activeStationIdxRef = useRef<number>(0);
+  const activeStationIdxRef = useRef<number>(initialStnClamped);
   useEffect(() => {
     activeStationIdxRef.current = activeStationIdx;
   }, [activeStationIdx]);
 
   useEffect(() => {
-    setActiveStationIdx(0);
-  }, [isJezero]);
+    setActiveStationIdx(initialStnClamped);
+  }, [isJezero, initialStnClamped]);
 
   // Split-Screen Compare Mode (Natural vs Enhanced Geological Color)
   const [isCompareActive, setIsCompareActive] = useState<boolean>(false);
@@ -560,8 +635,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
 
   // Camera Framing & Telemetry Readouts
   const [camAzimuth, setCamAzimuth] = useState<number>(0);
-  const [camPitch, setCamPitch] = useState<number>(-8);
-  const [camFov, setCamFov] = useState<number>(65);
+  const [camPitch, setCamPitch] = useState<number>(-3);
+  const [camFov, setCamFov] = useState<number>(52);
   const [camElevation, setCamElevation] = useState<number>(-4120);
   const [reticleCoords, setReticleCoords] = useState<{ x: number; z: number; elev: number } | null>(null);
   const [teleportingNotice, setTeleportingNotice] = useState<boolean>(false);
@@ -570,8 +645,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const panoMeshNaturalRef = useRef<THREE.Mesh | null>(null);
-  const panoMeshEnhancedRef = useRef<THREE.Mesh | null>(null);
+  const panoMeshNaturalRef = useRef<THREE.Group | null>(null);
+  const panoMeshEnhancedRef = useRef<THREE.Group | null>(null);
   const terrainMeshRef = useRef<THREE.Mesh | null>(null);
   const wireframeMeshRef = useRef<THREE.LineSegments | null>(null);
   const reticleRef = useRef<THREE.Mesh | null>(null);
@@ -583,10 +658,10 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const targetCamPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 4.2, 2.0));
   const isLerpingCamRef = useRef<boolean>(false);
   const yawRef = useRef<number>(0);
-  const pitchRef = useRef<number>((-8 * Math.PI) / 180);
-  const fovRef = useRef<number>(65);
+  const pitchRef = useRef<number>((-3 * Math.PI) / 180);
+  const fovRef = useRef<number>(52);
 
-  // Load and blend spherical station panorama textures
+  // Load and blend cylindrical 360° station panorama textures (1:1 Natural Aspect Ratio)
   const loadStationPanorama = useCallback(
     (stationOrUrl?: number | string) => {
       const site = isJezero ? "jezero" : "gale";
@@ -607,10 +682,22 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         try {
           const blendedTex = blendMartianZenithAndNadir(naturalImg, dustStormActive, "natural");
           if (panoMeshNaturalRef.current) {
-            const mat = panoMeshNaturalRef.current.material as THREE.MeshBasicMaterial;
-            if (mat.map) mat.map.dispose();
-            mat.map = blendedTex;
-            mat.needsUpdate = true;
+            const cyl = panoMeshNaturalRef.current.getObjectByName("pano_cylinder") as THREE.Mesh | undefined;
+            if (cyl) {
+              const mat = cyl.material as THREE.MeshBasicMaterial;
+              if (mat.map) mat.map.dispose();
+              mat.map = blendedTex;
+              mat.needsUpdate = true;
+            }
+            const sky = panoMeshNaturalRef.current.getObjectByName("pano_sky_cap") as THREE.Mesh | undefined;
+            const ground = panoMeshNaturalRef.current.getObjectByName("pano_ground_cap") as THREE.Mesh | undefined;
+            if (cyl && sky && ground && naturalImg.naturalWidth && naturalImg.naturalHeight) {
+              const canvasAspect = naturalImg.naturalWidth / ((naturalImg.naturalHeight * 0.78) * 2);
+              const targetH = Math.max(200, (2 * Math.PI * 60) / Math.max(1.8, Math.min(4.5, canvasAspect)));
+              cyl.scale.set(-1, targetH / 200, 1);
+              sky.position.y = targetH / 2;
+              ground.position.y = -targetH / 2;
+            }
           }
         } catch (_err) {}
       };
@@ -625,10 +712,22 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         try {
           const blendedTex = blendMartianZenithAndNadir(enhancedImg, dustStormActive, "enhanced");
           if (panoMeshEnhancedRef.current) {
-            const mat = panoMeshEnhancedRef.current.material as THREE.MeshBasicMaterial;
-            if (mat.map) mat.map.dispose();
-            mat.map = blendedTex;
-            mat.needsUpdate = true;
+            const cyl = panoMeshEnhancedRef.current.getObjectByName("pano_cylinder") as THREE.Mesh | undefined;
+            if (cyl) {
+              const mat = cyl.material as THREE.MeshBasicMaterial;
+              if (mat.map) mat.map.dispose();
+              mat.map = blendedTex;
+              mat.needsUpdate = true;
+            }
+            const sky = panoMeshEnhancedRef.current.getObjectByName("pano_sky_cap") as THREE.Mesh | undefined;
+            const ground = panoMeshEnhancedRef.current.getObjectByName("pano_ground_cap") as THREE.Mesh | undefined;
+            if (cyl && sky && ground && enhancedImg.naturalWidth && enhancedImg.naturalHeight) {
+              const canvasAspect = enhancedImg.naturalWidth / ((enhancedImg.naturalHeight * 0.78) * 2);
+              const targetH = Math.max(200, (2 * Math.PI * 60) / Math.max(1.8, Math.min(4.5, canvasAspect)));
+              cyl.scale.set(-1, targetH / 200, 1);
+              sky.position.y = targetH / 2;
+              ground.position.y = -targetH / 2;
+            }
           }
         } catch (_err) {}
       };
@@ -642,6 +741,13 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       const list = PANORAMA_STATIONS[siteKey];
       const clamped = Math.max(0, Math.min(list.length - 1, idx));
       setActiveStationIdx(clamped);
+      const stn = list[clamped];
+      if (stn?.headingOffsetDeg !== undefined) {
+        yawRef.current = (stn.headingOffsetDeg * Math.PI) / 180;
+        setCamAzimuth(Math.round(stn.headingOffsetDeg));
+      }
+      pitchRef.current = (-3 * Math.PI) / 180;
+      setCamPitch(-3);
       setStationJumpingNotice(true);
       setTimeout(() => setStationJumpingNotice(false), 1200);
       loadStationPanorama(clamped);
@@ -699,17 +805,18 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const originY = getTerrainHeight(originX, originZ, wpId) + 4.2;
     targetCamPosRef.current.set(originX, originY, originZ);
     isLerpingCamRef.current = true;
-    yawRef.current = 0;
-    pitchRef.current = (-8 * Math.PI) / 180;
-    fovRef.current = 65;
+    const currentStn = stationList[activeStationIdxRef.current] || stationList[0];
+    yawRef.current = (currentStn.headingOffsetDeg * Math.PI) / 180;
+    pitchRef.current = (-3 * Math.PI) / 180;
+    fovRef.current = 52;
     if (cameraRef.current) {
-      cameraRef.current.fov = 65;
+      cameraRef.current.fov = 52;
       cameraRef.current.updateProjectionMatrix();
     }
-    setCamAzimuth(0);
-    setCamPitch(-8);
-    setCamFov(65);
-  }, [wpId]);
+    setCamAzimuth(Math.round(currentStn.headingOffsetDeg));
+    setCamPitch(-3);
+    setCamFov(52);
+  }, [wpId, stationList]);
 
   // Three.js Scene Setup & Render Loop
   useEffect(() => {
@@ -723,8 +830,8 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const skyClearColor = dustStormActive ? 0x240e06 : 0x3b2316;
-    const fogColor = dustStormActive ? 0x6b2e10 : 0x5c3520;
+    const skyClearColor = dustStormActive ? 0x240e06 : 0xb07c5e;
+    const fogColor = dustStormActive ? 0x6b2e10 : 0xb07c5e;
     const fogDensity = dustStormActive ? 0.032 : 0.007;
     scene.background = new THREE.Color(skyClearColor);
     scene.fog = new THREE.FogExp2(fogColor, fogDensity);
@@ -769,30 +876,94 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
     sunLight.position.set(35, 45, 25);
     scene.add(sunLight);
 
-    // 5. 360° Spherical Panorama Meshes (Natural & Enhanced)
-    const panoGeom = new THREE.SphereGeometry(60, 64, 32);
-    panoGeom.scale(-1, 1, 1);
+    // 5. 360° Cylindrical Panorama Groups (Natural & Enhanced)
+    // Radius 60 matches the natural human ground scale on Mars.
+    // The cylinder geometry maintains 100% flat horizon with zero bowl curvature.
+    const cylGeom = new THREE.CylinderGeometry(60, 60, 200, 64, 1, true);
+    cylGeom.scale(-1, 1, 1);
+
+    const skyCapGeom = new THREE.CircleGeometry(60, 64);
+    skyCapGeom.rotateX(Math.PI / 2);
+
+    const groundCapGeom = new THREE.CircleGeometry(60, 64);
+    groundCapGeom.rotateX(-Math.PI / 2);
+
+    // Natural Color Panorama Group
+    const panoGroupNatural = new THREE.Group();
+    panoGroupNatural.name = "rover_360_natural";
+    panoGroupNatural.position.copy(camPosRef.current);
 
     const panoMatNatural = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
       toneMapped: false,
     });
-    const panoMeshNatural = new THREE.Mesh(panoGeom, panoMatNatural);
-    panoMeshNatural.name = "rover_360_natural";
-    panoMeshNatural.position.copy(camPosRef.current);
-    scene.add(panoMeshNatural);
-    panoMeshNaturalRef.current = panoMeshNatural;
+    const cylMeshNatural = new THREE.Mesh(cylGeom, panoMatNatural);
+    cylMeshNatural.name = "pano_cylinder";
+    panoGroupNatural.add(cylMeshNatural);
+
+    const skyTexNatural = createSkyCapTexture(dustStormActive, "natural");
+    const skyMatNatural = new THREE.MeshBasicMaterial({
+      map: skyTexNatural,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    const skyMeshNatural = new THREE.Mesh(skyCapGeom, skyMatNatural);
+    skyMeshNatural.name = "pano_sky_cap";
+    skyMeshNatural.position.y = 100;
+    panoGroupNatural.add(skyMeshNatural);
+
+    const groundTexNatural = createGroundCapTexture(dustStormActive, "natural");
+    const groundMatNatural = new THREE.MeshBasicMaterial({
+      map: groundTexNatural,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    const groundMeshNatural = new THREE.Mesh(groundCapGeom, groundMatNatural);
+    groundMeshNatural.name = "pano_ground_cap";
+    groundMeshNatural.position.y = -100;
+    panoGroupNatural.add(groundMeshNatural);
+
+    scene.add(panoGroupNatural);
+    panoMeshNaturalRef.current = panoGroupNatural;
+
+    // Enhanced Geological False-Color Panorama Group
+    const panoGroupEnhanced = new THREE.Group();
+    panoGroupEnhanced.name = "rover_360_enhanced";
+    panoGroupEnhanced.position.copy(camPosRef.current);
+    panoGroupEnhanced.visible = false;
 
     const panoMatEnhanced = new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
       toneMapped: false,
     });
-    const panoMeshEnhanced = new THREE.Mesh(panoGeom, panoMatEnhanced);
-    panoMeshEnhanced.name = "rover_360_enhanced";
-    panoMeshEnhanced.position.copy(camPosRef.current);
-    panoMeshEnhanced.visible = false;
-    scene.add(panoMeshEnhanced);
-    panoMeshEnhancedRef.current = panoMeshEnhanced;
+    const cylMeshEnhanced = new THREE.Mesh(cylGeom, panoMatEnhanced);
+    cylMeshEnhanced.name = "pano_cylinder";
+    panoGroupEnhanced.add(cylMeshEnhanced);
+
+    const skyTexEnhanced = createSkyCapTexture(dustStormActive, "enhanced");
+    const skyMatEnhanced = new THREE.MeshBasicMaterial({
+      map: skyTexEnhanced,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    const skyMeshEnhanced = new THREE.Mesh(skyCapGeom, skyMatEnhanced);
+    skyMeshEnhanced.name = "pano_sky_cap";
+    skyMeshEnhanced.position.y = 100;
+    panoGroupEnhanced.add(skyMeshEnhanced);
+
+    const groundTexEnhanced = createGroundCapTexture(dustStormActive, "enhanced");
+    const groundMatEnhanced = new THREE.MeshBasicMaterial({
+      map: groundTexEnhanced,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
+    const groundMeshEnhanced = new THREE.Mesh(groundCapGeom, groundMatEnhanced);
+    groundMeshEnhanced.name = "pano_ground_cap";
+    groundMeshEnhanced.position.y = -100;
+    panoGroupEnhanced.add(groundMeshEnhanced);
+
+    scene.add(panoGroupEnhanced);
+    panoMeshEnhancedRef.current = panoGroupEnhanced;
 
     // Load initial panorama textures
     const initialSource =
@@ -990,9 +1161,19 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
       renderer.dispose();
-      panoGeom.dispose();
+      cylGeom.dispose();
+      skyCapGeom.dispose();
+      groundCapGeom.dispose();
       panoMatNatural.dispose();
       panoMatEnhanced.dispose();
+      skyMatNatural.dispose();
+      groundMatNatural.dispose();
+      skyMatEnhanced.dispose();
+      groundMatEnhanced.dispose();
+      skyTexNatural.dispose();
+      groundTexNatural.dispose();
+      skyTexEnhanced.dispose();
+      groundTexEnhanced.dispose();
       terrainGeom.dispose();
       terrainMaterial.dispose();
       reliefContourTex.dispose();
@@ -1162,11 +1343,14 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
         hasDraggedRef.current = true;
       }
 
-      const sens = 0.0035;
+      const sens = 0.003;
       yawRef.current = pointerStartRef.current.startYaw - dx * sens;
+      // Realistic tactical rover pitch bounds: -26° (looking down at tracks) to +20° (looking up at rim)
+      const minPitch = (-26 * Math.PI) / 180;
+      const maxPitch = (20 * Math.PI) / 180;
       pitchRef.current = Math.max(
-        -1.3,
-        Math.min(1.3, pointerStartRef.current.startPitch + dy * sens)
+        minPitch,
+        Math.min(maxPitch, pointerStartRef.current.startPitch + dy * sens)
       );
 
       if (now - lastCamStateUpdateRef.current >= 32) {
@@ -1255,8 +1439,9 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (!cameraRef.current) return;
-    const delta = e.deltaY * 0.05;
-    const newFov = Math.max(30, Math.min(85, fovRef.current + delta));
+    const delta = e.deltaY * 0.04;
+    // Keep FOV between 35° (optical telephoto) and 65° (natural human vista, zero fish-eye barrel distortion)
+    const newFov = Math.max(35, Math.min(65, fovRef.current + delta));
     fovRef.current = newFov;
     cameraRef.current.fov = newFov;
     cameraRef.current.updateProjectionMatrix();
