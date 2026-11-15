@@ -259,6 +259,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const zoiMarkersRef = useRef<Marker[]>([]);
   const viewshedMarkerRef = useRef<Marker | null>(null);
   const scrubMarkerRef = useRef<Marker | null>(null);
+  const landmarkMarkersRef = useRef<Marker[]>([]);
 
   const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
   const [showGraticule, setShowGraticule] = useState<boolean>(false);
@@ -336,6 +337,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       style: {
         version: 8,
         sources: {
+          mars_openplanetary: {
+            type: "raster",
+            tiles: [
+              "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            attribution: "OpenPlanetary / CARTO / USGS Shaded Relief Basemap",
+            maxzoom: 18,
+          },
           mars_viking_basemap: {
             type: "raster",
             tiles: ["/api/mars-tiles/viking-mdim21/{z}/{y}/{x}"],
@@ -368,11 +378,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             paint: { "background-color": isDark ? "#06080d" : "#e2e8f0" },
           },
           {
-            id: "mars-true-color-underlay",
-            type: "background",
+            id: "mars-raster-openplanetary",
+            type: "raster",
+            source: "mars_openplanetary",
+            layout: {
+              visibility: "visible",
+            },
             paint: {
-              "background-color": isDark ? "#8f371a" : "#b44c28",
-              "background-opacity": 0.88,
+              "raster-opacity": 1.0,
+              "raster-contrast": 0.28,
+              "raster-saturation": 0.12,
             },
           },
           {
@@ -380,10 +395,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "raster",
             source: "mars_viking_basemap",
             layout: {
-              visibility: tileMode === "live_trek" ? "visible" : "none",
+              visibility: tileMode === "live_trek" && orbitalSource !== "opm_basemap" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 1.0,
+              "raster-opacity": 0.9,
               "raster-contrast": 0.25,
               "raster-saturation": 0.15,
             },
@@ -460,7 +475,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         filter: ["==", "$type", "Polygon"],
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.75,
+          "fill-opacity": 0.0,
         },
       });
 
@@ -470,9 +485,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "mars_procedural_terrain",
         filter: ["==", "$type", "LineString"],
         paint: {
-          "line-color": ["get", "color"],
-          "line-width": 1.5,
-          "line-opacity": 0.85,
+          "line-color": "#ffffff",
+          "line-width": 1.2,
+          "line-opacity": 0.4,
+          "line-dasharray": [4, 3],
         },
       });
 
@@ -492,7 +508,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.32,
+          "fill-opacity": 0.16,
         },
       });
 
@@ -506,7 +522,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         paint: {
           "line-color": ["get", "color"],
           "line-width": 1.5,
-          "line-opacity": 0.9,
+          "line-opacity": 0.85,
+          "line-dasharray": [3, 2],
         },
       });
 
@@ -671,7 +688,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "marswalk_route_source",
         paint: {
           "line-color": "#07090e",
-          "line-width": 4.5,
+          "line-width": 5.5,
           "line-opacity": 0.95,
         },
       });
@@ -686,7 +703,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             ["get", "color"],
             "#10b981"
           ],
-          "line-width": 3.0,
+          "line-width": 3.5,
         },
       });
 
@@ -704,15 +721,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "circle",
         source: "marswalk_route_dots_source",
         paint: {
-          "circle-radius": 2.2,
+          "circle-radius": 3.0,
           "circle-color": [
             "coalesce",
             ["get", "color"],
             "#ffffff"
           ],
-          "circle-stroke-width": 1.0,
+          "circle-stroke-width": 1.2,
           "circle-stroke-color": "#07090e",
-          "circle-opacity": 0.9,
+          "circle-opacity": 0.95,
         },
       });
 
@@ -1260,6 +1277,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     const isLive = tileMode === "live_trek";
 
+    // 0. OpenPlanetary Global Shaded Relief Basemap
+    if (map.getLayer("mars-raster-openplanetary")) {
+      map.setLayoutProperty("mars-raster-openplanetary", "visibility", "visible");
+    }
+
     // 1. Viking MDIM 2.1 Basemap (always visible when live_trek is on)
     if (map.getLayer("mars-raster-viking")) {
       map.setLayoutProperty("mars-raster-viking", "visibility", isLive ? "visible" : "none");
@@ -1542,48 +1564,50 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       const has360 = wp.has360Pov || !!(wp as any).customPanoramaUrl;
       const wpNumber = idx + 1;
 
-      // Image 2 MMGIS Standard: Circular Camera Badge with Sol / Index Number
+      // Image 2 MMGIS Standard: Circular Camera Badge with Sol / Index Number & Connecting Pin Stem
       if (has360) {
         el.innerHTML = `
-          <div class="relative flex flex-col items-center">
-            <div class="flex items-center justify-center gap-1 px-2 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-[1.5px] ${
-              isSelected ? "border-cyan-300 ring-2 ring-cyan-400" : "border-[#06b6d4]"
-            } font-mono font-black text-[9px] shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-transform group-hover:scale-110">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+          <div class="relative flex flex-col items-center group">
+            <div class="flex items-center justify-center gap-1.5 px-2.5 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${
+              isSelected ? "border-cyan-300 ring-4 ring-cyan-400/60" : "border-[#06b6d4]"
+            } font-mono font-black text-[9px] shadow-[0_0_12px_rgba(6,182,212,0.7)] transition-transform group-hover:scale-115">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
-              <span>360°</span>
+              <span>360° POV</span>
             </div>
-            <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
+            <div class="w-0.5 h-2 bg-[#06b6d4] -mt-0.5"></div>
+            <div class="whitespace-nowrap px-2 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${
               isSelected
                 ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-                : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4]"
+                : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4] shadow-md"
             }">
-              ${wp.name.split(" ")[0]}
+              [360°] ${wp.name}
             </div>
           </div>
         `;
       } else {
         el.innerHTML = `
-          <div class="relative flex flex-col items-center">
-            <div class="flex items-center justify-center gap-0.5 px-1.5 h-6 rounded-full ${
+          <div class="relative flex flex-col items-center group">
+            <div class="flex items-center justify-center gap-1 px-2 h-6.5 rounded-full ${
               isSelected
-                ? "bg-amber-400 text-slate-950 border-[1.5px] border-amber-200 ring-2 ring-amber-500"
-                : "bg-white text-slate-900 border-[1.5px] border-slate-900"
-            } font-mono font-black text-[9px] shadow-sm transition-transform group-hover:scale-110">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-500/60"
+                : "bg-white text-slate-950 border-2 border-slate-900"
+            } font-mono font-black text-[9px] shadow-md transition-transform group-hover:scale-115">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
               <span>${wpNumber}</span>
             </div>
-            <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
+            <div class="w-0.5 h-1.5 ${isSelected ? "bg-amber-400" : "bg-slate-900"} -mt-0.5"></div>
+            <div class="whitespace-nowrap px-1.5 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${
               isSelected
                 ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
                 : isDark
-                ? "bg-[#0b0f17] text-slate-300 border border-slate-700"
+                ? "bg-[#0b0f17] text-slate-200 border border-slate-700 shadow-sm"
                 : "bg-white text-slate-800 border border-slate-300 shadow-sm"
             }">
-              ${wp.name.split(" ")[0]}
+              ${wp.name}
             </div>
           </div>
         `;
@@ -1592,7 +1616,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectWaypoint(wp);
-        map.flyTo({ center: wp.coordinates, zoom: 12.5, duration: 600 });
+        map.flyTo({ center: wp.coordinates, zoom: 12.8, duration: 600 });
       });
 
       // Double-click or clicking on a 360 waypoint directly launches 360 POV Modal
@@ -1610,6 +1634,43 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       markersRef.current.push(marker);
     });
   }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints]);
+
+  // Render Martian Topographic Landmarks & Geomorphic Formations (Ref Image 2 & 3 Standard)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    landmarkMarkersRef.current.forEach((m) => m.remove());
+    landmarkMarkersRef.current = [];
+
+    const galeLandmarks = [
+      { name: "MOUNT SHARP", sub: "AEOLIS MONS // -3,912M", coords: [137.8414, -5.4453] as [number, number] },
+      { name: "BOXWORK VEINS 2025", sub: "MINERAL DISCOVERY SITE", coords: [137.8350, -5.4520] as [number, number] },
+      { name: "VERA RUBIN RIDGE", sub: "HEMATITE CAPROCK", coords: [137.5684, -4.9281] as [number, number] },
+      { name: "GLEN TORRIDON", sub: "SMECTITE CLAY TROUGH", coords: [137.4042, -4.7561] as [number, number] },
+      { name: "BRADBURY LANDING", sub: "TOUCHDOWN SOL 0 // -4,501M", coords: [137.4417, -4.5895] as [number, number] },
+      { name: "GEDIZ VALLIS", sub: "DEBRIS FLOW CHANNEL", coords: [137.7120, -5.2150] as [number, number] },
+      { name: "YELLOWKNIFE BAY", sub: "LACUSTRINE MUDSTONE", coords: [137.4520, -4.5950] as [number, number] },
+    ];
+
+    galeLandmarks.forEach((lm) => {
+      const el = document.createElement("div");
+      el.className = "pointer-events-none select-none flex flex-col items-center opacity-85 hover:opacity-100 transition-opacity";
+      el.innerHTML = `
+        <div class="px-1.5 py-0.5 bg-[#07090e]/95 border border-slate-700/80 text-[8px] font-mono font-bold tracking-wider text-slate-300 flex items-center gap-1 shadow-md">
+          <span class="w-1.5 h-1.5 bg-amber-400"></span>
+          <span>${lm.name}</span>
+        </div>
+        <div class="text-[7px] font-mono text-cyan-400 font-bold bg-black/80 px-1 border border-slate-800 -mt-0.5">
+          ${lm.sub}
+        </div>
+      `;
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(lm.coords)
+        .addTo(map);
+      landmarkMarkersRef.current.push(marker);
+    });
+  }, [currentSite]);
 
   // Render Custom Click Pin Marker
   useEffect(() => {
