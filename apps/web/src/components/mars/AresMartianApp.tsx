@@ -243,20 +243,9 @@ export const AresMartianApp: React.FC = () => {
     setCurrentSite(site);
     const siteWaypoints = getWaypointsForSite(site);
     setSelectedWaypoint(siteWaypoints[1] || siteWaypoints[0]);
-    try {
-      const defaultStart = site === "gale_crater" ? "gale_hab_alpha" : "jzr_hab_alpha";
-      const defaultTarget = site === "gale_crater" ? "curiosity_boxwork_2025" : "jzr_three_forks_delta";
-      const newRoute = planMarswalkRoute({
-        startWaypointId: defaultStart,
-        targetWaypointId: defaultTarget,
-        supportMode: "PAIRED_CREW_MULE_ROVER",
-        avoidHighRadiationRidges: true,
-      });
-      setActiveRoute(newRoute);
-      setIsProfileDockOpen(true);
-    } catch {
-      // fallback
-    }
+    // Clear any active route and close profile dock so the map remains clean and unobstructed
+    setActiveRoute(null);
+    setIsProfileDockOpen(false);
   }, []);
 
   const activeTraverseSols = useMemo(() => {

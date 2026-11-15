@@ -88,6 +88,8 @@ interface AresMapViewerProps {
     distanceRemainingKm: number;
     headingDeg: number;
   }) => void;
+  onCursorTelemetryUpdate?: (telemetry: { lat: number; lon: number; elev: number; slope: number } | null) => void;
+  onScaleUpdate?: (scale: { label: string; widthPx: number }) => void;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -284,6 +286,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   aerialFlightTarget = null,
   onAerialFlightComplete,
   onAerialTelemetryUpdate,
+  onCursorTelemetryUpdate,
+  onScaleUpdate,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -362,7 +366,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     const widthPx = Math.max(30, Math.min(180, Math.round(chosenM / mpp)));
     const label = chosenM >= 1000 ? `${chosenM / 1000} KM` : `${chosenM} M`;
     setScaleBar({ widthPx, label });
-  }, []);
+    onScaleUpdate?.({ widthPx, label });
+  }, [onScaleUpdate]);
 
   // Primary MapLibre Instance Initialization
   useEffect(() => {
@@ -935,7 +940,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         const elev = getMartianElevation(lon, lat, currentSite);
         const slope = getMartianSlope(lon, lat, currentSite);
         setCursorTelemetry({ lat, lon, elev, slope });
+        onCursorTelemetryUpdate?.({ lat, lon, elev, slope });
       });
+    });
+
+    map.on("mouseout", () => {
+      setCursorTelemetry(null);
+      onCursorTelemetryUpdate?.(null);
     });
 
     // Throttled Move & Scale Update
@@ -998,7 +1009,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           </svg>
         </div>
         <div class="mt-1 px-1.5 py-0.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-mono text-[8px] font-bold tracking-wider whitespace-nowrap shadow-md">
-          ✈ AERIAL SCOUT-01 // ${aerialFlightTarget.altitudeM}m
+          [AERIAL SCOUT-01] // ${aerialFlightTarget.altitudeM}m
         </div>
       </div>
     `;
@@ -2366,50 +2377,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* Main Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* 3. Bottom HUD: Live Cursor Telemetry & Dynamic Metric Scale Bar */}
-      <div className="absolute bottom-2 left-3 right-3 z-20 flex items-center justify-between pointer-events-none font-mono text-[9px]">
-        {/* Live Cursor Telemetry */}
-        <div className="px-2 py-1 bg-[#07090e]/95 border border-slate-800 text-slate-300 flex items-center gap-3 tabular-nums select-none">
-          <span className="text-slate-400 font-bold uppercase tracking-wider">CURSOR:</span>
-          {cursorTelemetry ? (
-            <>
-              <div>
-                <span className="text-slate-400">{tMmgis("cursorLat")}: </span>
-                <span className="text-cyan-400 font-bold">{cursorTelemetry.lat}°</span>
-              </div>
-              <div>
-                <span className="text-slate-400">{tMmgis("cursorLon")}: </span>
-                <span className="text-cyan-400 font-bold">{cursorTelemetry.lon}°</span>
-              </div>
-              <div>
-                <span className="text-slate-400">{tMmgis("cursorElev")}: </span>
-                <span className="text-amber-400 font-bold">{cursorTelemetry.elev} M</span>
-              </div>
-              <div>
-                <span className="text-slate-400">{tMmgis("cursorSlope")}: </span>
-                <span className="text-purple-400 font-bold">{cursorTelemetry.slope}°</span>
-              </div>
-            </>
-          ) : (
-            <span className="text-slate-400">SCANNING MARTIAN SURFACE...</span>
-          )}
-        </div>
-
-        {/* Dynamic Metric Scale Bar */}
-        <div className="px-2 py-1 bg-[#07090e]/95 border border-slate-800 text-slate-300 flex items-center gap-2 select-none">
-          <span className="text-slate-400 font-bold uppercase text-[8px]">{tMmgis("scaleBar")}</span>
-          <div className="flex flex-col items-center">
-            <span className="text-[8px] text-amber-400 font-bold tabular-nums leading-none mb-0.5">
-              {scaleBar.label}
-            </span>
-            <div
-              style={{ width: `${scaleBar.widthPx}px` }}
-              className="h-1 border-x border-b border-amber-400"
-            />
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

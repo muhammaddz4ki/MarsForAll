@@ -310,27 +310,62 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     pool[1]; // default curiosity_boxwork_2025
 
   const profile = MODE_PROFILES[options.supportMode];
-  const corridors = getTopographicCorridorNodes();
+  const isJezero = startWp.coordinates[0] < 100 || targetWp.coordinates[0] < 100;
+  const siteWaypoints = pool.filter((w) => isJezero ? (w.coordinates[0] < 100) : (w.coordinates[0] > 100));
+  const corridors = getTopographicCorridorNodes().filter((c) => isJezero ? (c.coordinates[0] < 100) : (c.coordinates[0] > 100));
 
-  // Graph vertices
-  const allNodes: NavNode[] = [
-    {
-      id: startWp.id,
-      coordinates: startWp.coordinates,
-      elevationM: startWp.elevationM,
-      radiationMSvSol: startWp.surfaceRadiationMSvSol,
-    },
-    ...corridors,
-    {
-      id: targetWp.id,
-      coordinates: targetWp.coordinates,
-      elevationM: targetWp.elevationM,
-      radiationMSvSol: targetWp.surfaceRadiationMSvSol,
-    },
-  ];
+  // Graph vertices: Combine start, target, all site scientific waypoints, and intermediate passes
+  const allNodes: NavNode[] = [];
+  const nodeMap = new Map<string, NavNode>();
 
-  // Build adjacency with terrain cost calculation
-  // A* implementation over the navigation corridor
+  const registerNode = (n: NavNode) => {
+    if (!nodeMap.has(n.id)) {
+      nodeMap.set(n.id, n);
+      allNodes.push(n);
+    }
+  };
+
+  registerNode({
+    id: startWp.id,
+    name: startWp.name,
+    coordinates: startWp.coordinates,
+    elevationM: startWp.elevationM,
+    radiationMSvSol: startWp.surfaceRadiationMSvSol,
+    sandTrapRisk: startWp.sandTrapRisk,
+    surfaceFirmness: startWp.surfaceFirmness,
+    crustalMagneticFieldNt: startWp.crustalMagneticFieldNt,
+  });
+
+  registerNode({
+    id: targetWp.id,
+    name: targetWp.name,
+    coordinates: targetWp.coordinates,
+    elevationM: targetWp.elevationM,
+    radiationMSvSol: targetWp.surfaceRadiationMSvSol,
+    sandTrapRisk: targetWp.sandTrapRisk,
+    surfaceFirmness: targetWp.surfaceFirmness,
+    crustalMagneticFieldNt: targetWp.crustalMagneticFieldNt,
+  });
+
+  for (const wp of siteWaypoints) {
+    registerNode({
+      id: wp.id,
+      name: wp.name,
+      coordinates: wp.coordinates,
+      elevationM: wp.elevationM,
+      radiationMSvSol: wp.surfaceRadiationMSvSol,
+      sandTrapRisk: wp.sandTrapRisk,
+      surfaceFirmness: wp.surfaceFirmness,
+      crustalMagneticFieldNt: wp.crustalMagneticFieldNt,
+    });
+  }
+
+  for (const c of corridors) {
+    registerNode(c);
+  }
+
+  // Build adjacency with multi-criteria terrain cost calculation
+  // A* implementation over the complete interconnected navigation network
   const distMatrix = new Map<string, Map<string, { distanceKm: number; cost: number; slopeDeg: number }>>();
 
   for (const a of allNodes) {
@@ -342,14 +377,14 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
       const isTerminalB = b.id === startWp.id || b.id === targetWp.id;
       const dist = calculateMartianDistanceKm(a.coordinates, b.coordinates);
 
-      // Max corridor connection threshold: 14 km for intermediate corridors, 32 km for terminals
-      const maxDistLimit = isTerminalA || isTerminalB ? 32.0 : 14.5;
+      // Threshold: up to 24 km for network edges, 42 km for start/target endpoints
+      const maxDistLimit = isTerminalA || isTerminalB ? 42.0 : 24.0;
 
       if (dist < maxDistLimit) {
         const elevDiff = b.elevationM - a.elevationM;
         const slopeDeg = Math.abs(Math.atan2(Math.abs(elevDiff), dist * 1000.0) * (180.0 / Math.PI));
 
-        // Hard exclusion if slope exceeds mode maxHardSlopeDeg
+        // Hard exclusion: Impassable cliffs exceeding mode limits
         if (slopeDeg > profile.maxHardSlopeDeg) {
           continue;
         }
@@ -357,16 +392,22 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
         const terrainCost = computeTerrainImpedance(slopeDeg);
         if (!isFinite(terrainCost)) continue;
 
-        // Sand trap penalty: loose aeolian dune fields (elevation < -4450m in northern Gale or low basins)
-        const isSandRisk = b.elevationM < -4480 || (b.coordinates[0] > 137.48 && b.coordinates[1] < -4.68 && b.elevationM < -4380);
-        const sandTrapMultiplier = isSandRisk ? 2.8 : 1.0;
+        // Sand trap penalty: Loose aeolian dust/sand traps (Morgan et al. 2020)
+        // High risk incurs severe 15.0x cost multiplier forcing A* to find firm bedrock corridors
+        const bSandRisk = b.sandTrapRisk ?? (b.elevationM < -4480 ? "HIGH" : "LOW");
+        const sandTrapMultiplier =
+          bSandRisk === "HIGH" ? 15.0 : bSandRisk === "MODERATE" ? 2.5 : 0.85;
+
+        // MGS MAG crustal magnetic natural radiation shielding bonus
+        const bMag = b.crustalMagneticFieldNt ?? 38;
+        const magBonus = bMag >= 42 ? 0.75 : bMag >= 35 ? 0.90 : 1.0;
 
         // Radiation penalty along exposed high ridges (>0.68 mSv/sol)
         const radFactor = options.avoidHighRadiationRidges
-          ? (b.radiationMSvSol > 0.68 ? 1.45 : b.radiationMSvSol < 0.63 ? 0.88 : 1.0)
+          ? (b.radiationMSvSol > 0.68 ? 1.55 : b.radiationMSvSol < 0.63 ? 0.85 : 1.0)
           : 1.0;
 
-        const totalEdgeCost = dist * terrainCost * sandTrapMultiplier * radFactor;
+        const totalEdgeCost = dist * terrainCost * sandTrapMultiplier * magBonus * radFactor;
 
         distMatrix.get(a.id)!.set(b.id, { distanceKm: dist, cost: totalEdgeCost, slopeDeg });
       }
@@ -388,7 +429,6 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
   fScore.set(startWp.id, calculateMartianDistanceKm(startWp.coordinates, targetWp.coordinates));
 
   while (openSet.size > 0) {
-    // Current node with lowest fScore
     let currentId = Array.from(openSet).reduce((lowest, node) =>
       (fScore.get(node) ?? Infinity) < (fScore.get(lowest) ?? Infinity) ? node : lowest
     );
@@ -426,13 +466,24 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     }
   }
 
-  // Fallback if disconnected: direct line
+  // Fallback if disconnected: find nearest corridor to bridge rather than raw direct line
   if (pathNodeIds.length <= 1) {
     pathNodeIds.length = 0;
-    pathNodeIds.push(startWp.id, targetWp.id);
+    // Find closest node to start and target
+    const intermediate = corridors.sort((c1, c2) => {
+      const d1 = calculateMartianDistanceKm(startWp.coordinates, c1.coordinates) + calculateMartianDistanceKm(c1.coordinates, targetWp.coordinates);
+      const d2 = calculateMartianDistanceKm(startWp.coordinates, c2.coordinates) + calculateMartianDistanceKm(c2.coordinates, targetWp.coordinates);
+      return d1 - d2;
+    })[0];
+
+    if (intermediate) {
+      pathNodeIds.push(startWp.id, intermediate.id, targetWp.id);
+    } else {
+      pathNodeIds.push(startWp.id, targetWp.id);
+    }
   }
 
-  // Synthesize segments
+  // Synthesize segments with turn-by-turn navigation instructions
   const segments: RouteSegment[] = [];
   let totalDistKm = 0;
   let cumAscent = 0;
@@ -471,9 +522,15 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
       const segRad = (nodeA.radiationMSvSol / 24.66) * segHours;
 
       const nodeBWp = pool.find((w) => w.id === nodeB.id);
-      const segSandRisk: SandTrapRiskLevel = nodeBWp?.sandTrapRisk ?? (nodeB.elevationM > -4100 ? "LOW" : "MODERATE");
-      const segFirmness: SurfaceFirmnessStatus = nodeBWp?.surfaceFirmness ?? (segSandRisk === "HIGH" ? "SOFT SAND TRAP RISK" : segSandRisk === "MODERATE" ? "MODERATE COMPACTION" : "BEDROCK FIRM");
-      const segMagNt = nodeBWp?.crustalMagneticFieldNt ?? 38;
+      const segSandRisk: SandTrapRiskLevel = nodeBWp?.sandTrapRisk ?? nodeB.sandTrapRisk ?? (nodeB.elevationM > -4100 ? "LOW" : "MODERATE");
+      const segFirmness: SurfaceFirmnessStatus = nodeBWp?.surfaceFirmness ?? nodeB.surfaceFirmness ?? (segSandRisk === "HIGH" ? "SOFT SAND TRAP RISK" : segSandRisk === "MODERATE" ? "MODERATE COMPACTION" : "BEDROCK FIRM");
+      const segMagNt = nodeBWp?.crustalMagneticFieldNt ?? nodeB.crustalMagneticFieldNt ?? 38;
+
+      // Calculate compass bearings and turn maneuver
+      const bearingDeg = calculateBearingDeg(nodeA.coordinates, nodeB.coordinates);
+      const cardinal = getCardinalDirection(bearingDeg);
+      const prevBearing = i > 0 ? calculateBearingDeg(segments[i - 1].fromCoordinate, segments[i - 1].toCoordinate) : null;
+      const turnType = classifyTurnType(prevBearing, bearingDeg);
 
       let isHazard = false;
       let hazardDesc = "";
@@ -484,11 +541,53 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
       }
       if (segSandRisk === "HIGH") {
         isHazard = true;
-        hazardDesc = `SAND TRAP RISK: Soft regolith drift near ${nodeB.id} presents high entrapment/sinkage hazard.`;
+        hazardDesc = `SAND TRAP RISK: Soft regolith drift near ${nodeB.name || nodeB.id} presents high entrapment/sinkage hazard.`;
         hazardAlerts.push(hazardDesc);
       }
       if (nodeB.radiationMSvSol > 0.72) {
-        hazardAlerts.push(`High radiation ridge crossing near ${nodeB.id} (${nodeB.radiationMSvSol.toFixed(2)} mSv/sol).`);
+        hazardAlerts.push(`High radiation ridge crossing near ${nodeB.name || nodeB.id} (${nodeB.radiationMSvSol.toFixed(2)} mSv/sol).`);
+      }
+
+      // Generate localized turn-by-turn maneuver instruction
+      let instructionEn = "";
+      let instructionId = "";
+      const destName = nodeB.name || `Waypoint #${i + 2}`;
+
+      if (turnType === "START") {
+        instructionEn = `Depart ${nodeA.name || "Habitat"} heading ${bearingDeg}° (${cardinal}) on verified ${segFirmness} corridor`;
+        instructionId = `Berangkat dari ${nodeA.name || "Habitat"} arah ${bearingDeg}° (${cardinal}) melintasi jalur ${segFirmness === "BEDROCK FIRM" ? "batuan padat" : "tanah stabil"}`;
+      } else if (i === pathNodeIds.length - 2) {
+        instructionEn = `${turnType === "STRAIGHT" ? "Continue straight" : turnType.replace("_", " ")} heading ${bearingDeg}° (${cardinal}) onto final approach to ${destName}`;
+        instructionId = `${turnType === "STRAIGHT" ? "Lanjut lurus" : "Belok"} arah ${bearingDeg}° (${cardinal}) menuju titik tujuan akhir ${destName}`;
+      } else if (turnType === "STRAIGHT") {
+        instructionEn = `Continue straight heading ${bearingDeg}° (${cardinal}) along ${segFirmness} for ${segDist.toFixed(1)} km`;
+        instructionId = `Lanjut lurus arah ${bearingDeg}° (${cardinal}) melintasi ${segFirmness === "BEDROCK FIRM" ? "batuan padat" : "tanah stabil"} sejauh ${segDist.toFixed(1)} km`;
+      } else if (turnType === "SLIGHT_LEFT") {
+        instructionEn = `Bear slight left heading ${bearingDeg}° (${cardinal}) towards ${destName}`;
+        instructionId = `Belok sedikit ke kiri arah ${bearingDeg}° (${cardinal}) menuju ${destName}`;
+      } else if (turnType === "LEFT") {
+        instructionEn = `Turn left heading ${bearingDeg}° (${cardinal}) towards ${destName}`;
+        instructionId = `Belok kiri arah ${bearingDeg}° (${cardinal}) menuju ${destName}`;
+      } else if (turnType === "SHARP_LEFT") {
+        instructionEn = `Sharp switchback left heading ${bearingDeg}° (${cardinal}) ascending ridge towards ${destName}`;
+        instructionId = `Belok tajam berbalik ke kiri arah ${bearingDeg}° (${cardinal}) mendaki punggungan menuju ${destName}`;
+      } else if (turnType === "SLIGHT_RIGHT") {
+        instructionEn = `Bear slight right heading ${bearingDeg}° (${cardinal}) towards ${destName}`;
+        instructionId = `Belok sedikit ke kanan arah ${bearingDeg}° (${cardinal}) menuju ${destName}`;
+      } else if (turnType === "RIGHT") {
+        instructionEn = `Turn right heading ${bearingDeg}° (${cardinal}) towards ${destName}`;
+        instructionId = `Belok kanan arah ${bearingDeg}° (${cardinal}) menuju ${destName}`;
+      } else {
+        instructionEn = `Sharp switchback right heading ${bearingDeg}° (${cardinal}) ascending ridge towards ${destName}`;
+        instructionId = `Belok tajam berbalik ke kanan arah ${bearingDeg}° (${cardinal}) mendaki punggungan menuju ${destName}`;
+      }
+
+      if (segSandRisk === "HIGH") {
+        instructionEn += " — [ALERT] Avoid soft sand sink trap, maintain bedrock footing";
+        instructionId += " — [PERINGATAN] Hindari jebakan pasir lunak, pijak batuan padat";
+      } else if (segMagNt >= 42) {
+        instructionEn += ` — [SHIELD] Natural MGS MAG magnetic umbrella active (${segMagNt} nT)`;
+        instructionId += ` — [PERISAI] Perlindungan perisai magnetik alami MGS MAG (${segMagNt} nT)`;
       }
 
       segments.push({
@@ -509,6 +608,11 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
         crustalMagneticFieldNt: segMagNt,
         isHazardWarning: isHazard,
         hazardDescription: hazardDesc,
+        turnType,
+        bearingDeg,
+        cardinalDirection: cardinal,
+        maneuverInstruction: instructionEn,
+        maneuverInstructionId: instructionId,
       });
 
       totalDistKm += segDist;
