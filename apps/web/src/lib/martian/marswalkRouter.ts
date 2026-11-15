@@ -192,25 +192,48 @@ interface NavNode {
 }
 
 /**
- * Creates navigation intermediate corridors between Gale Crater points of interest.
+ * Creates navigation intermediate corridors between Gale Crater & Jezero Crater points of interest.
+ * Includes historically rover-verified corridors, gentle ridge ramps, clay troughs, and pass nodes.
  */
 function getTopographicCorridorNodes(): NavNode[] {
   return [
-    // Gale Crater Nav Corridors
+    // --- GALE CRATER / MOUNT SHARP CORRIDOR NETWORK ---
+    { id: "corr_bradbury_landing", coordinates: [137.4417, -4.5895], elevationM: -4501, radiationMSvSol: 0.62 },
+    { id: "corr_yellowknife_bay", coordinates: [137.4490, -4.5910], elevationM: -4520, radiationMSvSol: 0.61 },
+    { id: "corr_peace_vallis_fan", coordinates: [137.4350, -4.6150], elevationM: -4490, radiationMSvSol: 0.62 },
     { id: "corr_plains_01", coordinates: [137.4700, -4.6200], elevationM: -4460, radiationMSvSol: 0.63 },
     { id: "corr_plains_02", coordinates: [137.5200, -4.6800], elevationM: -4390, radiationMSvSol: 0.64 },
-    { id: "corr_gap_rubin_north", coordinates: [137.4100, -4.7000], elevationM: -4280, radiationMSvSol: 0.65 },
+    { id: "corr_dingo_gap", coordinates: [137.4050, -4.6550], elevationM: -4450, radiationMSvSol: 0.63 },
+    { id: "corr_kimberley", coordinates: [137.4000, -4.6850], elevationM: -4430, radiationMSvSol: 0.64 },
+    { id: "corr_pahrump_approach", coordinates: [137.3800, -4.7100], elevationM: -4400, radiationMSvSol: 0.64 },
+    { id: "corr_gap_rubin_north", coordinates: [137.4080, -4.7080], elevationM: -4280, radiationMSvSol: 0.65 },
     { id: "corr_rubin_pass", coordinates: [137.3750, -4.7350], elevationM: -4190, radiationMSvSol: 0.72 },
+    { id: "corr_rubin_south_gap", coordinates: [137.3950, -4.7380], elevationM: -4240, radiationMSvSol: 0.66 },
     { id: "corr_torridon_low", coordinates: [137.4120, -4.7450], elevationM: -4315, radiationMSvSol: 0.64 },
+    { id: "corr_torridon_east", coordinates: [137.4350, -4.7550], elevationM: -4290, radiationMSvSol: 0.63 },
+    { id: "corr_greenheugh_pediment", coordinates: [137.3850, -4.7700], elevationM: -4200, radiationMSvSol: 0.68 },
     { id: "corr_marker_approach", coordinates: [137.4150, -4.7800], elevationM: -4140, radiationMSvSol: 0.66 },
     { id: "corr_gediz_channel", coordinates: [137.4350, -4.8250], elevationM: -4020, radiationMSvSol: 0.70 },
+    { id: "corr_amalia_pass", coordinates: [137.4800, -4.8900], elevationM: -4050, radiationMSvSol: 0.68 },
+    { id: "corr_sharp_flank_north", coordinates: [137.5800, -4.9500], elevationM: -4120, radiationMSvSol: 0.65 },
     { id: "corr_boxwork_basin", coordinates: [137.6500, -5.0500], elevationM: -4080, radiationMSvSol: 0.66 },
+    { id: "corr_boxwork_west_bench", coordinates: [137.7100, -5.1800], elevationM: -4020, radiationMSvSol: 0.67 },
     { id: "corr_boxwork_approach", coordinates: [137.7800, -5.3200], elevationM: -3980, radiationMSvSol: 0.67 },
-    // Jezero Crater Nav Corridors
+    { id: "corr_boxwork_ridge_central", coordinates: [137.8200, -5.4100], elevationM: -3940, radiationMSvSol: 0.68 },
+    { id: "corr_boxwork_east_flank", coordinates: [137.8600, -5.4600], elevationM: -3900, radiationMSvSol: 0.69 },
+
+    // --- JEZERO CRATER CORRIDOR NETWORK ---
+    { id: "corr_jzr_butler_landing", coordinates: [77.4509, 18.3789], elevationM: -2569, radiationMSvSol: 0.61 },
+    { id: "corr_jzr_van_zyl", coordinates: [77.4450, 18.3720], elevationM: -2560, radiationMSvSol: 0.61 },
+    { id: "corr_jzr_seitah_pass", coordinates: [77.4410, 18.3720], elevationM: -2550, radiationMSvSol: 0.62 },
     { id: "corr_jzr_butler_west", coordinates: [77.4380, 18.3900], elevationM: -2560, radiationMSvSol: 0.61 },
     { id: "corr_jzr_delta_apron", coordinates: [77.4220, 18.4120], elevationM: -2530, radiationMSvSol: 0.60 },
-    { id: "corr_jzr_seitah_pass", coordinates: [77.4410, 18.3720], elevationM: -2550, radiationMSvSol: 0.62 },
+    { id: "corr_jzr_kodiak_saddle", coordinates: [77.4100, 18.4050], elevationM: -2510, radiationMSvSol: 0.60 },
+    { id: "corr_jzr_delta_top_channel", coordinates: [77.4150, 18.4280], elevationM: -2480, radiationMSvSol: 0.59 },
     { id: "corr_jzr_neretva_canyon", coordinates: [77.4300, 18.4480], elevationM: -2495, radiationMSvSol: 0.59 },
+    { id: "corr_jzr_belva_rim", coordinates: [77.4050, 18.4600], elevationM: -2460, radiationMSvSol: 0.58 },
+    { id: "corr_jzr_margin_carbonate", coordinates: [77.3850, 18.4350], elevationM: -2475, radiationMSvSol: 0.59 },
+    { id: "corr_jzr_cheyava_canyon", coordinates: [77.3750, 18.4800], elevationM: -2440, radiationMSvSol: 0.58 },
   ];
 }
 
@@ -252,12 +275,17 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
 
   for (const a of allNodes) {
     distMatrix.set(a.id, new Map());
+    const isTerminalA = a.id === startWp.id || a.id === targetWp.id;
+
     for (const b of allNodes) {
       if (a.id === b.id) continue;
+      const isTerminalB = b.id === startWp.id || b.id === targetWp.id;
       const dist = calculateMartianDistanceKm(a.coordinates, b.coordinates);
 
-      // Connect only nodes within plausible direct corridor visibility (< 35 km)
-      if (dist < 38.0) {
+      // Max corridor connection threshold: 14 km for intermediate corridors, 32 km for terminals
+      const maxDistLimit = isTerminalA || isTerminalB ? 32.0 : 14.5;
+
+      if (dist < maxDistLimit) {
         const elevDiff = b.elevationM - a.elevationM;
         const slopeDeg = Math.abs(Math.atan2(Math.abs(elevDiff), dist * 1000.0) * (180.0 / Math.PI));
 
@@ -269,9 +297,16 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
         const terrainCost = computeTerrainImpedance(slopeDeg);
         if (!isFinite(terrainCost)) continue;
 
-        // Radiation penalty along exposed ridges
-        const radFactor = options.avoidHighRadiationRidges ? (b.radiationMSvSol > 0.7 ? 1.4 : 1.0) : 1.0;
-        const totalEdgeCost = dist * terrainCost * radFactor;
+        // Sand trap penalty: loose aeolian dune fields (elevation < -4450m in northern Gale or low basins)
+        const isSandRisk = b.elevationM < -4480 || (b.coordinates[0] > 137.48 && b.coordinates[1] < -4.68 && b.elevationM < -4380);
+        const sandTrapMultiplier = isSandRisk ? 2.8 : 1.0;
+
+        // Radiation penalty along exposed high ridges (>0.68 mSv/sol)
+        const radFactor = options.avoidHighRadiationRidges
+          ? (b.radiationMSvSol > 0.68 ? 1.45 : b.radiationMSvSol < 0.63 ? 0.88 : 1.0)
+          : 1.0;
+
+        const totalEdgeCost = dist * terrainCost * sandTrapMultiplier * radFactor;
 
         distMatrix.get(a.id)!.set(b.id, { distanceKm: dist, cost: totalEdgeCost, slopeDeg });
       }

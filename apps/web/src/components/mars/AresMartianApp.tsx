@@ -33,6 +33,7 @@ import {
 } from "@/lib/martian/mmgisSpatialAnalysis";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import type { AerialScoutTarget } from "./MarsAerialScoutDock";
 
 export type SupportedLocale = "en" | "id" | "es" | "fr" | "zh";
 
@@ -79,6 +80,10 @@ const MarsGlobeViewer = dynamic(() => import("./MarsGlobeViewer"), {
 });
 
 const Custom360ManagerModal = dynamic(() => import("./Custom360ManagerModal"), {
+  ssr: false,
+});
+
+const MarsAerialScoutDock = dynamic(() => import("./MarsAerialScoutDock"), {
   ssr: false,
 });
 
@@ -189,6 +194,25 @@ export const AresMartianApp: React.FC = () => {
   const [pickedElevFor360, setPickedElevFor360] = useState<number | undefined>(undefined);
   const [isPicking360Coord, setIsPicking360Coord] = useState<boolean>(false);
   const [exportNotification, setExportNotification] = useState<string | null>(null);
+
+  // Mars Aerial Scout Drone States
+  const [isAerialDockOpen, setIsAerialDockOpen] = useState<boolean>(false);
+  const [aerialFlightTarget, setAerialFlightTarget] = useState<AerialScoutTarget | null>(null);
+  const [isAerialFlying, setIsAerialFlying] = useState<boolean>(false);
+  const [aerialFlightTelemetry, setAerialFlightTelemetry] = useState<any>(null);
+
+  const handleLaunchAerialFlight = useCallback((target: AerialScoutTarget) => {
+    setAerialFlightTarget(target);
+    setIsAerialFlying(true);
+    setExportNotification(`[AERIAL SCOUT LAUNCHED: ${target.label.toUpperCase()}]`);
+    setTimeout(() => setExportNotification(null), 3500);
+  }, []);
+
+  const handleAerialFlightComplete = useCallback((target: AerialScoutTarget) => {
+    setIsAerialFlying(false);
+    setExportNotification(`[AERIAL SCOUT ARRIVED: ${target.label.toUpperCase()}]`);
+    setTimeout(() => setExportNotification(null), 4000);
+  }, []);
 
   // Theme Sync on Mount & Toggle
   useEffect(() => {
@@ -551,6 +575,23 @@ export const AresMartianApp: React.FC = () => {
               </svg>
               <span>{tNav("helmetVisor")}</span>
             </button>
+
+            {/* MARS AERIAL SCOUT DRONE / PESAWAT ORBITER */}
+            <button
+              onClick={() => setIsAerialDockOpen((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-2 py-0.5 transition-colors border ${isAerialDockOpen
+                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                : isDark
+                  ? "bg-[#111827] text-cyan-400 hover:text-cyan-200 border-slate-700"
+                  : "bg-slate-100 text-cyan-700 hover:text-cyan-900 border-slate-300"
+                }`}
+              title="Mars Aerial Scout Drone: Fly to Coordinates"
+            >
+              <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+              </svg>
+              <span>AERIAL SCOUT</span>
+            </button>
           </div>
         </div>
 
@@ -874,6 +915,13 @@ export const AresMartianApp: React.FC = () => {
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
           onOpenPovModal={handleOpenPovModal}
           onAnalyzeProspector={handleAnalyzeProspector}
+          onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+          onOpenAnalogueMatcher={(wp: MountSharpWaypoint) => {
+            setSelectedWaypoint(wp);
+            setActiveTool("analogue");
+          }}
+          onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
+          isProfileDockOpen={isProfileDockOpen}
           onOpen360Manager={() => setIs360ManagerOpen(true)}
           custom360Waypoints={custom360List}
           hoveredRoutePoint={hoveredRoutePoint}
@@ -885,7 +933,22 @@ export const AresMartianApp: React.FC = () => {
           flyToCoord={navFlyToCoord}
           dustStormActive={dustStormActive}
           currentSol={currentSol}
+          aerialFlightTarget={aerialFlightTarget}
+          onAerialFlightComplete={handleAerialFlightComplete}
+          onAerialTelemetryUpdate={setAerialFlightTelemetry}
         />
+
+        {/* Mars Aerial Scout Drone Flight Dock (Input Koordinat & Terbang Pesawat) */}
+        {isAerialDockOpen && viewMode === "mission_control" && (
+          <MarsAerialScoutDock
+            currentSite={currentSite}
+            onLaunchFlight={handleLaunchAerialFlight}
+            onClose={() => setIsAerialDockOpen(false)}
+            isFlying={isAerialFlying}
+            flightTelemetry={aerialFlightTelemetry}
+            theme={theme}
+          />
+        )}
 
         {/* Floating Google Maps Martian Navigation HUD */}
         {activeRoute && viewMode === "mission_control" && (

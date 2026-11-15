@@ -18,6 +18,8 @@ import { MarswalkRouteResult, HighDensityPointTelemetry } from "@/lib/martian/ma
 import {
   OrbitalImagerySource,
   WmtsStreamStatus,
+  SurfaceFirmnessStatus,
+  SandTrapRiskLevel,
 } from "@/lib/martian/scientificParams";
 import {
   getMartianElevation,
@@ -29,6 +31,7 @@ import {
 } from "@/lib/martian/mmgisSpatialAnalysis";
 import mountSharpGeology from "@/data/mountSharpGeology.json";
 import martianTerrainBase from "@/data/martianTerrainBase.json";
+import { AerialScoutTarget } from "./MarsAerialScoutDock";
 
 interface AresMapViewerProps {
   currentSite?: MissionSiteId;
@@ -63,6 +66,10 @@ interface AresMapViewerProps {
   isLeftDrawerOpen?: boolean;
   onOpenPovModal?: (wp: MountSharpWaypoint) => void;
   onAnalyzeProspector?: (wp: MountSharpWaypoint) => void;
+  onPlanRouteToWaypoint?: (wp: MountSharpWaypoint) => void;
+  onOpenAnalogueMatcher?: (wp: MountSharpWaypoint) => void;
+  onToggleProfileDock?: () => void;
+  isProfileDockOpen?: boolean;
   onOpen360Manager?: () => void;
   custom360Waypoints?: MountSharpWaypoint[];
   hoveredRoutePoint?: HighDensityPointTelemetry | null;
@@ -72,6 +79,15 @@ interface AresMapViewerProps {
   onToggleFloatingLegend?: () => void;
   reCenterTrigger?: number;
   flyToCoord?: [number, number] | null;
+  aerialFlightTarget?: AerialScoutTarget | null;
+  onAerialFlightComplete?: (target: AerialScoutTarget) => void;
+  onAerialTelemetryUpdate?: (telemetry: {
+    currentCoord: [number, number];
+    altitudeM: number;
+    speedMs: number;
+    distanceRemainingKm: number;
+    headingDeg: number;
+  }) => void;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -160,6 +176,11 @@ interface IdentifiedFeatureInfo {
   slopeDeg: number;
   mineralogy: string;
   coordinates: [number, number];
+  surfaceFirmness?: SurfaceFirmnessStatus;
+  sandTrapRisk?: SandTrapRiskLevel;
+  crustalMagneticFieldNt?: number;
+  surfaceRadiationMSvSol?: number;
+  has360Pov?: boolean;
   associatedWaypoint?: MountSharpWaypoint;
 }
 
@@ -247,6 +268,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   isLeftDrawerOpen = false,
   onOpenPovModal,
   onAnalyzeProspector,
+  onPlanRouteToWaypoint,
+  onOpenAnalogueMatcher,
+  onToggleProfileDock,
+  isProfileDockOpen = true,
   onOpen360Manager,
   custom360Waypoints = [],
   hoveredRoutePoint,
@@ -256,10 +281,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onToggleFloatingLegend,
   reCenterTrigger = 0,
   flyToCoord = null,
+  aerialFlightTarget = null,
+  onAerialFlightComplete,
+  onAerialTelemetryUpdate,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+
+  const planeMarkerRef = useRef<Marker | null>(null);
 
   const markersRef = useRef<Marker[]>([]);
   const curiosityMarkersRef = useRef<Marker[]>([]);
@@ -428,8 +458,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             layout: {
               visibility:
                 orbitalSource === "jpl_hirise" &&
-                currentSite === "gale_crater" &&
-                tileMode === "live_trek"
+                  currentSite === "gale_crater" &&
+                  tileMode === "live_trek"
                   ? "visible"
                   : "none",
             },
@@ -445,8 +475,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             layout: {
               visibility:
                 orbitalSource === "jpl_hirise" &&
-                currentSite === "jezero_crater" &&
-                tileMode === "live_trek"
+                  currentSite === "jezero_crater" &&
+                  tileMode === "live_trek"
                   ? "visible"
                   : "none",
             },
@@ -937,6 +967,106 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     map.flyTo({ center: flyToCoord, zoom: 13.8, duration: 800, pitch: 48 });
   }, [flyToCoord]);
 
+  // Mars Aerial Scout Drone Animated Flight Loop
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !aerialFlightTarget) {
+      if (planeMarkerRef.current) {
+        planeMarkerRef.current.remove();
+        planeMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const startLon = map.getCenter().lng;
+    const startLat = map.getCenter().lat;
+    const targetLon = aerialFlightTarget.lon;
+    const targetLat = aerialFlightTarget.lat;
+
+    const dLon = targetLon - startLon;
+    const dLat = targetLat - startLat;
+    const headingDeg = (Math.atan2(dLon, dLat) * 180) / Math.PI;
+
+    // Create Aircraft Element
+    const el = document.createElement("div");
+    el.className = "select-none pointer-events-none";
+    el.innerHTML = `
+      <div class="relative flex flex-col items-center">
+        <div class="w-8 h-8 rounded-full bg-cyan-950/80 border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.9)]" style="transform: rotate(${headingDeg}deg);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#38bdf8">
+            <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+          </svg>
+        </div>
+        <div class="mt-1 px-1.5 py-0.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-mono text-[8px] font-bold tracking-wider whitespace-nowrap shadow-md">
+          ✈ AERIAL SCOUT-01 // ${aerialFlightTarget.altitudeM}m
+        </div>
+      </div>
+    `;
+
+    if (planeMarkerRef.current) {
+      planeMarkerRef.current.remove();
+    }
+
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([startLon, startLat])
+      .addTo(map);
+    planeMarkerRef.current = marker;
+
+    const totalDistKm = Math.hypot(dLon * 59.2, dLat * 59.2);
+    const durationMs = Math.min(8000, Math.max(3500, totalDistKm * 250));
+    const startTime = performance.now();
+    let animFrame: number;
+
+    const animateFlight = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(1.0, elapsed / durationMs);
+      const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+      const curLon = startLon + dLon * ease;
+      const curLat = startLat + dLat * ease;
+
+      marker.setLngLat([curLon, curLat]);
+      map.easeTo({ center: [curLon, curLat], zoom: 13.5, pitch: 45, duration: 60 });
+
+      const distRemaining = totalDistKm * (1 - ease);
+      onAerialTelemetryUpdate?.({
+        currentCoord: [curLon, curLat],
+        altitudeM: aerialFlightTarget.altitudeM,
+        speedMs: 140,
+        distanceRemainingKm: Math.max(0, distRemaining),
+        headingDeg,
+      });
+
+      if (progress < 1.0) {
+        animFrame = requestAnimationFrame(animateFlight);
+      } else {
+        // Flight Complete!
+        onAerialFlightComplete?.(aerialFlightTarget);
+        const elev = getMartianElevation(targetLon, targetLat, currentSite);
+        const slope = getMartianSlope(targetLon, targetLat, currentSite);
+        setIdentifiedFeature({
+          name: aerialFlightTarget.label,
+          category: "AERIAL SCOUT RECONNAISSANCE TARGET",
+          stratigraphicAge: `Aerial Survey Sol ${currentSol}`,
+          elevationM: elev,
+          slopeDeg: slope,
+          mineralogy: "Aerial Laser Altimeter & Spectral Sweep Locked",
+          coordinates: [targetLon, targetLat],
+          surfaceFirmness: elev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+          sandTrapRisk: elev > -4100 ? "LOW" : "HIGH",
+          crustalMagneticFieldNt: 42,
+          surfaceRadiationMSvSol: 0.64,
+        });
+      }
+    };
+
+    animFrame = requestAnimationFrame(animateFlight);
+
+    return () => {
+      if (animFrame) cancelAnimationFrame(animFrame);
+    };
+  }, [aerialFlightTarget, currentSite, currentSol, onAerialFlightComplete, onAerialTelemetryUpdate]);
+
   // Update cursor style depending on active MMGIS tool
   useEffect(() => {
     const map = mapRef.current;
@@ -1259,23 +1389,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [isDark, mapLoaded]);
 
-  // Atmospheric Dust Storm Extinction Sync on Map Tiles
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
-
-    const layers = ["mars-raster-ctx-gale", "mars-raster-ctx-jezero", "mars-raster-viking", "mars-raster-openplanetary"];
-    layers.forEach((id) => {
-      if (map.getLayer(id)) {
-        map.setPaintProperty(
-          id,
-          "raster-contrast",
-          dustStormActive ? -0.2 : 0.25
-        );
-      }
-    });
-  }, [dustStormActive, mapLoaded]);
-
   // Update pitch when pitch3D prop changes
   useEffect(() => {
     const map = mapRef.current;
@@ -1525,8 +1638,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 pt.slopeCategory === "HAZARD"
                   ? "#ef4444"
                   : pt.slopeCategory === "CAUTION"
-                  ? "#f59e0b"
-                  : "#ffffff";
+                    ? "#f59e0b"
+                    : "#ffffff";
               return {
                 type: "Feature",
                 properties: {
@@ -1700,20 +1813,18 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       if (has360) {
         el.innerHTML = `
           <div class="relative flex flex-col items-center group">
-            <div class="flex items-center justify-center gap-1.5 px-2.5 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${
-              isSelected ? "border-cyan-300 ring-4 ring-cyan-400/60" : "border-[#06b6d4]"
-            } font-mono font-black text-[9px] shadow-[0_0_12px_rgba(6,182,212,0.7)] transition-transform group-hover:scale-115">
+            <div class="flex items-center justify-center gap-1.5 px-2.5 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${isSelected ? "border-cyan-300 ring-4 ring-cyan-400/60" : "border-[#06b6d4]"
+          } font-mono font-black text-[9px] shadow-[0_0_12px_rgba(6,182,212,0.7)] transition-transform group-hover:scale-115">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
               <span>360° POV</span>
             </div>
             <div class="w-0.5 h-2 bg-[#06b6d4] -mt-0.5"></div>
-            <div class="whitespace-nowrap px-2 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${
-              isSelected
-                ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-                : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4] shadow-md"
-            }">
+            <div class="whitespace-nowrap px-2 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${isSelected
+            ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
+            : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4] shadow-md"
+          }">
               [360°] ${wp.name}
             </div>
           </div>
@@ -1721,24 +1832,22 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       } else {
         el.innerHTML = `
           <div class="relative flex flex-col items-center group">
-            <div class="flex items-center justify-center gap-1 px-2 h-6.5 rounded-full ${
-              isSelected
-                ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-500/60"
-                : "bg-white text-slate-950 border-2 border-slate-900"
-            } font-mono font-black text-[9px] shadow-md transition-transform group-hover:scale-115">
+            <div class="flex items-center justify-center gap-1 px-2 h-6.5 rounded-full ${isSelected
+            ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-500/60"
+            : "bg-white text-slate-950 border-2 border-slate-900"
+          } font-mono font-black text-[9px] shadow-md transition-transform group-hover:scale-115">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
               <span>${wpNumber}</span>
             </div>
             <div class="w-0.5 h-1.5 ${isSelected ? "bg-amber-400" : "bg-slate-900"} -mt-0.5"></div>
-            <div class="whitespace-nowrap px-1.5 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${
-              isSelected
-                ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-                : isDark
-                ? "bg-[#0b0f17] text-slate-200 border border-slate-700 shadow-sm"
-                : "bg-white text-slate-800 border border-slate-300 shadow-sm"
-            }">
+            <div class="whitespace-nowrap px-1.5 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${isSelected
+            ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
+            : isDark
+              ? "bg-[#0b0f17] text-slate-200 border border-slate-700 shadow-sm"
+              : "bg-white text-slate-800 border border-slate-300 shadow-sm"
+          }">
               ${wp.name}
             </div>
           </div>
@@ -1787,16 +1896,36 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     galeLandmarks.forEach((lm) => {
       const el = document.createElement("div");
-      el.className = "pointer-events-none select-none flex flex-col items-center opacity-85 hover:opacity-100 transition-opacity";
+      el.className = "cursor-pointer select-none flex flex-col items-center group";
       el.innerHTML = `
-        <div class="px-1.5 py-0.5 bg-[#07090e]/95 border border-slate-700/80 text-[8px] font-mono font-bold tracking-wider text-slate-300 flex items-center gap-1 shadow-md">
-          <span class="w-1.5 h-1.5 bg-amber-400"></span>
-          <span>${lm.name}</span>
-        </div>
-        <div class="text-[7px] font-mono text-cyan-400 font-bold bg-black/80 px-1 border border-slate-800 -mt-0.5">
-          ${lm.sub}
+        <div class="relative flex flex-col items-center">
+          <div class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-950 shadow-sm transition-transform group-hover:scale-130"></div>
+          <div class="absolute -bottom-6 whitespace-nowrap px-1.5 py-0.5 bg-[#07090e]/95 border border-slate-700/80 text-[8px] font-mono font-bold tracking-wider text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
+            <span>${lm.name}</span>
+          </div>
         </div>
       `;
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const elev = getMartianElevation(lm.coords[0], lm.coords[1], currentSite);
+        const slope = getMartianSlope(lm.coords[0], lm.coords[1], currentSite);
+        setIdentifiedFeature({
+          name: lm.name,
+          category: "TOPOGRAPHIC LANDMARK",
+          stratigraphicAge: lm.sub,
+          elevationM: elev,
+          slopeDeg: slope,
+          mineralogy: "Regional Geologic Bedrock Formation",
+          coordinates: lm.coords,
+          surfaceFirmness: elev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+          sandTrapRisk: elev > -4100 ? "LOW" : "HIGH",
+          crustalMagneticFieldNt: 42,
+          surfaceRadiationMSvSol: 0.64,
+        });
+        map.flyTo({ center: lm.coords, zoom: 12.8, duration: 600 });
+      });
+
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat(lm.coords)
         .addTo(map);
@@ -1822,9 +1951,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           <div class="flex items-center justify-center w-7 h-7 bg-[#b45309] border border-[#fbbf24] text-white text-[10px] font-mono font-black shadow-none animate-pulse">
             ${t("pin")}
           </div>
-          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 ${
-            isDark ? "bg-[#111827] text-amber-300 border-amber-400" : "bg-white text-amber-700 border-amber-500"
-          } border text-[8px] font-mono font-bold tracking-wider">
+          <div class="absolute -bottom-4 whitespace-nowrap px-1 py-0.2 ${isDark ? "bg-[#111827] text-amber-300 border-amber-400" : "bg-white text-amber-700 border-amber-500"
+        } border text-[8px] font-mono font-bold tracking-wider">
             ${t("customTarget")}
           </div>
         </div>
@@ -1861,6 +1989,21 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
+        const elev = getMartianElevation(pt.coordinates[0], pt.coordinates[1], currentSite);
+        const slope = getMartianSlope(pt.coordinates[0], pt.coordinates[1], currentSite);
+        setIdentifiedFeature({
+          name: `Sol ${pt.sol}: ${pt.name}`,
+          category: "ROVER TRAVERSE CHECKPOINT",
+          stratigraphicAge: `Sol ${pt.sol} Mission Milestone`,
+          elevationM: elev,
+          slopeDeg: slope,
+          mineralogy: "Proven Safe Rover Surface Corridor",
+          coordinates: pt.coordinates,
+          surfaceFirmness: "BEDROCK FIRM",
+          sandTrapRisk: "LOW",
+          crustalMagneticFieldNt: 39,
+          surfaceRadiationMSvSol: 0.63,
+        });
         map.flyTo({ center: pt.coordinates, zoom: 13, duration: 600 });
       });
 
@@ -1877,9 +2020,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* Active Tool Floating Banner (Appears ONLY when Measure / Viewshed / ZOI is active) */}
       {activeMmgisTool !== "none" && (
         <div
-          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${
-            isLeftDrawerOpen ? "left-[416px]" : "left-[64px]"
-          }`}
+          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${isLeftDrawerOpen ? "left-[416px]" : "left-[64px]"
+            }`}
         >
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-bold shadow-lg">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
@@ -1907,11 +2049,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* Floating Scientific Map Legend (Ref Image 1: Bioscape / MMGIS Legend Window) */}
       {showFloatingLegend && (
         <div
-          className={`absolute top-12 right-4 z-20 w-64 border font-mono select-none shadow-xl ${
-            isDark
-              ? "bg-[#07090e]/95 border-slate-700 text-slate-200"
-              : "bg-white border-slate-300 text-slate-800"
-          }`}
+          className={`absolute top-12 right-4 z-20 w-64 border font-mono select-none shadow-xl ${isDark
+            ? "bg-[#07090e]/95 border-slate-700 text-slate-200"
+            : "bg-white border-slate-300 text-slate-800"
+            }`}
         >
           <div className="flex items-center justify-between px-2.5 py-1 bg-[#0b0f17] border-b border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
             <span className="flex items-center gap-1.5 text-amber-400">
@@ -2010,102 +2151,205 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       )}
 
       {/* In-Map MMGIS Feature Identifier Popover */}
+      {/* Interactive Waypoint & Feature Hub Inspector Card (Google Maps / NASA Mars Trek Standard) */}
       {identifiedFeature && (
         <div
-          className={`absolute top-12 right-4 z-30 w-80 border font-mono select-none ${
+          className={`absolute top-14 z-30 w-88 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-2xl transition-all duration-200 ${
+            isLeftDrawerOpen ? "left-[416px]" : "left-14"
+          } ${
             isDark
-              ? "bg-[#07090e]/95 border-cyan-500/80 text-slate-200"
-              : "bg-white border-cyan-600 text-slate-800 shadow-lg"
+              ? "bg-[#07090e]/98 border-slate-700 text-slate-200"
+              : "bg-white border-slate-300 text-slate-800 shadow-xl"
           }`}
         >
           {/* Header */}
-          <div className="h-7 px-2.5 bg-[#0b0f17] flex items-center justify-between border-b border-cyan-900/60 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
-            <span className="flex items-center gap-1.5">
+          <div className="h-8 px-3 bg-[#0b0f17] flex items-center justify-between border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider">
+            <span className="flex items-center gap-1.5 text-cyan-400">
               <span className="w-2 h-2 bg-cyan-400" />
-              <span>{tMmgis("identifierTitle")}</span>
+              <span>POINT INSPECTOR // {identifiedFeature.category}</span>
             </span>
             <button
               onClick={() => setIdentifiedFeature(null)}
-              className="text-slate-400 hover:text-white px-1 text-[11px]"
+              className="text-slate-400 hover:text-white px-1.5 py-0.5 text-[11px] font-bold"
+              title="Close Inspector"
             >
               ✕
             </button>
           </div>
 
           {/* Feature Attributes Table */}
-          <div className="p-3 space-y-2 text-[10px]">
+          <div className="p-3 space-y-2.5 text-[10px]">
             <div>
-              <div className="text-[9px] text-slate-400 uppercase font-bold">{tMmgis("identifierUnit")}</div>
-              <div className="text-cyan-400 font-bold truncate">{identifiedFeature.name}</div>
+              <div className="text-[8px] text-slate-400 uppercase font-bold tracking-wider">LOCATION & GEOLOGY</div>
+              <div className="text-amber-400 font-bold text-[11px] truncate">{identifiedFeature.name}</div>
+              <div className="text-[9px] text-slate-400">{identifiedFeature.stratigraphicAge}</div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-              <div>
-                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierAge")}</span>
-                <span className="text-slate-200">{identifiedFeature.stratigraphicAge}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierElev")}</span>
-                <span className="text-amber-400 font-bold tabular-nums">
+            {/* Metrics Matrix */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">MOLA ELEVATION</span>
+                <span className="text-slate-200 font-bold tabular-nums">
                   {identifiedFeature.elevationM > 0 ? `+${identifiedFeature.elevationM}` : identifiedFeature.elevationM} m
                 </span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-              <div>
-                <span className="text-[9px] text-slate-400 block">{tMmgis("identifierSlope")}</span>
-                <span className="text-slate-200 tabular-nums">{identifiedFeature.slopeDeg.toFixed(1)}°</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-400 block">COORDINATES</span>
-                <span className="text-slate-300 tabular-nums">
-                  {identifiedFeature.coordinates[1].toFixed(3)}°, {identifiedFeature.coordinates[0].toFixed(3)}°
+              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">SLOPE / LERENG</span>
+                <span className="text-slate-200 font-bold tabular-nums">
+                  {identifiedFeature.slopeDeg.toFixed(1)}°{" "}
+                  <span className={`text-[8px] ${
+                    identifiedFeature.slopeDeg < 15 ? "text-emerald-400" : identifiedFeature.slopeDeg < 25 ? "text-amber-400" : "text-red-400"
+                  }`}>
+                    [{identifiedFeature.slopeDeg < 15 ? "SAFE <15°" : identifiedFeature.slopeDeg < 25 ? "CAUTION" : "HAZARD"}]
+                  </span>
                 </span>
               </div>
             </div>
 
-            <div className="pt-1 border-t border-slate-800">
-              <span className="text-[9px] text-slate-400 block">{tMmgis("identifierMineral")}</span>
-              <span className="text-emerald-400">{identifiedFeature.mineralogy}</span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">GROUND FIRMNESS</span>
+                <span className={`text-[9px] font-bold ${
+                  (identifiedFeature.surfaceFirmness ?? "BEDROCK FIRM") === "BEDROCK FIRM"
+                    ? "text-emerald-400"
+                    : (identifiedFeature.surfaceFirmness ?? "") === "MODERATE COMPACTION"
+                    ? "text-amber-400"
+                    : "text-red-400"
+                }`}>
+                  [{identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK")}]
+                </span>
+              </div>
+              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">MAG SHIELDING</span>
+                <span className="text-purple-400 font-bold tabular-nums">
+                  {identifiedFeature.crustalMagneticFieldNt ?? 38} nT
+                </span>
+              </div>
             </div>
 
-            {/* MMGIS Action Buttons */}
-            <div className="pt-2 border-t border-slate-800 flex gap-2">
-              {identifiedFeature.associatedWaypoint && (
-                <>
-                  <button
-                    onClick={() => {
-                      if (identifiedFeature.associatedWaypoint && onOpenPovModal) {
-                        onOpenPovModal(identifiedFeature.associatedWaypoint);
-                      }
-                    }}
-                    className="flex-1 py-1 px-1.5 bg-[#451a03] border border-[#ea580c] text-[#fed7aa] font-bold text-[9px] hover:bg-[#7c2d12] transition-colors text-center"
-                  >
-                    [ {tMmgis("openPov")} ]
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (identifiedFeature.associatedWaypoint && onAnalyzeProspector) {
-                        onAnalyzeProspector(identifiedFeature.associatedWaypoint);
-                      }
-                    }}
-                    className="flex-1 py-1 px-1.5 bg-[#083344] border border-[#06b6d4] text-[#a5f3fc] font-bold text-[9px] hover:bg-[#0e7490] transition-colors text-center"
-                  >
-                    [ {tMmgis("analyzeProspector")} ]
-                  </button>
-                </>
-              )}
+            <div className="pt-1.5 border-t border-slate-800 flex justify-between items-center text-[9px]">
+              <span className="text-slate-400 uppercase">COORDINATES:</span>
+              <span className="text-slate-300 font-bold tabular-nums">
+                Lat {identifiedFeature.coordinates[1].toFixed(4)}°, Lon {identifiedFeature.coordinates[0].toFixed(4)}°
+              </span>
+            </div>
+
+            <div className="pt-1 border-t border-slate-800">
+              <span className="text-[8px] text-slate-400 uppercase block font-bold">HYDRATED MINERALOGY:</span>
+              <span className="text-cyan-300 font-medium text-[9px] truncate block">
+                {identifiedFeature.mineralogy}
+              </span>
+            </div>
+
+            {/* ACTION FEATURE MENU: WHAT CAN BE ACCESSED FROM THIS POINT */}
+            <div className="pt-2 border-t border-slate-800 space-y-1.5">
+              <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block">
+                AVAILABLE ACTIONS &amp; ANALYSIS:
+              </span>
+
+              {/* PRIMARY ACTION: PLAN SAFE ROUTE HERE */}
+              <button
+                onClick={() => {
+                  const targetWp = identifiedFeature.associatedWaypoint || ({
+                    id: `custom_pt_${Date.now()}`,
+                    name: identifiedFeature.name,
+                    coordinates: identifiedFeature.coordinates,
+                    elevationM: identifiedFeature.elevationM,
+                    category: "custom_user_pov",
+                    slopeDeg: identifiedFeature.slopeDeg,
+                    surfaceFirmness: identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK"),
+                    sandTrapRisk: identifiedFeature.sandTrapRisk || (identifiedFeature.elevationM > -4100 ? "LOW" : "HIGH"),
+                    crustalMagneticFieldNt: identifiedFeature.crustalMagneticFieldNt || 38,
+                    surfaceRadiationMSvSol: identifiedFeature.surfaceRadiationMSvSol || 0.65,
+                    dominantMineral: identifiedFeature.mineralogy,
+                  } as unknown as MountSharpWaypoint);
+
+                  onPlanRouteToWaypoint?.(targetWp);
+                }}
+                className="w-full py-2 px-3 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[10px] tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
+              >
+                <span>🧭</span>
+                <span>[ {tMmgis("planRouteHere")} ]</span>
+              </button>
+
+              {/* SECONDARY ACTION BUTTONS */}
+              <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                {/* 360 POV */}
+                <button
+                  onClick={() => {
+                    const wp = identifiedFeature.associatedWaypoint || ({
+                      id: `custom_pt_${Date.now()}`,
+                      name: identifiedFeature.name,
+                      coordinates: identifiedFeature.coordinates,
+                      elevationM: identifiedFeature.elevationM,
+                      has360Pov: true,
+                    } as unknown as MountSharpWaypoint);
+                    onOpenPovModal?.(wp);
+                  }}
+                  className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors text-center truncate"
+                >
+                  [ 📷 {tMmgis("openPov")} ]
+                </button>
+
+                {/* PROSPECTOR ML */}
+                <button
+                  onClick={() => {
+                    if (identifiedFeature.associatedWaypoint && onAnalyzeProspector) {
+                      onAnalyzeProspector(identifiedFeature.associatedWaypoint);
+                    } else if (onAnalyzeProspector && selectedWaypoint) {
+                      onAnalyzeProspector(selectedWaypoint);
+                    }
+                  }}
+                  className="py-1.5 px-2 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[9px] transition-colors text-center truncate"
+                >
+                  [ 🔬 {tMmgis("analyzeProspector")} ]
+                </button>
+
+                {/* EARTH ANALOGUE */}
+                <button
+                  onClick={() => {
+                    if (identifiedFeature.associatedWaypoint && onOpenAnalogueMatcher) {
+                      onOpenAnalogueMatcher(identifiedFeature.associatedWaypoint);
+                    } else if (onOpenAnalogueMatcher && selectedWaypoint) {
+                      onOpenAnalogueMatcher(selectedWaypoint);
+                    }
+                  }}
+                  className="py-1.5 px-2 bg-[#451a03] hover:bg-[#78350f] text-[#fde68a] border border-[#d97706] font-bold text-[9px] transition-colors text-center truncate"
+                >
+                  [ 🌍 {tMmgis("compareAnalogue")} ]
+                </button>
+
+                {/* 5M TRANSECT DOCK */}
+                <button
+                  onClick={() => {
+                    onToggleProfileDock?.();
+                  }}
+                  className={`py-1.5 px-2 border font-bold text-[9px] transition-colors text-center truncate ${
+                    isProfileDockOpen
+                      ? "bg-[#161e2e] text-cyan-300 border-cyan-500"
+                      : "bg-[#111827] text-slate-300 border-slate-700 hover:text-white"
+                  }`}
+                >
+                  [ 📈 {tMmgis("transectDock")} ]
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Floating Guidance Prompt when no point is selected */}
+      {!identifiedFeature && activeMmgisTool === "none" && !activeRoute && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-[#07090e]/90 border border-slate-700/80 text-slate-300 font-mono text-[9px] font-bold tracking-wider pointer-events-none select-none shadow-md flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span>{tMmgis("clickPrompt")}</span>
+        </div>
+      )}
+
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (
-        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17]/95 border border-cyan-500/80 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${
-          isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
-        }`}>
+        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17]/95 border border-cyan-500/80 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
+          }`}>
           <span className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
           <span>
             {activeMmgisTool === "measure" && tMmgis("measureInstruction")}
@@ -2123,16 +2367,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* Main Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
-
-      {/* Dynamic Martian Atmospheric Dust Storm Visual Simulation */}
-      {dustStormActive && (
-        <div className="absolute inset-0 pointer-events-none z-10 bg-[#7c2d12]/28 mix-blend-multiply transition-opacity duration-700">
-          <div className="absolute top-24 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#451a03]/95 border border-[#ea580c] text-[#fdba74] font-mono text-[9px] font-bold flex items-center gap-2 shadow-xl animate-pulse">
-            <span className="w-2 h-2 bg-[#ea580c] rounded-full animate-ping" />
-            <span>[ MARS ATMOSPHERE: DUST STORM ACTIVE // OPTICAL DEPTH TAU: 2.40 // EXTREME SCATTERING ]</span>
-          </div>
-        </div>
-      )}
 
       {/* 3. Bottom HUD: Live Cursor Telemetry & Dynamic Metric Scale Bar */}
       <div className="absolute bottom-2 left-3 right-3 z-20 flex items-center justify-between pointer-events-none font-mono text-[9px]">

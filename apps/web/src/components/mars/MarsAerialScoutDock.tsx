@@ -1,0 +1,237 @@
+"use client";
+
+import React, { useState, memo, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import { MissionSiteId } from "@/lib/martian/mountSharpWaypoints";
+
+export interface AerialScoutTarget {
+  lat: number;
+  lon: number;
+  altitudeM: number;
+  label: string;
+}
+
+interface MarsAerialScoutDockProps {
+  currentSite: MissionSiteId;
+  onLaunchFlight: (target: AerialScoutTarget) => void;
+  onClose: () => void;
+  isFlying: boolean;
+  flightTelemetry?: {
+    currentCoord: [number, number];
+    altitudeM: number;
+    speedMs: number;
+    distanceRemainingKm: number;
+    headingDeg: number;
+  } | null;
+  theme?: "dark" | "light";
+}
+
+export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
+  currentSite,
+  onLaunchFlight,
+  onClose,
+  isFlying,
+  flightTelemetry,
+  theme = "dark",
+}) => {
+  const isDark = theme === "dark";
+  const defaultCoords = currentSite === "gale_crater"
+    ? { lat: -5.4453, lon: 137.8414, label: "Mount Sharp Boxwork 2025" }
+    : { lat: 18.4120, lon: 77.4220, label: "Three Forks Delta Front" };
+
+  const [targetLat, setTargetLat] = useState<string>(defaultCoords.lat.toString());
+  const [targetLon, setTargetLon] = useState<string>(defaultCoords.lon.toString());
+  const [altitudeM, setAltitudeM] = useState<number>(350);
+  const [flightLabel, setFlightLabel] = useState<string>(defaultCoords.label);
+
+  const presets = currentSite === "gale_crater"
+    ? [
+        { label: "Boxwork Veins 2025", lat: -5.4453, lon: 137.8414 },
+        { label: "Vera Rubin Ridge", lat: -4.9281, lon: 137.5684 },
+        { label: "Glen Torridon Smectite", lat: -4.7561, lon: 137.4042 },
+        { label: "Bradbury Landing (Sol 0)", lat: -4.5895, lon: 137.4417 },
+        { label: "Gediz Vallis Channel", lat: -5.2150, lon: 137.7120 },
+      ]
+    : [
+        { label: "Three Forks Delta Front", lat: 18.4120, lon: 77.4220 },
+        { label: "Neretva Vallis Canyon", lat: 18.4480, lon: 77.4300 },
+        { label: "Belva Impact Crater", lat: 18.4600, lon: 77.4050 },
+        { label: "Cheyava Falls Outcrop", lat: 18.4800, lon: 77.3750 },
+        { label: "Octavia Butler Landing", lat: 18.3789, lon: 77.4509 },
+      ];
+
+  const handleApplyPreset = (p: { label: string; lat: number; lon: number }) => {
+    setTargetLat(p.lat.toString());
+    setTargetLon(p.lon.toString());
+    setFlightLabel(p.label);
+  };
+
+  const handleExecuteLaunch = () => {
+    const lat = parseFloat(targetLat);
+    const lon = parseFloat(targetLon);
+    if (isNaN(lat) || isNaN(lon)) return;
+    onLaunchFlight({
+      lat,
+      lon,
+      altitudeM,
+      label: flightLabel || `Recon Target [${lat.toFixed(4)}°, ${lon.toFixed(4)}°]`,
+    });
+  };
+
+  return (
+    <div
+      className={`fixed top-14 right-4 z-40 w-84 border font-mono select-none shadow-2xl transition-all duration-200 ${
+        isDark ? "bg-[#07090e]/98 border-slate-700 text-slate-200" : "bg-white border-slate-300 text-slate-800"
+      }`}
+    >
+      {/* Header */}
+      <div className="h-8 px-3 bg-[#0b0f17] flex items-center justify-between border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider">
+        <span className="flex items-center gap-2 text-cyan-400">
+          {/* Aircraft SVG Vector Icon */}
+          <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+          </svg>
+          <span>MARS AERIAL SCOUT // DRONE FLIGHT</span>
+        </span>
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-white px-1.5 text-[11px] font-bold"
+          title="Close Aerial Dock"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="p-3 space-y-3 text-[10px]">
+        {/* Real-time In-Flight Telemetry HUD */}
+        {isFlying && flightTelemetry && (
+          <div className="p-2 bg-[#064e3b]/40 border border-[#10b981] space-y-1">
+            <div className="flex items-center justify-between text-[#34d399] font-bold text-[9px] uppercase">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+                <span>[AERIAL DRONE: IN FLIGHT]</span>
+              </span>
+              <span>HEADING: {flightTelemetry.headingDeg.toFixed(0)}°</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 text-[9px] pt-1 border-t border-[#10b981]/40 tabular-nums">
+              <div>
+                <span className="text-slate-400 block text-[8px]">ALTITUDE</span>
+                <span className="text-white font-bold">{flightTelemetry.altitudeM.toFixed(0)} m</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[8px]">AIRSPEED</span>
+                <span className="text-white font-bold">{flightTelemetry.speedMs.toFixed(0)} m/s</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[8px]">REMAINING</span>
+                <span className="text-amber-400 font-bold">{flightTelemetry.distanceRemainingKm.toFixed(2)} km</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Coordinate Inputs */}
+        <div className="space-y-2">
+          <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block">
+            TARGET RECONNAISSANCE COORDINATES (SI)
+          </span>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[8px] text-slate-400 block mb-0.5">LATITUDE (DEG)</label>
+              <input
+                type="number"
+                step="0.0001"
+                value={targetLat}
+                onChange={(e) => setTargetLat(e.target.value)}
+                placeholder="-5.4453"
+                className="w-full px-2 py-1 bg-[#111827] border border-slate-700 text-slate-100 font-mono text-[10px] focus:outline-none focus:border-cyan-500 tabular-nums"
+              />
+            </div>
+            <div>
+              <label className="text-[8px] text-slate-400 block mb-0.5">LONGITUDE (DEG)</label>
+              <input
+                type="number"
+                step="0.0001"
+                value={targetLon}
+                onChange={(e) => setTargetLon(e.target.value)}
+                placeholder="137.8414"
+                className="w-full px-2 py-1 bg-[#111827] border border-slate-700 text-slate-100 font-mono text-[10px] focus:outline-none focus:border-cyan-500 tabular-nums"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[8px] text-slate-400 block mb-0.5">TARGET DESIGNATION / LABEL</label>
+            <input
+              type="text"
+              value={flightLabel}
+              onChange={(e) => setFlightLabel(e.target.value)}
+              placeholder="Recon Station Alpha"
+              className="w-full px-2 py-1 bg-[#111827] border border-slate-700 text-slate-100 font-mono text-[10px] focus:outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center text-[8px] text-slate-400 mb-0.5">
+              <span>CRUISE ALTITUDE AGL</span>
+              <span className="text-cyan-400 font-bold tabular-nums">{altitudeM} m AGL</span>
+            </div>
+            <input
+              type="range"
+              min={100}
+              max={1200}
+              step={50}
+              value={altitudeM}
+              onChange={(e) => setAltitudeM(parseInt(e.target.value))}
+              className="w-full h-1 bg-slate-800 accent-cyan-400 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Quick Presets */}
+        <div className="pt-2 border-t border-slate-800">
+          <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block mb-1.5">
+            MISSION SATELLITE / LANDMARK PRESETS
+          </span>
+          <div className="grid grid-cols-1 gap-1 max-h-28 overflow-y-auto pr-1">
+            {presets.map((p) => (
+              <button
+                key={p.label}
+                onClick={() => handleApplyPreset(p)}
+                className="px-2 py-1 bg-[#111827]/80 hover:bg-[#1f2937] border border-slate-800 text-left text-[9px] flex items-center justify-between text-slate-300 transition-colors"
+              >
+                <span className="truncate">{p.label}</span>
+                <span className="text-[8px] text-slate-500 tabular-nums ml-2 shrink-0">
+                  {p.lat.toFixed(3)}°, {p.lon.toFixed(3)}°
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Flight Execution Button */}
+        <div className="pt-2 border-t border-slate-800">
+          <button
+            onClick={handleExecuteLaunch}
+            disabled={isFlying}
+            className={`w-full py-2 px-3 border font-bold text-[10px] tracking-wider transition-colors flex items-center justify-center gap-2 ${
+              isFlying
+                ? "bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed"
+                : "bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border-[#10b981] shadow-lg cursor-pointer"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+            </svg>
+            <span>{isFlying ? "[SCOUT IN FLIGHT...]" : "[ TERBANGKAN PESAWAT // LAUNCH FLIGHT ]"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+MarsAerialScoutDock.displayName = "MarsAerialScoutDock";
+
+export default MarsAerialScoutDock;
