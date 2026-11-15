@@ -161,7 +161,7 @@ export default function Navbar() {
             </div>
 
             <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-              <span className="text-slate-400">Bahasa:</span>
+              <span className="text-slate-400">{t("language")}</span>
               <LanguageSwitcher variant="minimal" />
             </div>
 

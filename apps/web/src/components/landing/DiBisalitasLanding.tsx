@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   motion,
   useInView,
@@ -67,14 +68,14 @@ function useCounter(end: number, duration: number = 2000, startCounting: boolean
 /* ============================================
    1. FIVE PLANETARY SCIENTIFIC LAYERS DATA (SYNTHESIZED)
 ============================================ */
-type ScienceDomainItem = {
+type ScienceDomainConfig = {
   id: string;
   number: string;
-  domainTag: string;
-  category: string;
-  title: string;
-  instrument: string;
-  description: string;
+  tagKey: "layer1Tag" | "layer2Tag" | "layer3Tag" | "layer4Tag" | "layer5Tag";
+  catKey: "layer1Cat" | "layer2Cat" | "layer3Cat" | "layer4Cat" | "layer5Cat";
+  titleKey: "layer1Title" | "layer2Title" | "layer3Title" | "layer4Title" | "layer5Title";
+  instKey: "layer1Inst" | "layer2Inst" | "layer3Inst" | "layer4Inst" | "layer5Inst";
+  descKey: "layer1Desc" | "layer2Desc" | "layer3Desc" | "layer4Desc" | "layer5Desc";
   metric: string;
   color: string;
   border: string;
@@ -85,15 +86,15 @@ type ScienceDomainItem = {
   link: string;
 };
 
-const scienceMatrixData: ScienceDomainItem[] = [
+const scienceMatrixConfig: ScienceDomainConfig[] = [
   {
     id: "layer-geologi",
     number: "01",
-    domainTag: "LAYER 01 // USGS & HiRISE 25cm",
-    category: "Fotogeologi & Stratigrafi",
-    title: "Geologi & Citra Optik",
-    instrument: "HiRISE 25cm/px, CTX 6m/px & USGS Astrogeology",
-    description: "Pemetaan fotogeologi orbital resolusi ultra-tinggi mengidentifikasi batas kontak formasi Noachian-Hesperian, urat kristal Boxwork 2025, dan stratigrafi paleodanau 5.5 km Mount Sharp.",
+    tagKey: "layer1Tag",
+    catKey: "layer1Cat",
+    titleKey: "layer1Title",
+    instKey: "layer1Inst",
+    descKey: "layer1Desc",
     metric: "25 cm/px [NOACHIAN/HESPERIAN]",
     color: "bg-[#18110b]",
     border: "border-amber-500/40",
@@ -106,11 +107,11 @@ const scienceMatrixData: ScienceDomainItem[] = [
   {
     id: "layer-topografi",
     number: "02",
-    domainTag: "LAYER 02 // 1m DEM & HRSC",
-    category: "Morfologi & Bahaya Lereng",
-    title: "Topografi & Bahaya Lereng",
-    instrument: "HiRISE Stereo DTM 1m/px & HRSC",
-    description: "Model elevasi digital mikro 1 meter mengekstrak kontur tebing terjal, kemiringan lereng instan, dan kekasaran permukaan untuk koridor traksi aman A* rute EVA astronot.",
+    tagKey: "layer2Tag",
+    catKey: "layer2Cat",
+    titleKey: "layer2Title",
+    instKey: "layer2Inst",
+    descKey: "layer2Desc",
     metric: "< 15° [SAFE TRAVERSE]",
     color: "bg-[#0b1320]",
     border: "border-emerald-500/40",
@@ -123,11 +124,11 @@ const scienceMatrixData: ScienceDomainItem[] = [
   {
     id: "layer-termal",
     number: "03",
-    domainTag: "LAYER 03 // THEMIS Night IR & TES",
-    category: "Geofisika & Sand Trap",
-    title: "Termal Inersia & Sand Trap",
-    instrument: "THEMIS Night IR (100m) & TES Apparent Inertia",
-    description: "Model inersia termal Morgan et al. (2020) membedakan batuan dasar padat [BEDROCK FIRM 485 tiu] dari mantel debu eolian amblas [SOFT SAND TRAP RISK 140 tiu].",
+    tagKey: "layer3Tag",
+    catKey: "layer3Cat",
+    titleKey: "layer3Title",
+    instKey: "layer3Inst",
+    descKey: "layer3Desc",
     metric: "485 tiu [BEDROCK FIRM]",
     color: "bg-[#101424]",
     border: "border-cyan-500/40",
@@ -140,11 +141,11 @@ const scienceMatrixData: ScienceDomainItem[] = [
   {
     id: "layer-mineral",
     number: "04",
-    domainTag: "LAYER 04 // CRISM 18m/px & GRS",
-    category: "Geokimia & ISRU",
-    title: "Mineral Terhidrasi & ISRU",
-    instrument: "MRO CRISM & Odyssey GRS/DAN",
-    description: "Spektroskopi serapan inframerah mendeteksi lempung smektit terhidrasi dan jaringan urat sulfat boxwork 2025 dengan potensi pemanenan air 6.8 wt% WEH untuk modul habitat.",
+    tagKey: "layer4Tag",
+    catKey: "layer4Cat",
+    titleKey: "layer4Title",
+    instKey: "layer4Inst",
+    descKey: "layer4Desc",
     metric: "6.8 wt% WEH [34 L/t]",
     color: "bg-[#180e24]",
     border: "border-purple-500/40",
@@ -157,11 +158,11 @@ const scienceMatrixData: ScienceDomainItem[] = [
   {
     id: "layer-radiasi",
     number: "05",
-    domainTag: "LAYER 05 // MGS MAG & MSL RAD",
-    category: "Fisika Radiasi & Magnetik",
-    title: "Radiasi & Medan Magnet Kerak",
-    instrument: "MSL RAD Dosimeter & MGS MAG Magnetometer",
-    description: "Dosimetri partikel MSL RAD dipadukan anomali medan magnet kerak purba Mars (72 nT) yang menjadi perisai alami defleksi radiasi kosmik galaksi hingga 13.7%.",
+    tagKey: "layer5Tag",
+    catKey: "layer5Cat",
+    titleKey: "layer5Title",
+    instKey: "layer5Inst",
+    descKey: "layer5Desc",
     metric: "72 nT [-13.7% GCR]",
     color: "bg-[#200e14]",
     border: "border-rose-500/40",
@@ -174,7 +175,18 @@ const scienceMatrixData: ScienceDomainItem[] = [
 ];
 
 function MartianScienceMatrixSection() {
+  const tMatrix = useTranslations("landing.matrixSection");
   const [activeIndex, setActiveIndex] = useState(1);
+
+  const scienceMatrixData = scienceMatrixConfig.map((item) => ({
+    ...item,
+    domainTag: tMatrix(item.tagKey),
+    category: tMatrix(item.catKey),
+    title: tMatrix(item.titleKey),
+    instrument: tMatrix(item.instKey),
+    description: tMatrix(item.descKey),
+  }));
+
   const activeItem = scienceMatrixData[activeIndex];
   const ActiveIcon = activeItem.icon;
   const len = scienceMatrixData.length;
@@ -207,12 +219,14 @@ function MartianScienceMatrixSection() {
         {/* Section Header (Always above any gradient) */}
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-8 md:mb-12 relative z-30">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white tracking-tight leading-[1.12]">
-            Planetary <span className="text-[#f97316]">Science</span> <br className="hidden sm:inline" />
-            & Tactical Matrix.
+            {tMatrix("headingLead")}{" "}
+            <span className="text-[#f97316]">{tMatrix("headingHighlight")}</span>{" "}
+            <br className="hidden sm:inline" />
+            {tMatrix("headingSuffix")}
           </h2>
 
           <p className="text-sm md:text-base text-slate-300 font-light leading-relaxed font-sans max-w-2xl mx-auto">
-            Sintesis 5 layer saintifik instrumen orbital NASA dan telemetri in-situ rover untuk perencanaan taktis ekstravehikular (EVA) berstandar misi berawak Mars.
+            {tMatrix("subtitle")}
           </p>
         </div>
 
@@ -355,7 +369,7 @@ function MartianScienceMatrixSection() {
                           href={activeItem.link}
                           className="text-[10px] sm:text-xs font-mono font-semibold tracking-wider text-[#f97316] hover:text-white transition-colors flex items-center gap-1 uppercase"
                         >
-                          <span>Inspeksi di Cockpit</span>
+                          <span>{tMatrix("inspectCta")}</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
@@ -399,6 +413,8 @@ function MartianScienceMatrixSection() {
    6. CTA & STATS SECTION
 ============================================ */
 function CTAAndStatsSection() {
+  const tStats = useTranslations("landing.stats");
+  const tRing = useTranslations("landing.statsRing");
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-80px" });
 
@@ -407,7 +423,7 @@ function CTAAndStatsSection() {
   const stat3 = useCounter(96, 2000, isInView);
   const stat4 = useCounter(15, 1500, isInView);
 
-  const text = "eksplorasi kawah gale • misi marsforall • ";
+  const text = tRing("text");
   const characters = text.split("");
 
   return (
@@ -489,7 +505,7 @@ function CTAAndStatsSection() {
           </motion.h2>
 
           <p className="text-slate-400 text-sm font-sans font-light">
-            Kesiapan Data Orbital & Navigasi Saintifik Permukaan Mars
+            {tStats("title")}
           </p>
         </div>
 
@@ -504,8 +520,8 @@ function CTAAndStatsSection() {
             className="bg-[#0b0f17]/95 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-[#f97316]/50"
           >
             <h3 className="text-5xl font-bold mb-2 font-mono tabular-nums text-white">{stat1}+</h3>
-            <h4 className="text-xs font-bold text-[#f97316] font-mono tracking-widest uppercase mb-3">SOL</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">Hari operasional penjelajahan rover Curiosity di Kawah Gale</p>
+            <h4 className="text-xs font-bold text-[#f97316] font-mono tracking-widest uppercase mb-3">{tStats("solLabel")}</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">{tStats("solDesc")}</p>
           </motion.div>
 
           <motion.div 
@@ -517,8 +533,8 @@ function CTAAndStatsSection() {
             className="bg-[#0b0f17]/95 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-cyan-400/50"
           >
             <h3 className="text-5xl font-bold mb-2 font-mono tabular-nums text-white">{stat2}</h3>
-            <h4 className="text-xs font-bold text-cyan-400 font-mono tracking-widest uppercase mb-3">LAYER</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">Lapisan saintifik & operasional NASA terintegrasi penuh</p>
+            <h4 className="text-xs font-bold text-cyan-400 font-mono tracking-widest uppercase mb-3">{tStats("layerLabel")}</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">{tStats("layerDesc")}</p>
           </motion.div>
 
           <motion.div 
@@ -530,8 +546,8 @@ function CTAAndStatsSection() {
             className="bg-[#0b0f17]/95 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-emerald-400/50"
           >
             <h3 className="text-5xl font-bold mb-2 font-mono tabular-nums text-white">{stat3}%</h3>
-            <h4 className="text-xs font-bold text-emerald-400 font-mono tracking-widest uppercase mb-3">AKURASI</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">Skor prospek fusi ML untuk urat mineral terhidrasi Boxwork</p>
+            <h4 className="text-xs font-bold text-emerald-400 font-mono tracking-widest uppercase mb-3">{tStats("accuracyLabel")}</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">{tStats("accuracyDesc")}</p>
           </motion.div>
 
           <motion.div 
@@ -543,8 +559,8 @@ function CTAAndStatsSection() {
             className="bg-[#0b0f17]/95 border border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-amber-400/50"
           >
             <h3 className="text-5xl font-bold mb-2 font-mono tabular-nums text-white">&lt; {stat4}°</h3>
-            <h4 className="text-xs font-bold text-amber-400 font-mono tracking-widest uppercase mb-3">DERAJAT</h4>
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">Batas kemiringan lereng aman [SAFE] untuk mobilitas Marswalk & Rover</p>
+            <h4 className="text-xs font-bold text-amber-400 font-mono tracking-widest uppercase mb-3">{tStats("slopeLabel")}</h4>
+            <p className="text-xs text-slate-400 leading-relaxed font-sans">{tStats("slopeDesc")}</p>
           </motion.div>
         </div>
       </div>
@@ -760,6 +776,8 @@ function ShowcaseSection() {
    9. FOOTER
 ============================================ */
 function Footer() {
+  const tFooter = useTranslations("landing.footer");
+
   return (
     <footer className="bg-[#05070b] text-slate-400 py-16 border-t border-white/10 px-6 relative z-50 select-none">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -781,39 +799,39 @@ function Footer() {
             </span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed max-w-sm font-sans font-light">
-            Interplanetary Survival Guide: Hyperlocalized Martian Excursion Map & ML Prospector for Mount Sharp (Aeolis Mons), Gale Crater, Mars. Developed for NASA Space Apps Challenge 2026.
+            {tFooter("brandDesc")}
           </p>
           <div className="text-[11px] text-slate-500 pt-2 font-mono">
-            Scientific data attributions: USGS Astrogeology Planetary Geologic Mapping Program, NASA AMMOS MMGIS, JPL Mars Trek, NASA Worldview / GIBS, and Mars Rover Raw Images.
+            {tFooter("attribution")}
           </div>
         </div>
 
         <div className="space-y-2 text-xs font-mono">
           <div className="font-bold text-white uppercase tracking-wider mb-2">
-            5 Layer Saintifik
+            {tFooter("colLayersTitle")}
           </div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Layer 1: Citra Optik HiRISE & Geologi</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Layer 2: Topografi 1m DEM & Kemiringan</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Layer 3: THEMIS & Detektor Pasir Amblas</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Layer 4: CRISM Mineral Terhidrasi & WEH</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Layer 5: Perisai Magnetik MGS & RAD</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Engine 6: Perencana Rute Marswalk A*</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("l1")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("l2")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("l3")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("l4")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("l5")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("e6")}</Link></div>
         </div>
 
         <div className="space-y-2 text-xs font-mono">
           <div className="font-bold text-white uppercase tracking-wider mb-2">
-            Navigasi Cockpit
+            {tFooter("colCockpitTitle")}
           </div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Peta Interaktif Mount Sharp</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Mode Habitat Mission Control</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Astronaut Helmet Visor HUD</Link></div>
-          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">Penjelajah POV 360° Permukaan</Link></div>
-          <div><Link href="#analogi" className="text-slate-400 hover:text-[#f97316] transition-colors">Analogi Terestrial Bumi-Mars</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("c1")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("c2")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("c3")}</Link></div>
+          <div><Link href="/peta" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("c4")}</Link></div>
+          <div><Link href="#analogi" className="text-slate-400 hover:text-[#f97316] transition-colors">{tFooter("c5")}</Link></div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto pt-10 mt-10 border-t border-white/10 text-center text-xs text-slate-500 font-mono">
-        MARSFORALL &copy; {new Date().getFullYear()} — NASA Space Apps Challenge 2026. Zero NASA insignia policy enforced.
+        {tFooter("policy", { year: new Date().getFullYear().toString() })}
       </div>
     </footer>
   );
@@ -823,6 +841,7 @@ function Footer() {
    10. SPLASH SCREEN (MARS SCANNER INTRO)
 ============================================ */
 function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const tSplash = useTranslations("landing.splash");
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
@@ -948,7 +967,7 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
           transition={{ delay: 0.4, duration: 0.4 }}
           className="text-slate-300 text-xs sm:text-sm font-mono tracking-wider animate-pulse"
         >
-          Menghubungkan Telemetri Orbital & Topografi Kawah Gale...
+          {tSplash("connecting")}
         </motion.span>
       </div>
     </motion.div>

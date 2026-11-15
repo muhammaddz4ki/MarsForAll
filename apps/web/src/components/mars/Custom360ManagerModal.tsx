@@ -498,31 +498,34 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
             <div className="space-y-4 text-[11px] leading-relaxed text-slate-300">
               <div className="p-3 bg-[#0b0f17] border border-slate-800 space-y-2">
                 <div className="font-bold text-white text-xs text-amber-400">
-                  CARA MEMASUKKAN FOTO PANORAMA JPEG 360°:
+                  {t("guideHeading")}
                 </div>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-300 pl-1">
                   <li>
-                    Buka direktori proyek: <code className="text-cyan-300 bg-slate-900 px-1 py-0.5 border border-slate-800">apps/web/public/panoramas/</code>
+                    {t("guideStep1")}{" "}
+                    <code className="text-cyan-300 bg-slate-900 px-1 py-0.5 border border-slate-800">
+                      apps/web/public/panoramas/
+                    </code>
                   </li>
                   <li>
-                    Salin file JPEG foto panorama 360° Anda ke dalam folder tersebut (contoh: <code className="text-white">gediz_vallis_360.jpg</code>).
+                    {t("guideStep2")}
                   </li>
                   <li>
-                    Buka kembali dialog ini, pilih tab <strong>+ Tambah Waypoint</strong>, ketik nama file yang Anda masukkan, dan tentukan koordinatnya.
+                    {t("guideStep3")}
                   </li>
                   <li>
-                    Klik <strong>Simpan & Buka POV 360°</strong>. Mesin Three.js akan memproyeksikan foto Anda menjadi bola panorama 360° interaktif!
+                    {t("guideStep4")}
                   </li>
                 </ol>
               </div>
 
               <div className="p-3 bg-[#0b0f17] border border-slate-800 space-y-2">
                 <div className="font-bold text-white text-xs text-cyan-400">
-                  REKOMENDASI FORMAT GAMBAR 360°:
+                  {t("guideRecHeading")}
                 </div>
                 <ul className="list-disc list-inside space-y-1 text-slate-400 pl-1">
-                  <li><strong className="text-slate-200">Rasio 2:1 Equirectangular Spherical</strong> (contoh: 2048×1024, 3840×1920, atau 4096×2048 px) menghasilkan tampilan bola 360° penuh paling mulus.</li>
-                  <li>Jika Anda menggunakan foto rover mosaic biasa atau strip panorama horizontal, sistem otomatis menjalankan <code className="text-emerald-300">blendMartianZenithAndNadir</code> untuk mengisi langit Mars dan tanah batuan secara mulus tanpa lubang hitam!</li>
+                  <li>{t("guideRec1")}</li>
+                  <li>{t("guideRec2")}</li>
                 </ul>
               </div>
             </div>

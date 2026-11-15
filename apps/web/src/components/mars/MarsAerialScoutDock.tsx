@@ -34,6 +34,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
   flightTelemetry,
   theme = "dark",
 }) => {
+  const t = useTranslations("scout");
   const isDark = theme === "dark";
   const defaultCoords = currentSite === "gale_crater"
     ? { lat: -5.4453, lon: 137.8414, label: "Mount Sharp Boxwork 2025" }
@@ -91,7 +92,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
           <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
             <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
           </svg>
-          <span>MARS AERIAL SCOUT // DRONE FLIGHT</span>
+          <span>{t("title")}</span>
         </span>
         <button
           onClick={onClose}
@@ -109,21 +110,21 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
             <div className="flex items-center justify-between text-[#34d399] font-bold text-[9px] uppercase">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
-                <span>[AERIAL DRONE: IN FLIGHT]</span>
+                <span>{t("inFlight")}</span>
               </span>
-              <span>HEADING: {flightTelemetry.headingDeg.toFixed(0)}°</span>
+              <span>{t("heading")} {flightTelemetry.headingDeg.toFixed(0)}°</span>
             </div>
             <div className="grid grid-cols-3 gap-1 text-[9px] pt-1 border-t border-[#10b981]/40 tabular-nums">
               <div>
-                <span className="text-slate-400 block text-[8px]">ALTITUDE</span>
+                <span className="text-slate-400 block text-[8px]">{t("altitude")}</span>
                 <span className="text-white font-bold">{flightTelemetry.altitudeM.toFixed(0)} m</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[8px]">AIRSPEED</span>
+                <span className="text-slate-400 block text-[8px]">{t("airspeed")}</span>
                 <span className="text-white font-bold">{flightTelemetry.speedMs.toFixed(0)} m/s</span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[8px]">REMAINING</span>
+                <span className="text-slate-400 block text-[8px]">{t("remaining")}</span>
                 <span className="text-amber-400 font-bold">{flightTelemetry.distanceRemainingKm.toFixed(2)} km</span>
               </div>
             </div>
@@ -133,12 +134,12 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
         {/* Coordinate Inputs */}
         <div className="space-y-2">
           <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block">
-            TARGET RECONNAISSANCE COORDINATES (SI)
+            {t("targetCoords")}
           </span>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[8px] text-slate-400 block mb-0.5">LATITUDE (DEG)</label>
+              <label className="text-[8px] text-slate-400 block mb-0.5">{t("latitude")}</label>
               <input
                 type="number"
                 step="0.0001"
@@ -149,7 +150,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
               />
             </div>
             <div>
-              <label className="text-[8px] text-slate-400 block mb-0.5">LONGITUDE (DEG)</label>
+              <label className="text-[8px] text-slate-400 block mb-0.5">{t("longitude")}</label>
               <input
                 type="number"
                 step="0.0001"
@@ -162,7 +163,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
           </div>
 
           <div>
-            <label className="text-[8px] text-slate-400 block mb-0.5">TARGET DESIGNATION / LABEL</label>
+            <label className="text-[8px] text-slate-400 block mb-0.5">{t("designation")}</label>
             <input
               type="text"
               value={flightLabel}
@@ -174,7 +175,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
 
           <div>
             <div className="flex justify-between items-center text-[8px] text-slate-400 mb-0.5">
-              <span>CRUISE ALTITUDE AGL</span>
+              <span>{t("cruiseAltitude")}</span>
               <span className="text-cyan-400 font-bold tabular-nums">{altitudeM} m AGL</span>
             </div>
             <input
@@ -192,7 +193,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
         {/* Quick Presets */}
         <div className="pt-2 border-t border-slate-800">
           <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block mb-1.5">
-            MISSION SATELLITE / LANDMARK PRESETS
+            {t("presets")}
           </span>
           <div className="grid grid-cols-1 gap-1 max-h-28 overflow-y-auto pr-1">
             {presets.map((p) => (
@@ -224,7 +225,7 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
               <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
             </svg>
-            <span>{isFlying ? "[SCOUT IN FLIGHT...]" : "[ TERBANGKAN PESAWAT // LAUNCH FLIGHT ]"}</span>
+            <span>{isFlying ? t("scoutInFlight") : t("launchFlight")}</span>
           </button>
         </div>
       </div>

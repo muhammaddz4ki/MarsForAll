@@ -15,9 +15,6 @@ interface LanguageSwitcherProps {
 const LANGUAGES = [
   { code: "id", label: "Indonesia", flag: "ID" },
   { code: "en", label: "English", flag: "EN" },
-  { code: "es", label: "Español", flag: "ES" },
-  { code: "fr", label: "Français", flag: "FR" },
-  { code: "zh", label: "中文", flag: "ZH" },
 ];
 
 export default function LanguageSwitcher({

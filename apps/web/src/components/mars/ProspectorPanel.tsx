@@ -533,7 +533,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                   />
                 </div>
                 <p className="text-[8px] text-slate-400 leading-tight">
-                  Penampang radargram orbital MRO SHARAD memverifikasi lapisan reflektor bawah tanah dan formasi batuan dasar padat di sekitar koordinat target.
+                  {t("sharadDescription")}
                 </p>
               </div>
             )}

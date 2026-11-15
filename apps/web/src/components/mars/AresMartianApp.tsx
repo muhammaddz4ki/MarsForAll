@@ -35,7 +35,7 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { AerialScoutTarget } from "./MarsAerialScoutDock";
 
-export type SupportedLocale = "en" | "id" | "es" | "fr" | "zh";
+export type SupportedLocale = "en" | "id";
 
 // Lazy-loaded heavy modules with zero-SSR to optimize initial bundle size & load speed
 const SurfacePovModal = dynamic(() => import("./SurfacePovModal"), {
@@ -120,12 +120,12 @@ export const AresMartianApp: React.FC = () => {
   const [customPin, setCustomPin] = useState<MountSharpWaypoint | null>(null);
 
   // MMGIS Left Tool Rail Active Drawer State (null = full-canvas map/globe)
-  const [activeTool, setActiveTool] = useState<ActiveDrawerTool>("layers");
+  const [activeTool, setActiveTool] = useState<ActiveDrawerTool>(null);
 
   // Sol & Atmospheric Simulation State
   const [currentSol, setCurrentSol] = useState<number>(4180);
   const [dustStormActive, setDustStormActive] = useState<boolean>(false);
-  const [showSolWeatherScrubber, setShowSolWeatherScrubber] = useState<boolean>(true);
+  const [showSolWeatherScrubber, setShowSolWeatherScrubber] = useState<boolean>(false);
   const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
   const [orbitalSource, setOrbitalSource] = useState<OrbitalImagerySource>("jpl_hirise");
   const [wmtsStatus, setWmtsStatus] = useState<WmtsStreamStatus>("streaming");
@@ -163,7 +163,7 @@ export const AresMartianApp: React.FC = () => {
   const [zoiList, setZoiList] = useState<ZoiFeature[]>([]);
   const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
   const [showGraticule, setShowGraticule] = useState<boolean>(false);
-  const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(true);
+  const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(false);
   const [reCenterTrigger, setReCenterTrigger] = useState<number>(0);
 
   const handleAddZoi = useCallback((newZoi: ZoiFeature) => {
@@ -172,19 +172,8 @@ export const AresMartianApp: React.FC = () => {
     setTimeout(() => setExportNotification(null), 2500);
   }, []);
 
-  const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(() => {
-    try {
-      return planMarswalkRoute({
-        startWaypointId: "gale_hab_alpha",
-        targetWaypointId: "curiosity_boxwork_2025",
-        supportMode: "PAIRED_CREW_MULE_ROVER",
-        avoidHighRadiationRidges: true,
-      });
-    } catch {
-      return null;
-    }
-  });
-  const [isProfileDockOpen, setIsProfileDockOpen] = useState<boolean>(true);
+  const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
+  const [isProfileDockOpen, setIsProfileDockOpen] = useState<boolean>(false);
   const [navFlyToCoord, setNavFlyToCoord] = useState<[number, number] | null>(null);
   const [hoveredRoutePoint, setHoveredRoutePoint] = useState<HighDensityPointTelemetry | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
@@ -358,7 +347,11 @@ export const AresMartianApp: React.FC = () => {
       setPickedElevFor360(elevation);
       setIsPicking360Coord(false);
       setIs360ManagerOpen(true);
-      setExportNotification(`KOORDINAT DIAMBIL: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`);
+      setExportNotification(
+        currentLocale === "id"
+          ? `KOORDINAT DIAMBIL: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`
+          : `COORDINATES CAPTURED: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`
+      );
       setTimeout(() => setExportNotification(null), 3000);
       return;
     }
@@ -597,10 +590,10 @@ export const AresMartianApp: React.FC = () => {
 
         {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
         <div className="flex items-center gap-1 shrink-0">
-          {/* Multi-Language Selector [ EN | ID | ES | FR | ZH ] */}
+          {/* Multi-Language Selector [ EN | ID ] */}
           <div className={`flex items-center ${isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
             } border p-0.5 font-mono text-[9px]`}>
-            {(["en", "id", "es", "fr", "zh"] as const).map((loc) => (
+            {(["en", "id"] as const).map((loc) => (
               <button
                 key={loc}
                 onClick={() => handleChangeLanguage(loc)}
@@ -1205,7 +1198,11 @@ export const AresMartianApp: React.FC = () => {
           pickedElevation={pickedElevFor360}
           onStartPickCoordinate={() => {
             setIsPicking360Coord(true);
-            setExportNotification("KLIK TITIK DI PETA UNTUK KOORDINAT 360°");
+            setExportNotification(
+              currentLocale === "id"
+                ? "KLIK TITIK DI PETA UNTUK KOORDINAT 360°"
+                : "CLICK MAP TO CAPTURE 360° COORDINATES"
+            );
             setTimeout(() => setExportNotification(null), 3000);
           }}
           onSelectAndOpen360={(wp) => {

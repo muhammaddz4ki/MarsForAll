@@ -2268,7 +2268,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 }}
                 className="w-full py-2 px-3 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[10px] tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
               >
-                <span>🧭</span>
                 <span>[ {tMmgis("planRouteHere")} ]</span>
               </button>
 
@@ -2288,7 +2287,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                   }}
                   className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors text-center truncate"
                 >
-                  [ 📷 {tMmgis("openPov")} ]
+                  {tMmgis("openPov")}
                 </button>
 
                 {/* PROSPECTOR ML */}
@@ -2302,7 +2301,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                   }}
                   className="py-1.5 px-2 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[9px] transition-colors text-center truncate"
                 >
-                  [ 🔬 {tMmgis("analyzeProspector")} ]
+                  {tMmgis("analyzeProspector")}
                 </button>
 
                 {/* EARTH ANALOGUE */}
@@ -2316,7 +2315,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                   }}
                   className="py-1.5 px-2 bg-[#451a03] hover:bg-[#78350f] text-[#fde68a] border border-[#d97706] font-bold text-[9px] transition-colors text-center truncate"
                 >
-                  [ 🌍 {tMmgis("compareAnalogue")} ]
+                  [ {tMmgis("compareAnalogue")} ]
                 </button>
 
                 {/* 5M TRANSECT DOCK */}
@@ -2330,7 +2329,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                       : "bg-[#111827] text-slate-300 border-slate-700 hover:text-white"
                   }`}
                 >
-                  [ 📈 {tMmgis("transectDock")} ]
+                  [ {tMmgis("transectDock")} ]
                 </button>
               </div>
             </div>

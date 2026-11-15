@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const LOCALES = ["en", "id", "es", "fr", "zh"] as const;
+const LOCALES = ["en", "id"] as const;
 type Locale = (typeof LOCALES)[number];
 
 const ROUTES: {
@@ -8,16 +8,13 @@ const ROUTES: {
   priority: number;
 }[] = [
   {
-    paths: { en: "", id: "", es: "", fr: "", zh: "" },
+    paths: { en: "", id: "" },
     priority: 1.0,
   },
   {
     paths: {
       en: "/map",
       id: "/peta",
-      es: "/mapa",
-      fr: "/carte",
-      zh: "/ditu",
     },
     priority: 0.95,
   },

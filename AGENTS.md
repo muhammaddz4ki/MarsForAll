@@ -60,5 +60,5 @@
 
 ---
 
-## 6. STRICT I18N SYNC POLICY (THE 5-LANGUAGE RULE)
-Every time a new feature, UI component, panel, button, or text label is added or modified in the project, the AI Agent MUST automatically update all 5 localization dictionaries (`en.json`, `id.json`, `es.json`, `fr.json`, `zh.json`) simultaneously. No UI string shall be hardcoded in the components. All texts must use `next-intl` translations (`useTranslations`). The AI Agent must never complete a UI task without verifying that all 5 JSON files are 100% synced with the new keys.
+## 6. STRICT I18N SYNC POLICY (THE 2-LANGUAGE RULE: ID & EN)
+The project supports strictly two languages: Indonesian (`id`) and English (`en`). Every time a new feature, UI component, panel, button, or text label is added or modified in the project, the AI Agent MUST automatically update both localization dictionaries (`en.json` and `id.json`) simultaneously. No UI string shall be hardcoded in the components. All texts must use `next-intl` translations (`useTranslations`). The AI Agent must never complete a UI task without verifying that both JSON files are 100% synced with identical keys and accurate translations.

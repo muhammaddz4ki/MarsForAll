@@ -106,7 +106,8 @@
     "radarAttenuation": "RADAR ATTENUATION:",
     "radarAttenuationLow": "LOW (High transmission through dry sulfates)",
     "inspect3d": "INSPECT 3D POV (NASA MOLA & MSL RAW FEED)",
-    "planRoute": "PLAN MARSWALK ROUTE TO TARGET"
+    "planRoute": "PLAN MARSWALK ROUTE TO TARGET",
+    "sharadDescription": "MRO SHARAD orbital radargram sounder cross-section verifies subsurface reflector horizons and dense bedrock formations surrounding target coordinates."
   },
   "layers": {
     "title": "PLANETARY GIS TELEMETRY LAYERS",
@@ -128,11 +129,11 @@
     "pdsDocs": "[PDS DOCS]",
     "opacity": "OPACITY",
     "searchPlaceholder": "Search layers (# for tags)...",
-    "groupTopography": "1. TOPOGRAPHY & MEDAN JALAN",
-    "groupThermal": "2. FISIK TERMAL & PASIR AMBLAS",
-    "groupMinerals": "3. MINERALOGI & SUMBER DAYA HIDRAT",
-    "groupRadiation": "4. PERISAI RADIASI & MAGNETIK KERAK",
-    "groupWeather": "5. CUACA MARS & LINTASAN ROVER"
+    "groupTopography": "1. TOPOGRAPHY & MOBILITY HAZARD",
+    "groupThermal": "2. THERMAL PHYSICS & SAND TRAP RISK",
+    "groupMinerals": "3. MINERALOGY & HYDRATED RESOURCES",
+    "groupRadiation": "4. RADIATION SHIELDING & CRUSTAL MAGNETICS",
+    "groupWeather": "5. MARS WEATHER & ROVER TRAVERSES"
   },
   "marswalk": {
     "title": "MARSWALK A* ROUTE PLANNER",
@@ -352,7 +353,11 @@
     "solWeatherTitle": "SOL TIMELINE & ATMOSPHERIC SIMULATOR",
     "solTimelineDesc": "Jump between historical rover mission sols or simulate Martian atmospheric dust storm conditions with live optical depth (tau) extinction.",
     "weatherSim": "ATMOSPHERIC OPTICAL DEPTH",
-    "bottomScrubberToggle": "BOTTOM TIMELINE SCRUBBER OVERLAY"
+    "bottomScrubberToggle": "BOTTOM TIMELINE SCRUBBER OVERLAY",
+    "planRouteHere": "PLAN A* MARSWALK ROUTE HERE",
+    "compareAnalogue": "EARTH ANALOGUE",
+    "transectDock": "5M TRANSECT DOCK",
+    "clickPrompt": "CLICK ANY FEATURE OR WAYPOINT ON MARS SURFACE TO INSPECT & PLAN"
   },
   "landing": {
     "telemetry": {
@@ -534,7 +539,64 @@
       "layersSubtitle": "5 NASA Orbital Layers & ML Fusion",
       "openViewer": "Open Map Viewer",
       "viewportTitle": "Interactive Viewport Selection",
-      "close": "Close"
+      "close": "Close",
+      "language": "Language:"
+    },
+    "matrixSection": {
+      "headingLead": "Planetary",
+      "headingHighlight": "Science",
+      "headingSuffix": "& Tactical Matrix.",
+      "subtitle": "Synthesis of 5 NASA orbital remote sensing layers and in-situ rover telemetry for tactical extravehicular activity (EVA) planning at human-mission standards.",
+      "inspectCta": "Inspect in Cockpit",
+      "layer1Tag": "LAYER 01 // USGS & HiRISE 25cm",
+      "layer1Cat": "Photogeology & Stratigraphy",
+      "layer1Title": "Geology & Optical Imagery",
+      "layer1Inst": "HiRISE 25cm/px, CTX 6m/px & USGS Astrogeology",
+      "layer1Desc": "Ultra-high-resolution orbital photogeology identifies Noachian-Hesperian contact boundaries, 2025 Boxwork crystal veins, and the 5.5 km Mount Sharp paleolake stratigraphy.",
+      "layer2Tag": "LAYER 02 // 1m DEM & HRSC",
+      "layer2Cat": "Morphology & Slope Hazard",
+      "layer2Title": "Topography & Slope Hazard",
+      "layer2Inst": "HiRISE Stereo DTM 1m/px & HRSC",
+      "layer2Desc": "Micro 1-meter digital elevation model extracts sheer cliff contours, instant slope gradients, and surface roughness for safe A* astronaut EVA traction corridors.",
+      "layer3Tag": "LAYER 03 // THEMIS Night IR & TES",
+      "layer3Cat": "Geophysics & Sand Trap",
+      "layer3Title": "Thermal Inertia & Sand Trap",
+      "layer3Inst": "THEMIS Night IR (100m) & TES Apparent Inertia",
+      "layer3Desc": "Morgan et al. (2020) thermal inertia model distinguishes firm bedrock [BEDROCK FIRM 485 tiu] from dangerous sinking eolian dust mantles [SOFT SAND TRAP RISK 140 tiu].",
+      "layer4Tag": "LAYER 04 // CRISM 18m/px & GRS",
+      "layer4Cat": "Geochemistry & ISRU",
+      "layer4Title": "Hydrated Minerals & ISRU",
+      "layer4Inst": "MRO CRISM & Odyssey GRS/DAN",
+      "layer4Desc": "Infrared absorption spectroscopy detects hydrated smectite clays and 2025 boxwork sulfate vein networks with 6.8 wt% WEH water harvesting yield for habitat modules.",
+      "layer5Tag": "LAYER 05 // MGS MAG & MSL RAD",
+      "layer5Cat": "Radiation Physics & Magnetics",
+      "layer5Title": "Radiation & Crustal Magnetic Field",
+      "layer5Inst": "MSL RAD Dosimeter & MGS MAG Magnetometer",
+      "layer5Desc": "MSL RAD particle dosimetry fused with ancient Martian crustal magnetic anomalies (72 nT) providing natural galactic cosmic radiation deflection shielding up to 13.7%."
+    },
+    "statsRing": {
+      "text": "gale crater exploration • marsforall mission • "
+    },
+    "footer": {
+      "brandDesc": "Interplanetary Survival Guide: Hyperlocalized Martian Excursion Map & ML Prospector for Mount Sharp (Aeolis Mons), Gale Crater, Mars. Developed for NASA Space Apps Challenge 2026.",
+      "attribution": "Scientific data attributions: USGS Astrogeology Planetary Geologic Mapping Program, NASA AMMOS MMGIS, JPL Mars Trek, NASA Worldview / GIBS, and Mars Rover Raw Images.",
+      "colLayersTitle": "5 Scientific Layers",
+      "l1": "Layer 1: HiRISE Optical Imagery & Geology",
+      "l2": "Layer 2: 1m DEM Topography & Slope",
+      "l3": "Layer 3: THEMIS & Sand Trap Detector",
+      "l4": "Layer 4: CRISM Hydrated Minerals & WEH",
+      "l5": "Layer 5: MGS Magnetic Shielding & RAD",
+      "e6": "Engine 6: Marswalk A* Route Planner",
+      "colCockpitTitle": "Cockpit Navigation",
+      "c1": "Mount Sharp Interactive Map",
+      "c2": "Habitat Mission Control Mode",
+      "c3": "Astronaut Helmet Visor HUD",
+      "c4": "360° Surface POV Explorer",
+      "c5": "Earth-Mars Terrestrial Analogues",
+      "policy": "MARSFORALL © {year} — NASA Space Apps Challenge 2026. Zero NASA insignia policy enforced."
+    },
+    "splash": {
+      "connecting": "Connecting Orbital Telemetry & Gale Crater Topography..."
     }
   },
   "custom360": {
@@ -555,7 +617,15 @@
     "btnSaveOnly": "Save Waypoint",
     "btnSaveAndOpen360": "Save & Launch 360° POV",
     "btnFocusMap": "Focus Map",
-    "btnOpen360": "Open 360°"
+    "btnOpen360": "Open 360°",
+    "guideHeading": "HOW TO LOAD 360° JPEG PANORAMAS:",
+    "guideStep1": "Open project directory:",
+    "guideStep2": "Copy your 360° equirectangular JPEG photo into that folder (e.g., gediz_vallis_360.jpg).",
+    "guideStep3": "Return to this dialog, select + Add Waypoint, enter the file name, and specify Martian coordinates.",
+    "guideStep4": "Click Save & Launch 360° POV. The WebGL engine will project your photo into an interactive 360° sphere!",
+    "guideRecHeading": "RECOMMENDED 360° IMAGE SPECIFICATIONS:",
+    "guideRec1": "2:1 Equirectangular Spherical Aspect Ratio (e.g., 2048×1024, 3840×1920, or 4096×2048 px) gives the smoothest 360° spherical projection.",
+    "guideRec2": "If using a standard rover mosaic or horizontal panorama strip, the system automatically runs blendMartianZenithAndNadir to blend the sky and terrain seamlessly with zero black holes!"
   },
   "navigationHud": {
     "activeBadge": "3D MARSWALK NAVIGATION",
@@ -571,5 +641,21 @@
     "cautionVerdict": "[CAUTION // MODERATE SLOPES DETECTED]",
     "hazardVerdict": "[HAZARD // BYPASS HIGH SLOPES]",
     "turnByTurn": "TURN-BY-TURN CORRIDOR MANEUVERS"
+  },
+  "scout": {
+    "title": "MARS AERIAL SCOUT // DRONE FLIGHT",
+    "inFlight": "[AERIAL DRONE: IN FLIGHT]",
+    "heading": "HEADING:",
+    "altitude": "ALTITUDE",
+    "airspeed": "AIRSPEED",
+    "remaining": "REMAINING",
+    "targetCoords": "TARGET RECONNAISSANCE COORDINATES (SI)",
+    "latitude": "LATITUDE (DEG)",
+    "longitude": "LONGITUDE (DEG)",
+    "designation": "TARGET DESIGNATION / LABEL",
+    "cruiseAltitude": "CRUISE ALTITUDE AGL",
+    "presets": "MISSION SATELLITE / LANDMARK PRESETS",
+    "scoutInFlight": "[SCOUT IN FLIGHT...]",
+    "launchFlight": "[ LAUNCH AERIAL DRONE RECON ]"
   }
 }

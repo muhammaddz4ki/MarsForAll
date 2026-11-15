@@ -36,9 +36,9 @@
     "dustStorm": "BADAI DEBU (TAU 2.4)"
   },
   "status": {
-    "safe": "[AMAN <15 DGR]",
-    "caution": "[WASPADA 15-25 DGR]",
-    "hazard": "[BAHAYA >25 DGR]",
+    "safe": "[AMAN <15 DEG]",
+    "caution": "[WASPADA 15-25 DEG]",
+    "hazard": "[BAHAYA >25 DEG]",
     "nominal": "[NOMINAL]",
     "locked": "[TERKUNCI]"
   },
@@ -59,7 +59,7 @@
     "prioritySampling": "LOKASI PENGAMBILAN SAMPEL PRIORITAS",
     "hazardBypass": "PENGALIHAN BAHAYA DIPERLUKAN",
     "nominalSurvey": "LOKASI SURVEI NOMINAL",
-    "swimTitle": "INDEKS AIR-ES 5-ISTILAH SWIM (MORGAN ET AL. 2020)",
+    "swimTitle": "INDEKS AIR-ES 5-SUKU SWIM (MORGAN ET AL. 2020)",
     "sharadPermittivity": "PERMITIVITAS DIELEKTRIK SHARAD (ε'):",
     "chemcamTitle": "KIMIA BATUAN CHEMCAM (JPL MMGIS GBR. 2)",
     "libsAbundance": "KELIMPAHAN LIBS",
@@ -106,7 +106,8 @@
     "radarAttenuation": "ATENUASI RADAR:",
     "radarAttenuationLow": "RENDAH (Transmisi tinggi menembus sulfat kering)",
     "inspect3d": "INSPEKSI POV 3D (FEED ASLI NASA MOLA & MSL)",
-    "planRoute": "RENCANAKAN RUTE MARSWALK KE TARGET"
+    "planRoute": "RENCANAKAN RUTE MARSWALK KE TARGET",
+    "sharadDescription": "Penampang radargram orbital MRO SHARAD memverifikasi lapisan reflektor bawah tanah dan formasi batuan dasar padat di sekitar koordinat target."
   },
   "layers": {
     "title": "LAPISAN TELEMETRI GIS PLANET",
@@ -352,7 +353,11 @@
     "solWeatherTitle": "TIMELINE SOL & SIMULATOR ATMOSFER",
     "solTimelineDesc": "Lompat antar sol misi rover bersejarah atau simulasikan kondisi badai debu atmosfer Mars dengan kepunahan kedalaman optik (tau) langsung.",
     "weatherSim": "KEDALAMAN OPTIK ATMOSFER",
-    "bottomScrubberToggle": "OVERLAY SCRUBBER TIMELINE BAWAH"
+    "bottomScrubberToggle": "OVERLAY SCRUBBER TIMELINE BAWAH",
+    "planRouteHere": "RENCANAKAN RUTE MARSWALK A* KE SINI",
+    "compareAnalogue": "ANALOGI BUMI",
+    "transectDock": "DOCK TRANSEK 5M",
+    "clickPrompt": "KLIK FITUR ATAU TITIK MANAPUN DI PERMUKAAN MARS UNTUK INSPEKSI & RUTE"
   },
   "landing": {
     "telemetry": {
@@ -391,9 +396,9 @@
       "targetSiteVal": "Mount Sharp // Boxwork 2025",
       "coordsLabel": "Lat: -5.4453° | Lon: 137.8414°",
       "safetyLabel": "INTEGRASI SAINS",
-      "safetyVal": "[SAFE TRAVERSE <15°]",
+      "safetyVal": "[LINTASAN AMAN <15°]",
       "safetySub": "5 Layer NASA • Morgan et al. 2020",
-      "scrollExplore": "SCROLL EXPLORE",
+      "scrollExplore": "GULIR JELAJAHI",
       "evaBadge": "MISI EVA",
       "evaCockpit": "COCKPIT KESELAMATAN ASTRONOT",
       "destinationTag": "DESTINASI 01 · PLANET MERAH // KAWAH GALE",
@@ -483,7 +488,7 @@
       "targetPrefix": "Target:",
       "missionTitle": "TELEMETRI MISI EVA // REAL-TIME",
       "routeActiveNotice": "[VISUALISASI RUTE AMAN AKTIF DI BOLA MARS]",
-      "slopeNotice": "KEMIRINGAN: <15° [SAFE TRAVERSE]",
+      "slopeNotice": "KEMIRINGAN: <15° [LINTASAN AMAN]",
       "proofTitle": "KLAIM VALIDITAS RUTE AMAN MARS",
       "sensorsCount": "5 SENSOR NASA",
       "verifiedDist": "Jarak Rute Terverifikasi",
@@ -534,7 +539,64 @@
       "layersSubtitle": "5 Layer Orbital NASA & Fusi ML",
       "openViewer": "Buka Peta",
       "viewportTitle": "Pilihan Viewport Interaktif",
-      "close": "Tutup"
+      "close": "Tutup",
+      "language": "Bahasa:"
+    },
+    "matrixSection": {
+      "headingLead": "Sains",
+      "headingHighlight": "Planet",
+      "headingSuffix": "& Matriks Taktis.",
+      "subtitle": "Sintesis 5 layer saintifik instrumen orbital NASA dan telemetri in-situ rover untuk perencanaan taktis ekstravehikular (EVA) berstandar misi berawak Mars.",
+      "inspectCta": "Inspeksi di Cockpit",
+      "layer1Tag": "LAYER 01 // USGS & HiRISE 25cm",
+      "layer1Cat": "Fotogeologi & Stratigrafi",
+      "layer1Title": "Geologi & Citra Optik",
+      "layer1Inst": "HiRISE 25cm/px, CTX 6m/px & USGS Astrogeology",
+      "layer1Desc": "Pemetaan fotogeologi orbital resolusi ultra-tinggi mengidentifikasi batas kontak formasi Noachian-Hesperian, urat kristal Boxwork 2025, dan stratigrafi paleodanau 5.5 km Mount Sharp.",
+      "layer2Tag": "LAYER 02 // 1m DEM & HRSC",
+      "layer2Cat": "Morfologi & Bahaya Lereng",
+      "layer2Title": "Topografi & Bahaya Lereng",
+      "layer2Inst": "HiRISE Stereo DTM 1m/px & HRSC",
+      "layer2Desc": "Model elevasi digital mikro 1 meter mengekstrak kontur tebing terjal, kemiringan lereng instan, dan kekasaran permukaan untuk koridor traksi aman A* rute EVA astronot.",
+      "layer3Tag": "LAYER 03 // THEMIS Night IR & TES",
+      "layer3Cat": "Geofisika & Sand Trap",
+      "layer3Title": "Termal Inersia & Sand Trap",
+      "layer3Inst": "THEMIS Night IR (100m) & TES Apparent Inertia",
+      "layer3Desc": "Model inersia termal Morgan et al. (2020) membedakan batuan dasar padat [BEDROCK FIRM 485 tiu] dari mantel debu eolian amblas [SOFT SAND TRAP RISK 140 tiu].",
+      "layer4Tag": "LAYER 04 // CRISM 18m/px & GRS",
+      "layer4Cat": "Geokimia & ISRU",
+      "layer4Title": "Mineral Terhidrasi & ISRU",
+      "layer4Inst": "MRO CRISM & Odyssey GRS/DAN",
+      "layer4Desc": "Spektroskopi serapan inframerah mendeteksi lempung smektit terhidrasi dan jaringan urat sulfat boxwork 2025 dengan potensi pemanenan air 6.8 wt% WEH untuk modul habitat.",
+      "layer5Tag": "LAYER 05 // MGS MAG & MSL RAD",
+      "layer5Cat": "Fisika Radiasi & Magnetik",
+      "layer5Title": "Radiasi & Medan Magnet Kerak",
+      "layer5Inst": "MSL RAD Dosimeter & MGS MAG Magnetometer",
+      "layer5Desc": "Dosimetri partikel MSL RAD dipadukan anomali medan magnet kerak purba Mars (72 nT) yang menjadi perisai alami defleksi radiasi kosmik galaksi hingga 13.7%."
+    },
+    "statsRing": {
+      "text": "eksplorasi kawah gale • misi marsforall • "
+    },
+    "footer": {
+      "brandDesc": "Panduan Bertahan Antarplanet: Peta Ekskursi Mars Hiperlokal & ML Prospector untuk Mount Sharp (Aeolis Mons), Kawah Gale, Mars. Dikembangkan untuk NASA Space Apps Challenge 2026.",
+      "attribution": "Atribusi data saintifik: Program Pemetaan Geologi Planet USGS Astrogeology, NASA AMMOS MMGIS, JPL Mars Trek, NASA Worldview / GIBS, dan Citra Mentah Mars Rover.",
+      "colLayersTitle": "5 Layer Saintifik",
+      "l1": "Layer 1: Citra Optik HiRISE & Geologi",
+      "l2": "Layer 2: Topografi 1m DEM & Kemiringan",
+      "l3": "Layer 3: THEMIS & Detektor Pasir Amblas",
+      "l4": "Layer 4: CRISM Mineral Terhidrasi & WEH",
+      "l5": "Layer 5: Perisai Magnetik MGS & RAD",
+      "e6": "Engine 6: Perencana Rute Marswalk A*",
+      "colCockpitTitle": "Navigasi Cockpit",
+      "c1": "Peta Interaktif Mount Sharp",
+      "c2": "Mode Kendali Habitat Misi",
+      "c3": "HUD Visor Helm Astronot",
+      "c4": "Penjelajah POV 360° Permukaan",
+      "c5": "Analogi Terestrial Bumi-Mars",
+      "policy": "MARSFORALL © {year} — NASA Space Apps Challenge 2026. Kebijakan tanpa lencana NASA diberlakukan."
+    },
+    "splash": {
+      "connecting": "Menghubungkan Telemetri Orbital & Topografi Kawah Gale..."
     }
   },
   "custom360": {
@@ -555,7 +617,15 @@
     "btnSaveOnly": "Simpan Waypoint",
     "btnSaveAndOpen360": "Simpan & Buka POV 360°",
     "btnFocusMap": "Pusatkan Peta",
-    "btnOpen360": "Buka 360°"
+    "btnOpen360": "Buka 360°",
+    "guideHeading": "CARA MEMASUKKAN FOTO PANORAMA JPEG 360°:",
+    "guideStep1": "Buka direktori proyek:",
+    "guideStep2": "Salin file JPEG foto panorama 360° Anda ke dalam folder tersebut (contoh: gediz_vallis_360.jpg).",
+    "guideStep3": "Buka kembali dialog ini, pilih tab + Tambah Waypoint, ketik nama file yang Anda masukkan, dan tentukan koordinatnya.",
+    "guideStep4": "Klik Simpan & Buka POV 360°. Mesin Three.js akan memproyeksikan foto Anda menjadi bola panorama 360° interaktif!",
+    "guideRecHeading": "REKOMENDASI FORMAT GAMBAR 360°:",
+    "guideRec1": "Rasio 2:1 Equirectangular Spherical (contoh: 2048×1024, 3840×1920, atau 4096×2048 px) menghasilkan tampilan bola 360° penuh paling mulus.",
+    "guideRec2": "Jika Anda menggunakan foto rover mosaic biasa atau strip panorama horizontal, sistem otomatis menjalankan blendMartianZenithAndNadir untuk mengisi langit Mars dan tanah batuan secara mulus tanpa lubang hitam!"
   },
   "navigationHud": {
     "activeBadge": "NAVIGASI 3D MARSWALK",
@@ -571,5 +641,21 @@
     "cautionVerdict": "[PERINGATAN // TERDETEKSI KELERENGAN SEDANG]",
     "hazardVerdict": "[BAHAYA // HINDARI LERENG CURAM]",
     "turnByTurn": "MANUVER LANGKAH-DEMI-LANGKAH KORIDOR"
+  },
+  "scout": {
+    "title": "PENGINTAI UDARA MARS // PENERBANGAN DRONE",
+    "inFlight": "[DRONE UDARA: DALAM PENERBANGAN]",
+    "heading": "ARAH:",
+    "altitude": "ELEVASI",
+    "airspeed": "KECEPATAN",
+    "remaining": "SISA JARAK",
+    "targetCoords": "KOORDINAT PENGENALAN TARGET (SI)",
+    "latitude": "LINTANG (DEG)",
+    "longitude": "BUJUR (DEG)",
+    "designation": "DESIGNASI TARGET / LABEL",
+    "cruiseAltitude": "KETINGGIAN JELAJAH AGL",
+    "presets": "PRESET SATELIT / LANDMARK MISI",
+    "scoutInFlight": "[DRONE SEDANG TERBANG...]",
+    "launchFlight": "[ TERBANGKAN DRONE PENGINTAI ]"
   }
 }
