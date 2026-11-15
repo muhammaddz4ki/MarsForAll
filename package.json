@@ -2,7 +2,7 @@
   "name": "marsforall",
   "private": true,
   "version": "0.1.0",
-  "description": "MARSFORALL // GALE-01: Interplanetary Survival Guide - Martian Map (NASA Space Apps Challenge 2026)",
+  "description": "MARSFORALL: Interplanetary Survival Guide - Martian Map (NASA Space Apps Challenge 2026)",
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "engines": {
