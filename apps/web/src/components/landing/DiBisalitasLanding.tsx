@@ -942,9 +942,9 @@ export default function LandingPage() {
         <MarsVideoHero />
         <MarsTakeMeSection />
         <MarsMissionSection />
+        <ImpactSection />
         <MartianScienceMatrixSection />
         <CTAAndStatsSection />
-        <ImpactSection />
         <ShowcaseSection />
         <Footer />
       </div>
