@@ -2016,7 +2016,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* Active Tool Floating Banner (Appears ONLY when Measure / Viewshed / ZOI is active) */}
       {activeMmgisTool !== "none" && (
         <div
-          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${isLeftDrawerOpen ? "left-[416px]" : "left-[64px]"
+          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-[64px]"
             }`}
         >
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e] border border-cyan-400 text-cyan-300 font-bold shadow-lg">
@@ -2151,7 +2151,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {identifiedFeature && (
         <div
           className={`absolute top-14 z-40 w-96 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)] transition-all duration-200 ${
-            isLeftDrawerOpen ? "left-[416px]" : "left-14"
+            isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
           } bg-[#0b0f17] border-slate-700 text-slate-200`}
         >
           {/* Header */}
@@ -2342,7 +2342,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (
-        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17] border border-cyan-500 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
+        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17] border border-cyan-500 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-4 sm:left-[406px]" : "left-4 sm:left-[56px]"
           }`}>
           <span className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
           <span>

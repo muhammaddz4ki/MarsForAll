@@ -96,8 +96,8 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
   return (
     <div
       className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${
-        isLeftDrawerOpen ? "left-[400px]" : "left-[50px]"
-      } right-0 bg-[#07090e]/95 border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
+        isLeftDrawerOpen ? "left-0 sm:left-[400px]" : "left-0 sm:left-[50px]"
+      } right-0 bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
     >
       {/* Top Header Row */}
       <div className="h-7 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between text-[10px]">

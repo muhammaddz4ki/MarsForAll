@@ -823,7 +823,7 @@ export const AresMartianApp: React.FC = () => {
 
         {/* MMGIS SINGLE CLEAN DRAWER PANEL (w-[350px], left-11) */}
         {viewMode === "mission_control" && activeTool !== null && (
-          <aside className={`absolute left-11 top-0 bottom-14 w-[350px] z-20 pointer-events-auto ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
+          <aside className={`absolute left-11 top-0 bottom-0 w-[calc(100vw-44px)] sm:w-[350px] max-w-[calc(100vw-44px)] z-20 pointer-events-auto ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
             } border-r flex flex-col shadow-2xl`}>
             {/* Drawer Header with Title and Close Button */}
             <div className={`flex items-center justify-between px-3 py-2 border-b ${isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
@@ -1096,7 +1096,7 @@ export const AresMartianApp: React.FC = () => {
         {/* 3. UNIFIED BOTTOM TELEMETRY BAR & CIRCULAR TOGGLE BUTTON */}
         {viewMode === "mission_control" && !((activeRoute && isProfileDockOpen) || elevationProfile !== null) && (
           <div
-            className={`absolute bottom-3 z-20 flex items-center gap-2 pointer-events-none select-none transition-all duration-200 ${activeTool !== null ? "left-[406px]" : "left-14"
+            className={`absolute bottom-3 z-20 flex items-center gap-2 pointer-events-none select-none transition-all duration-200 ${activeTool !== null ? "hidden sm:flex sm:left-[406px]" : "left-14"
               } right-4`}
           >
             {/* Tombol Bulat Toggle Telemetri (Pointer-events-auto) */}
