@@ -107,7 +107,8 @@
     "radarAttenuationLow": "LOW (High transmission through dry sulfates)",
     "inspect3d": "INSPECT 3D POV (NASA MOLA & MSL RAW FEED)",
     "planRoute": "PLAN MARSWALK ROUTE TO TARGET",
-    "sharadDescription": "MRO SHARAD orbital radargram sounder cross-section verifies subsurface reflector horizons and dense bedrock formations surrounding target coordinates."
+    "sharadDescription": "MRO SHARAD orbital radargram sounder cross-section verifies subsurface reflector horizons and dense bedrock formations surrounding target coordinates.",
+    "sharadAlt": "MRO SHARAD Subsurface Cross-Section Radargram"
   },
   "layers": {
     "title": "PLANETARY GIS TELEMETRY LAYERS",
@@ -172,7 +173,18 @@
     "sandTrapSection": "2. GEOPHYSICS & SAND TRAP DETECTOR (THEMIS/TES)",
     "radiationSection": "3. RADIATION & CRUSTAL MAGNETIC SHIELDING (MGS MAG/RAD)",
     "mineralogySection": "4. MINERALOGY & SUBSTRATE STABILITY (CRISM)",
-    "consumablesSection": "5. LOGISTICS & EVA POWER RESERVES"
+    "consumablesSection": "5. LOGISTICS & EVA POWER RESERVES",
+    "scrubPrompt": "Hover cursor over graph to scrub points every 5 meters",
+    "pointInspector": "5M POINT INSPECTOR",
+    "coordinatesLabel": "COORDINATES:",
+    "elevationMolaLabel": "MOLA ELEVATION:",
+    "distance2dLabel": "2D DISTANCE:",
+    "firmnessLabel": "SURFACE FIRMNESS:",
+    "thermalInertiaLabel": "THERMAL INERTIA:",
+    "remainingO2Label": "REMAINING O2:",
+    "mgsMagLabel": "MGS MAG FIELD:",
+    "estimatedTimeLabel": "ESTIMATED TIME:",
+    "unitMinutes": "Minutes"
   },
   "analogue": {
     "targetRequiredDesc": "Select a Mount Sharp target waypoint to match against planetary Earth analogue testbeds.",
@@ -289,7 +301,8 @@
     "locked": "[LOCKED]",
     "distance": "DISTANCE",
     "meanSlope": "MEAN SLOPE",
-    "inspectPov": "INSPECT SURFACE POV"
+    "inspectPov": "INSPECT SURFACE POV",
+    "atmTemp": "ATM / TEMP"
   },
   "mmgis": {
     "toolbarTitle": "MMGIS TOOLS",
@@ -625,7 +638,24 @@
     "guideStep4": "Click Save & Launch 360° POV. The WebGL engine will project your photo into an interactive 360° sphere!",
     "guideRecHeading": "RECOMMENDED 360° IMAGE SPECIFICATIONS:",
     "guideRec1": "2:1 Equirectangular Spherical Aspect Ratio (e.g., 2048×1024, 3840×1920, or 4096×2048 px) gives the smoothest 360° spherical projection.",
-    "guideRec2": "If using a standard rover mosaic or horizontal panorama strip, the system automatically runs blendMartianZenithAndNadir to blend the sky and terrain seamlessly with zero black holes!"
+    "guideRec2": "If using a standard rover mosaic or horizontal panorama strip, the system automatically runs blendMartianZenithAndNadir to blend the sky and terrain seamlessly with zero black holes!",
+    "molaElevation": "MOLA Elevation (m):",
+    "waypointTitle": "Waypoint Name / Title:",
+    "roverSol": "Rover Sol:",
+    "geologyCategory": "Geological Formation Category:",
+    "catBoxwork": "Boxwork 2025 Crystal Vein",
+    "catClay": "Smectite Clay Trough",
+    "catHematite": "Hematite Ridge / Escarpment",
+    "catSulfate": "Sulfate & Calcium Vein",
+    "catHabitat": "Habitat Alpha Landing Zone",
+    "catHazard": "Sand Trap Hazard Zone",
+    "catCustom": "Custom Surface Survey",
+    "cameraHeading": "Camera Azimuth Heading (°):",
+    "scientificDesc": "Scientific / Visual Description:",
+    "placeholderDesc": "Visual ground characteristics, rock outcrops, and mineral formations...",
+    "totalWaypointsRegistered": "Total Registered 360° Waypoints:",
+    "coordCaptured": "COORDINATES CAPTURED: {lat}°, {lon}°",
+    "clickMapPrompt": "CLICK MAP TO CAPTURE 360° COORDINATES"
   },
   "navigationHud": {
     "activeBadge": "3D MARSWALK NAVIGATION",

@@ -107,7 +107,8 @@
     "radarAttenuationLow": "RENDAH (Transmisi tinggi menembus sulfat kering)",
     "inspect3d": "INSPEKSI POV 3D (FEED ASLI NASA MOLA & MSL)",
     "planRoute": "RENCANAKAN RUTE MARSWALK KE TARGET",
-    "sharadDescription": "Penampang radargram orbital MRO SHARAD memverifikasi lapisan reflektor bawah tanah dan formasi batuan dasar padat di sekitar koordinat target."
+    "sharadDescription": "Penampang radargram orbital MRO SHARAD memverifikasi lapisan reflektor bawah tanah dan formasi batuan dasar padat di sekitar koordinat target.",
+    "sharadAlt": "Radargram Penampang Bawah Tanah MRO SHARAD"
   },
   "layers": {
     "title": "LAPISAN TELEMETRI GIS PLANET",
@@ -172,7 +173,18 @@
     "sandTrapSection": "2. GEOFISIKA & DETEKSI PASIR HISAP (THEMIS/TES)",
     "radiationSection": "3. RADIASI & PERISAI MAGNETIK KERAK (MGS MAG/RAD)",
     "mineralogySection": "4. MINERALOGI & STABILITAS SUBSTRAT (CRISM)",
-    "consumablesSection": "5. LOGISTIK & CADANGAN DAYA EVA"
+    "consumablesSection": "5. LOGISTIK & CADANGAN DAYA EVA",
+    "scrubPrompt": "Gerakkan kursor di atas grafik untuk scrub titik tiap 5 meter",
+    "pointInspector": "INSPEKTOR TITIK 5M",
+    "coordinatesLabel": "KOORDINAT:",
+    "elevationMolaLabel": "ELEVASI MOLA:",
+    "distance2dLabel": "JARAK 2D:",
+    "firmnessLabel": "KEKERASAN TANAH:",
+    "thermalInertiaLabel": "INERSIA TERMAL:",
+    "remainingO2Label": "SISA OKSIGEN:",
+    "mgsMagLabel": "MEDAN MGS MAG:",
+    "estimatedTimeLabel": "ESTIMASI WAKTU:",
+    "unitMinutes": "Menit"
   },
   "analogue": {
     "targetRequiredDesc": "Pilih titik jalan target Mount Sharp untuk dicocokkan dengan lokasi uji analogi Bumi planet.",
@@ -289,7 +301,8 @@
     "locked": "[TERKUNCI]",
     "distance": "JARAK",
     "meanSlope": "KEMIRINGAN RATA-RATA",
-    "inspectPov": "INSPEKSI POV PERMUKAAN"
+    "inspectPov": "INSPEKSI POV PERMUKAAN",
+    "atmTemp": "ATM / SUHU"
   },
   "mmgis": {
     "toolbarTitle": "ALAT MMGIS",
@@ -343,7 +356,7 @@
     "floatingLegend": "LEGENDA ILMIAH PETA",
     "cameraPitch": "SUDUT KAMERA 3D",
     "exportGeoJsonBtn": "EKSPOR DATA GIS .GEOJSON",
-    "manage360Btn": "+ KELOLA / UPLOAD FOTO 360°",
+    "manage360Btn": "+ KELOLA / UNGGAH FOTO 360°",
     "open360PovBtn": "BUKA 360° SURFACE POV",
     "clearMeasureBtn": "BERSIHKAN TITIK PENGUKUR",
     "activeMeasuringPill": "MODE PENGUKUR AKTIF • KLIK PETA UNTUK MENAMBAH TITIK",
@@ -625,7 +638,24 @@
     "guideStep4": "Klik Simpan & Buka POV 360°. Mesin Three.js akan memproyeksikan foto Anda menjadi bola panorama 360° interaktif!",
     "guideRecHeading": "REKOMENDASI FORMAT GAMBAR 360°:",
     "guideRec1": "Rasio 2:1 Equirectangular Spherical (contoh: 2048×1024, 3840×1920, atau 4096×2048 px) menghasilkan tampilan bola 360° penuh paling mulus.",
-    "guideRec2": "Jika Anda menggunakan foto rover mosaic biasa atau strip panorama horizontal, sistem otomatis menjalankan blendMartianZenithAndNadir untuk mengisi langit Mars dan tanah batuan secara mulus tanpa lubang hitam!"
+    "guideRec2": "Jika Anda menggunakan foto rover mosaic biasa atau strip panorama horizontal, sistem otomatis menjalankan blendMartianZenithAndNadir untuk mengisi langit Mars dan tanah batuan secara mulus tanpa lubang hitam!",
+    "molaElevation": "Elevasi MOLA (m):",
+    "waypointTitle": "Nama / Judul Waypoint:",
+    "roverSol": "Sol Rover:",
+    "geologyCategory": "Kategori Formasi Geologi:",
+    "catBoxwork": "Urat Kristal Boxwork 2025",
+    "catClay": "Lembah Lempung Smektit",
+    "catHematite": "Punggungan Hematit / Escarpment",
+    "catSulfate": "Urat Sulfat & Kalsium",
+    "catHabitat": "Zona Pendaratan Habitat Alpha",
+    "catHazard": "Zona Bahaya Sand Trap",
+    "catCustom": "Survey Permukaan Kustom",
+    "cameraHeading": "Arah Sudut Kamera (Azimuth Heading °):",
+    "scientificDesc": "Deskripsi Ilmiah / Visual:",
+    "placeholderDesc": "Karakteristik visual tanah, singkapan batuan, dan formasi mineral...",
+    "totalWaypointsRegistered": "Total Waypoint 360° Terdaftar:",
+    "coordCaptured": "KOORDINAT DIAMBIL: {lat}°, {lon}°",
+    "clickMapPrompt": "KLIK TITIK DI PETA UNTUK KOORDINAT 360°"
   },
   "navigationHud": {
     "activeBadge": "NAVIGASI 3D MARSWALK",

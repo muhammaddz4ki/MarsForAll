@@ -528,7 +528,7 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 <div className="relative aspect-[16/7] w-full overflow-hidden border border-slate-800 bg-black">
                   <img
                     src={sharadProduct.browseImageUrl}
-                    alt="SHARAD Radargram Penampang Bawah Tanah"
+                    alt={t("sharadAlt")}
                     className="w-full h-full object-cover filter contrast-125"
                   />
                 </div>

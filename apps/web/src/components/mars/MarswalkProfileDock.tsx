@@ -159,7 +159,7 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
             </div>
 
             <div className="pt-1 border-t border-slate-800 text-[9px] text-slate-500">
-              Gerakkan kursor di atas grafik untuk scrub titik tiap 5 meter
+              {t("scrubPrompt")}
             </div>
           </div>
 
@@ -239,31 +239,31 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
           {activePoint && (
             <div className="w-64 shrink-0 bg-[#0b0f17] border border-slate-800 p-2.5 flex flex-col justify-between text-[10px] space-y-1">
               <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-                <span className="text-amber-400 font-bold uppercase">TITIK 5M INSPECTOR</span>
+                <span className="text-amber-400 font-bold uppercase">{t("pointInspector")}</span>
                 <span className="text-slate-400 tabular-nums">#{activePoint.pointIndex + 1}</span>
               </div>
 
               <div className="space-y-1 font-mono">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">KOORDINAT:</span>
+                  <span className="text-slate-400">{t("coordinatesLabel")}</span>
                   <span className="text-slate-200 tabular-nums">
                     {activePoint.coordinates[1]}°, {activePoint.coordinates[0]}°
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">ELEVASI MOLA:</span>
+                  <span className="text-slate-400">{t("elevationMolaLabel")}</span>
                   <span className="text-cyan-400 font-bold tabular-nums">
                     {activePoint.elevationM} m
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">JARAK 2D:</span>
+                  <span className="text-slate-400">{t("distance2dLabel")}</span>
                   <span className="text-white tabular-nums font-bold">
                     {activePoint.cumulativeDistanceM} m
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">SLOPE / LERENG:</span>
+                  <span className="text-slate-400">{t("slopeLabel")}:</span>
                   <span
                     className={`font-bold tabular-nums ${
                       activePoint.slopeCategory === "SAFE"
@@ -277,7 +277,7 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">KEKERASAN TANAH:</span>
+                  <span className="text-slate-400">{t("firmnessLabel")}</span>
                   <span
                     className={`font-bold ${
                       activePoint.surfaceFirmness === "BEDROCK FIRM"
@@ -291,19 +291,19 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">INERSIA TERMAL:</span>
+                  <span className="text-slate-400">{t("thermalInertiaLabel")}</span>
                   <span className="text-slate-300 tabular-nums">
                     {activePoint.thermalInertiaTiu} tiu
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">SISA OKSIGEN:</span>
+                  <span className="text-slate-400">{t("remainingO2Label")}</span>
                   <span className="text-emerald-400 font-bold tabular-nums">
                     {activePoint.remainingO2Percent}%
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">MEDAN MGS MAG:</span>
+                  <span className="text-slate-400">{t("mgsMagLabel")}</span>
                   <span className="text-amber-400 font-bold tabular-nums">
                     {activePoint.crustalMagneticFieldNt} nT
                   </span>
@@ -311,8 +311,8 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
               </div>
 
               <div className="pt-1 border-t border-slate-800 text-[9px] text-slate-400 flex items-center justify-between">
-                <span>ESTIMASI WAKTU:</span>
-                <span className="text-white font-bold">{activePoint.cumulativeTimeMinutes} Menit</span>
+                <span>{t("estimatedTimeLabel")}</span>
+                <span className="text-white font-bold">{activePoint.cumulativeTimeMinutes} {t("unitMinutes")}</span>
               </div>
             </div>
           )}

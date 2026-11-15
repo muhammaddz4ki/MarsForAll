@@ -212,7 +212,7 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
             </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>ATM / SUHU</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("atmTemp")}</span>
             <span className={`font-bold ${isDark ? "text-white" : "text-slate-900"} tabular-nums`}>
               {martianWeather ? `${martianWeather.maxTempC}°C | ${Math.round(martianWeather.atmosphericPressurePa)} Pa` : "-18°C | 745 Pa"}
             </span>

@@ -320,7 +320,7 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Elevasi MOLA (m):</span>
+                    <span className="text-[10px] text-slate-400 block">{t("molaElevation")}</span>
                     <input
                       type="number"
                       value={elevationM}
@@ -338,7 +338,7 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2">
-                    <span className="text-[10px] text-slate-400 block">Nama / Judul Waypoint:</span>
+                    <span className="text-[10px] text-slate-400 block">{t("waypointTitle")}</span>
                     <input
                       type="text"
                       value={title}
@@ -348,7 +348,7 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Sol Rover:</span>
+                    <span className="text-[10px] text-slate-400 block">{t("roverSol")}</span>
                     <input
                       type="number"
                       value={sol}
@@ -360,23 +360,23 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Kategori Formasi Geologi:</span>
+                    <span className="text-[10px] text-slate-400 block">{t("geologyCategory")}</span>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as any)}
                       className="w-full bg-[#0b0f17] border border-slate-700 text-white p-2 text-xs font-mono focus:border-cyan-400 focus:outline-none"
                     >
-                      <option value="boxwork_formation">Urat Kristal Boxwork 2025</option>
-                      <option value="clay_trough">Lembah Lempung Smektit</option>
-                      <option value="ridge_escarpment">Punggungan Hematit / Escarpment</option>
-                      <option value="mineral_vein">Urat Sulfat & Kalsium</option>
-                      <option value="habitat_landing">Zona Pendaratan Habitat Alpha</option>
-                      <option value="hazard_zone">Zona Bahaya Sand Trap</option>
-                      <option value="custom_user_pov">Survey Permukaan Kustom</option>
+                      <option value="boxwork_formation">{t("catBoxwork")}</option>
+                      <option value="clay_trough">{t("catClay")}</option>
+                      <option value="ridge_escarpment">{t("catHematite")}</option>
+                      <option value="mineral_vein">{t("catSulfate")}</option>
+                      <option value="habitat_landing">{t("catHabitat")}</option>
+                      <option value="hazard_zone">{t("catHazard")}</option>
+                      <option value="custom_user_pov">{t("catCustom")}</option>
                     </select>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Arah Sudut Kamera (Azimuth Heading °):</span>
+                    <span className="text-[10px] text-slate-400 block">{t("cameraHeading")}</span>
                     <input
                       type="number"
                       min="0"
@@ -389,12 +389,12 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
                 </div>
 
                 <div>
-                  <span className="text-[10px] text-slate-400 block">Deskripsi Ilmiah / Visual:</span>
+                  <span className="text-[10px] text-slate-400 block">{t("scientificDesc")}</span>
                   <textarea
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Karakteristik visual tanah, singkapan batuan, dan formasi mineral..."
+                    placeholder={t("placeholderDesc")}
                     className="w-full bg-[#0b0f17] border border-slate-700 text-white p-2 text-xs font-mono focus:border-cyan-400 focus:outline-none resize-none"
                   />
                 </div>
@@ -422,7 +422,7 @@ export const Custom360ManagerModal: React.FC<Custom360ManagerModalProps> = ({
           {activeTab === "list" && (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800">
-                <span>Total Waypoint 360° Terdaftar: <strong className="text-white">{entries.length}</strong></span>
+                <span>{t("totalWaypointsRegistered")} <strong className="text-white">{entries.length}</strong></span>
                 <span className="text-cyan-400">[ {currentSite.toUpperCase()} ]</span>
               </div>
 

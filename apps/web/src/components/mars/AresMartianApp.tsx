@@ -110,6 +110,7 @@ export const AresMartianApp: React.FC = () => {
   const tNav = useTranslations("nav");
   const tDocks = useTranslations("docks");
   const tScrubber = useTranslations("scrubber");
+  const tCustom360 = useTranslations("custom360");
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [currentSite, setCurrentSite] = useState<MissionSiteId>("gale_crater");
@@ -348,9 +349,10 @@ export const AresMartianApp: React.FC = () => {
       setIsPicking360Coord(false);
       setIs360ManagerOpen(true);
       setExportNotification(
-        currentLocale === "id"
-          ? `KOORDINAT DIAMBIL: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`
-          : `COORDINATES CAPTURED: ${coords[1].toFixed(4)}°, ${coords[0].toFixed(4)}°`
+        tCustom360("coordCaptured", {
+          lat: coords[1].toFixed(4),
+          lon: coords[0].toFixed(4),
+        })
       );
       setTimeout(() => setExportNotification(null), 3000);
       return;
@@ -1198,11 +1200,7 @@ export const AresMartianApp: React.FC = () => {
           pickedElevation={pickedElevFor360}
           onStartPickCoordinate={() => {
             setIsPicking360Coord(true);
-            setExportNotification(
-              currentLocale === "id"
-                ? "KLIK TITIK DI PETA UNTUK KOORDINAT 360°"
-                : "CLICK MAP TO CAPTURE 360° COORDINATES"
-            );
+            setExportNotification(tCustom360("clickMapPrompt"));
             setTimeout(() => setExportNotification(null), 3000);
           }}
           onSelectAndOpen360={(wp) => {

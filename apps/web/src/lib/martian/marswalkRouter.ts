@@ -23,6 +23,17 @@ import { calculateMartianDistanceKm } from "./prospectorScorer";
 
 export type MissionSupportMode = "SOLO_ASTRONAUT" | "PAIRED_CREW_MULE_ROVER";
 
+export type TurnType =
+  | "START"
+  | "STRAIGHT"
+  | "SLIGHT_LEFT"
+  | "LEFT"
+  | "SHARP_LEFT"
+  | "SLIGHT_RIGHT"
+  | "RIGHT"
+  | "SHARP_RIGHT"
+  | "DESTINATION";
+
 export interface MarswalkRouteOptions {
   startWaypointId: string;
   targetWaypointId: string;
@@ -51,6 +62,11 @@ export interface RouteSegment {
   crustalMagneticFieldNt: number;
   isHazardWarning: boolean;
   hazardDescription?: string;
+  turnType: TurnType;
+  bearingDeg: number;
+  cardinalDirection: string;
+  maneuverInstruction: string;
+  maneuverInstructionId: string;
 }
 
 export interface RouteSafetyRationale {
@@ -186,9 +202,53 @@ const MODE_PROFILES: Record<MissionSupportMode, MissionModeProfile> = {
  */
 interface NavNode {
   id: string;
+  name: string;
   coordinates: [number, number];
   elevationM: number;
   radiationMSvSol: number;
+  sandTrapRisk?: SandTrapRiskLevel;
+  surfaceFirmness?: SurfaceFirmnessStatus;
+  crustalMagneticFieldNt?: number;
+}
+
+/**
+ * Calculates absolute compass bearing (0-360°) between two coordinates on Mars.
+ */
+export function calculateBearingDeg(from: [number, number], to: [number, number]): number {
+  const dLon = ((to[0] - from[0]) * Math.PI) / 180.0;
+  const lat1 = (from[1] * Math.PI) / 180.0;
+  const lat2 = (to[1] * Math.PI) / 180.0;
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  const brng = (Math.atan2(y, x) * 180.0) / Math.PI;
+  return Math.round((brng + 360.0) % 360.0);
+}
+
+/**
+ * Converts degrees into 16-point cardinal compass text.
+ */
+export function getCardinalDirection(bearing: number): string {
+  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  const idx = Math.round(bearing / 22.5) % 16;
+  return directions[idx];
+}
+
+/**
+ * Classifies Google Maps-style relative turn type based on bearing delta.
+ */
+export function classifyTurnType(prevBearing: number | null, currentBearing: number): TurnType {
+  if (prevBearing === null) return "START";
+  let delta = currentBearing - prevBearing;
+  while (delta > 180) delta -= 360;
+  while (delta < -180) delta += 360;
+
+  if (Math.abs(delta) <= 15) return "STRAIGHT";
+  if (delta > 15 && delta <= 50) return "SLIGHT_RIGHT";
+  if (delta > 50 && delta <= 120) return "RIGHT";
+  if (delta > 120) return "SHARP_RIGHT";
+  if (delta < -15 && delta >= -50) return "SLIGHT_LEFT";
+  if (delta < -50 && delta >= -120) return "LEFT";
+  return "SHARP_LEFT";
 }
 
 /**
@@ -198,42 +258,42 @@ interface NavNode {
 function getTopographicCorridorNodes(): NavNode[] {
   return [
     // --- GALE CRATER / MOUNT SHARP CORRIDOR NETWORK ---
-    { id: "corr_bradbury_landing", coordinates: [137.4417, -4.5895], elevationM: -4501, radiationMSvSol: 0.62 },
-    { id: "corr_yellowknife_bay", coordinates: [137.4490, -4.5910], elevationM: -4520, radiationMSvSol: 0.61 },
-    { id: "corr_peace_vallis_fan", coordinates: [137.4350, -4.6150], elevationM: -4490, radiationMSvSol: 0.62 },
-    { id: "corr_plains_01", coordinates: [137.4700, -4.6200], elevationM: -4460, radiationMSvSol: 0.63 },
-    { id: "corr_plains_02", coordinates: [137.5200, -4.6800], elevationM: -4390, radiationMSvSol: 0.64 },
-    { id: "corr_dingo_gap", coordinates: [137.4050, -4.6550], elevationM: -4450, radiationMSvSol: 0.63 },
-    { id: "corr_kimberley", coordinates: [137.4000, -4.6850], elevationM: -4430, radiationMSvSol: 0.64 },
-    { id: "corr_pahrump_approach", coordinates: [137.3800, -4.7100], elevationM: -4400, radiationMSvSol: 0.64 },
-    { id: "corr_gap_rubin_north", coordinates: [137.4080, -4.7080], elevationM: -4280, radiationMSvSol: 0.65 },
-    { id: "corr_rubin_pass", coordinates: [137.3750, -4.7350], elevationM: -4190, radiationMSvSol: 0.72 },
-    { id: "corr_rubin_south_gap", coordinates: [137.3950, -4.7380], elevationM: -4240, radiationMSvSol: 0.66 },
-    { id: "corr_torridon_low", coordinates: [137.4120, -4.7450], elevationM: -4315, radiationMSvSol: 0.64 },
-    { id: "corr_torridon_east", coordinates: [137.4350, -4.7550], elevationM: -4290, radiationMSvSol: 0.63 },
-    { id: "corr_greenheugh_pediment", coordinates: [137.3850, -4.7700], elevationM: -4200, radiationMSvSol: 0.68 },
-    { id: "corr_marker_approach", coordinates: [137.4150, -4.7800], elevationM: -4140, radiationMSvSol: 0.66 },
-    { id: "corr_gediz_channel", coordinates: [137.4350, -4.8250], elevationM: -4020, radiationMSvSol: 0.70 },
-    { id: "corr_amalia_pass", coordinates: [137.4800, -4.8900], elevationM: -4050, radiationMSvSol: 0.68 },
-    { id: "corr_sharp_flank_north", coordinates: [137.5800, -4.9500], elevationM: -4120, radiationMSvSol: 0.65 },
-    { id: "corr_boxwork_basin", coordinates: [137.6500, -5.0500], elevationM: -4080, radiationMSvSol: 0.66 },
-    { id: "corr_boxwork_west_bench", coordinates: [137.7100, -5.1800], elevationM: -4020, radiationMSvSol: 0.67 },
-    { id: "corr_boxwork_approach", coordinates: [137.7800, -5.3200], elevationM: -3980, radiationMSvSol: 0.67 },
-    { id: "corr_boxwork_ridge_central", coordinates: [137.8200, -5.4100], elevationM: -3940, radiationMSvSol: 0.68 },
-    { id: "corr_boxwork_east_flank", coordinates: [137.8600, -5.4600], elevationM: -3900, radiationMSvSol: 0.69 },
+    { id: "corr_bradbury_landing", name: "Bradbury Plain Traverse", coordinates: [137.4417, -4.5895], elevationM: -4501, radiationMSvSol: 0.62, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 39 },
+    { id: "corr_yellowknife_bay", name: "Yellowknife Bay Mudstone Approach", coordinates: [137.4490, -4.5910], elevationM: -4520, radiationMSvSol: 0.61, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 39 },
+    { id: "corr_peace_vallis_fan", name: "Peace Vallis Alluvial Fan", coordinates: [137.4350, -4.6150], elevationM: -4490, radiationMSvSol: 0.62, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 40 },
+    { id: "corr_plains_01", name: "Northern Gale Flats", coordinates: [137.4700, -4.6200], elevationM: -4460, radiationMSvSol: 0.63, sandTrapRisk: "MODERATE", surfaceFirmness: "MODERATE COMPACTION", crustalMagneticFieldNt: 41 },
+    { id: "corr_plains_02", name: "Aeolis Palus Bedrock Pavement", coordinates: [137.5200, -4.6800], elevationM: -4390, radiationMSvSol: 0.64, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 43 },
+    { id: "corr_dingo_gap", name: "Dingo Gap Dune Pass", coordinates: [137.4050, -4.6550], elevationM: -4450, radiationMSvSol: 0.63, sandTrapRisk: "HIGH", surfaceFirmness: "SOFT SAND TRAP RISK", crustalMagneticFieldNt: 38 },
+    { id: "corr_kimberley", name: "Kimberley Sandstone Corridor", coordinates: [137.4000, -4.6850], elevationM: -4430, radiationMSvSol: 0.64, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 41 },
+    { id: "corr_pahrump_approach", name: "Pahrump Hills North Ramp", coordinates: [137.3800, -4.7100], elevationM: -4400, radiationMSvSol: 0.64, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 42 },
+    { id: "corr_gap_rubin_north", name: "Vera Rubin North Breach", coordinates: [137.4080, -4.7080], elevationM: -4280, radiationMSvSol: 0.65, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 44 },
+    { id: "corr_rubin_pass", name: "Vera Rubin Hematite Ridge Crest", coordinates: [137.3750, -4.7350], elevationM: -4190, radiationMSvSol: 0.72, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 45 },
+    { id: "corr_rubin_south_gap", name: "Vera Rubin South Descent", coordinates: [137.3950, -4.7380], elevationM: -4240, radiationMSvSol: 0.66, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 44 },
+    { id: "corr_torridon_low", name: "Glen Torridon Clay Trough", coordinates: [137.4120, -4.7450], elevationM: -4315, radiationMSvSol: 0.64, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 47 },
+    { id: "corr_torridon_east", name: "Glen Torridon East Bench", coordinates: [137.4350, -4.7550], elevationM: -4290, radiationMSvSol: 0.63, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 48 },
+    { id: "corr_greenheugh_pediment", name: "Greenheugh Pediment Scarp", coordinates: [137.3850, -4.7700], elevationM: -4200, radiationMSvSol: 0.68, sandTrapRisk: "MODERATE", surfaceFirmness: "MODERATE COMPACTION", crustalMagneticFieldNt: 46 },
+    { id: "corr_marker_approach", name: "Marker Band Valley Bench", coordinates: [137.4150, -4.7800], elevationM: -4140, radiationMSvSol: 0.66, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 48 },
+    { id: "corr_gediz_channel", name: "Gediz Vallis Flow Channel", coordinates: [137.4350, -4.8250], elevationM: -4020, radiationMSvSol: 0.70, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 49 },
+    { id: "corr_amalia_pass", name: "Amalia Pass Saddle", coordinates: [137.4800, -4.8900], elevationM: -4050, radiationMSvSol: 0.68, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 50 },
+    { id: "corr_sharp_flank_north", name: "Mount Sharp Flank Ramp", coordinates: [137.5800, -4.9500], elevationM: -4120, radiationMSvSol: 0.65, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 48 },
+    { id: "corr_boxwork_basin", name: "Boxwork Valley North Basin", coordinates: [137.6500, -5.0500], elevationM: -4080, radiationMSvSol: 0.66, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 49 },
+    { id: "corr_boxwork_west_bench", name: "Boxwork Western Bedrock Bench", coordinates: [137.7100, -5.1800], elevationM: -4020, radiationMSvSol: 0.67, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 51 },
+    { id: "corr_boxwork_approach", name: "Boxwork Polygonal Ridge Ramp", coordinates: [137.7800, -5.3200], elevationM: -3980, radiationMSvSol: 0.67, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 52 },
+    { id: "corr_boxwork_ridge_central", name: "Boxwork Central Mineral Veins", coordinates: [137.8200, -5.4100], elevationM: -3940, radiationMSvSol: 0.68, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 54 },
+    { id: "corr_boxwork_east_flank", name: "Boxwork East Boundary Flank", coordinates: [137.8600, -5.4600], elevationM: -3900, radiationMSvSol: 0.69, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 53 },
 
     // --- JEZERO CRATER CORRIDOR NETWORK ---
-    { id: "corr_jzr_butler_landing", coordinates: [77.4509, 18.3789], elevationM: -2569, radiationMSvSol: 0.61 },
-    { id: "corr_jzr_van_zyl", coordinates: [77.4450, 18.3720], elevationM: -2560, radiationMSvSol: 0.61 },
-    { id: "corr_jzr_seitah_pass", coordinates: [77.4410, 18.3720], elevationM: -2550, radiationMSvSol: 0.62 },
-    { id: "corr_jzr_butler_west", coordinates: [77.4380, 18.3900], elevationM: -2560, radiationMSvSol: 0.61 },
-    { id: "corr_jzr_delta_apron", coordinates: [77.4220, 18.4120], elevationM: -2530, radiationMSvSol: 0.60 },
-    { id: "corr_jzr_kodiak_saddle", coordinates: [77.4100, 18.4050], elevationM: -2510, radiationMSvSol: 0.60 },
-    { id: "corr_jzr_delta_top_channel", coordinates: [77.4150, 18.4280], elevationM: -2480, radiationMSvSol: 0.59 },
-    { id: "corr_jzr_neretva_canyon", coordinates: [77.4300, 18.4480], elevationM: -2495, radiationMSvSol: 0.59 },
-    { id: "corr_jzr_belva_rim", coordinates: [77.4050, 18.4600], elevationM: -2460, radiationMSvSol: 0.58 },
-    { id: "corr_jzr_margin_carbonate", coordinates: [77.3850, 18.4350], elevationM: -2475, radiationMSvSol: 0.59 },
-    { id: "corr_jzr_cheyava_canyon", coordinates: [77.3750, 18.4800], elevationM: -2440, radiationMSvSol: 0.58 },
+    { id: "corr_jzr_butler_landing", name: "Octavia Butler Plain", coordinates: [77.4509, 18.3789], elevationM: -2569, radiationMSvSol: 0.61, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 28 },
+    { id: "corr_jzr_van_zyl", name: "Van Zyl Overlook Ramp", coordinates: [77.4450, 18.3720], elevationM: -2560, radiationMSvSol: 0.61, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 29 },
+    { id: "corr_jzr_seitah_pass", name: "Séítah Dune Valley Pass", coordinates: [77.4410, 18.3720], elevationM: -2550, radiationMSvSol: 0.62, sandTrapRisk: "HIGH", surfaceFirmness: "SOFT SAND TRAP RISK", crustalMagneticFieldNt: 28 },
+    { id: "corr_jzr_butler_west", name: "Western Floor Pavement", coordinates: [77.4380, 18.3900], elevationM: -2560, radiationMSvSol: 0.61, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 30 },
+    { id: "corr_jzr_delta_apron", name: "Delta Scarp Apron", coordinates: [77.4220, 18.4120], elevationM: -2530, radiationMSvSol: 0.60, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 31 },
+    { id: "corr_jzr_kodiak_saddle", name: "Kodiak Butte Saddle", coordinates: [77.4100, 18.4050], elevationM: -2510, radiationMSvSol: 0.60, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 32 },
+    { id: "corr_jzr_delta_top_channel", name: "Delta Top Distributary", coordinates: [77.4150, 18.4280], elevationM: -2480, radiationMSvSol: 0.59, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 32 },
+    { id: "corr_jzr_neretva_canyon", name: "Neretva Vallis Inflow Canyon", coordinates: [77.4300, 18.4480], elevationM: -2495, radiationMSvSol: 0.59, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 33 },
+    { id: "corr_jzr_belva_rim", name: "Belva Crater South Rim", coordinates: [77.4050, 18.4600], elevationM: -2460, radiationMSvSol: 0.58, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 34 },
+    { id: "corr_jzr_margin_carbonate", name: "Marginal Carbonate Bench", coordinates: [77.3850, 18.4350], elevationM: -2475, radiationMSvSol: 0.59, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 33 },
+    { id: "corr_jzr_cheyava_canyon", name: "Cheyava Falls Canyon Gorge", coordinates: [77.3750, 18.4800], elevationM: -2440, radiationMSvSol: 0.58, sandTrapRisk: "LOW", surfaceFirmness: "BEDROCK FIRM", crustalMagneticFieldNt: 35 },
   ];
 }
 
