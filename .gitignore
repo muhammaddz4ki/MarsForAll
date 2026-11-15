@@ -31,3 +31,4 @@ DEPLOY.md
 # Python bytecode (scripts/*)
 __pycache__/
 *.pyc
+scratch/

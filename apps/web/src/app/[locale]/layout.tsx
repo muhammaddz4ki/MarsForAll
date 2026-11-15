@@ -173,7 +173,7 @@ export default async function RootLocaleLayout({
           }}
         />
       </head>
-      <body className={`${overpass.className} bg-[#ffffff] dark:bg-[#050505] text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen overflow-x-hidden transition-colors duration-300`}>
+      <body className={`${overpass.className} bg-[#07090e] text-slate-100 font-sans antialiased min-h-screen overflow-x-hidden transition-colors duration-300`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             {children}

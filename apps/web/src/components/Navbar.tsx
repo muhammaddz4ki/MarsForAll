@@ -31,19 +31,18 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled || mobileOpen
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled || mobileOpen
           ? "bg-black/40 backdrop-blur-md py-3 sm:py-3.5"
           : "bg-transparent py-4 sm:py-5"
-      }`}
+        }`}
     >
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 flex items-center justify-between">
-        
+
         {/* =========================================================
             LEFT GROUP: Clean Professional Brand Logo & Nav Links
         ========================================================= */}
         <div className="flex items-center gap-4 sm:gap-8">
-          
+
           {/* Logo Emblem & Brand Name (Bener & Rapih) */}
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group notranslate" translate="no">
             <img
@@ -94,7 +93,7 @@ export default function Navbar() {
             RIGHT GROUP: Language Switcher & Primary CTA (Searchbar & Light/Dark Dihapus)
         ========================================================= */}
         <div className="flex items-center gap-3 sm:gap-4">
-          
+
           {/* Minimalist Language Switcher (ID / EN) */}
           <LanguageSwitcher variant="minimal" />
 

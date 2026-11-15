@@ -562,13 +562,13 @@ const analogueMaps = [
   {
     id: "analogue-map-1",
     title: "Planetary Analogue Map 01",
-    src: "/images/analogues/analogue-map-1.png",
+    src: "/images/analogues/analogue-map-1.webp",
     tag: "MAP 01 // TERRESTRIAL ANALOGUE SITES",
   },
   {
     id: "analogue-map-2",
     title: "Planetary Analogue Map 02",
-    src: "/images/analogues/analogue-map-2.png",
+    src: "/images/analogues/analogue-map-2.webp",
     tag: "MAP 02 // TACTICAL SURFACE MATRIX",
   },
 ];
@@ -643,14 +643,16 @@ function ImpactSection() {
             }}
             className="absolute inset-0 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
           >
-            {/* Full Image background with automatic .jpg <-> .png fallback */}
+            {/* Full Image background with automatic webp -> jpg -> png fallback */}
             <img
               src={analogueMaps[activeIndex].src}
               alt={analogueMaps[activeIndex].title}
+              loading="lazy"
+              decoding="async"
               onError={(e) => {
                 const target = e.currentTarget;
-                if (target.src.endsWith(".png")) {
-                  target.src = target.src.replace(".png", ".jpg");
+                if (target.src.endsWith(".webp")) {
+                  target.src = target.src.replace(".webp", ".jpg");
                 } else if (target.src.endsWith(".jpg")) {
                   target.src = target.src.replace(".jpg", ".png");
                 }
@@ -824,19 +826,40 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
+  const handleDismiss = () => {
+    try {
+      sessionStorage.setItem("mars_splash_seen", "1");
+    } catch {}
+    onCompleteRef.current();
+  };
+
   useEffect(() => {
+    try {
+      if (sessionStorage.getItem("mars_splash_seen") === "1") {
+        onCompleteRef.current();
+        return;
+      }
+    } catch {}
+
     const timer = setTimeout(() => {
-      onCompleteRef.current();
-    }, 2800);
-    return () => clearTimeout(timer);
+      handleDismiss();
+    }, 1400);
+
+    const onKeyDown = () => handleDismiss();
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 
   return (
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      onClick={() => onCompleteRef.current()}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      onClick={handleDismiss}
       className="fixed inset-0 z-[99999] bg-[#07090e] flex items-center justify-center overflow-hidden cursor-pointer select-none"
     >
       <div
