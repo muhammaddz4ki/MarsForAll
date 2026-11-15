@@ -562,13 +562,13 @@ const analogueMaps = [
   {
     id: "analogue-map-1",
     title: "Planetary Analogue Map 01",
-    src: "/images/analogues/analogue-map-1.jpg",
+    src: "/images/analogues/analogue-map-1.png",
     tag: "MAP 01 // TERRESTRIAL ANALOGUE SITES",
   },
   {
     id: "analogue-map-2",
     title: "Planetary Analogue Map 02",
-    src: "/images/analogues/analogue-map-2.jpg",
+    src: "/images/analogues/analogue-map-2.png",
     tag: "MAP 02 // TACTICAL SURFACE MATRIX",
   },
 ];
@@ -616,108 +616,94 @@ function ImpactSection() {
   };
 
   return (
-    <section id="analogi" className="scroll-mt-20 py-20 md:py-28 w-full bg-[#05070b] relative overflow-hidden flex flex-col items-center select-none">
-      {/* Top and Bottom Seamless Blending Gradients */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#05070b] to-transparent pointer-events-none z-[1]" />
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#05070b] to-transparent pointer-events-none z-[1]" />
-
-      <div className="relative z-10 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-        {/* Header */}
-        <div className="flex flex-col items-center text-center mb-8 sm:mb-12">
-          <span className="text-[11px] font-mono tracking-widest uppercase text-[#f97316] font-semibold mb-2">
-            [TERRESTRIAL ANALOGUE TESTBEDS]
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-white tracking-tight leading-[1.12]">
-            Planetary Analogue Sites.
-          </h2>
-        </div>
-
-        {/* Full Image Slider Frame */}
-        <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] max-h-[750px] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 bg-[#07090e] shadow-2xl flex items-center justify-center group">
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.div
-              key={page}
-              custom={direction}
-              variants={analogueSlideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.4}
-              onDragEnd={(_e, { offset, velocity }) => {
-                const swipe = Math.abs(offset.x) * velocity.x;
-                if (swipe < -10000 || offset.x < -100) {
-                  paginate(1);
-                } else if (swipe > 10000 || offset.x > 100) {
-                  paginate(-1);
+    <section
+      id="analogi"
+      className="relative w-full min-h-[600px] sm:min-h-[750px] md:min-h-[900px] lg:min-h-screen lg:aspect-[16/9] bg-[#05070b] overflow-hidden flex items-center justify-center select-none"
+    >
+      {/* 0. FULL-BLEED SLIDING BACKGROUND IMAGES */}
+      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={page}
+            custom={direction}
+            variants={analogueSlideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.3}
+            onDragEnd={(_e, { offset, velocity }) => {
+              const swipe = Math.abs(offset.x) * velocity.x;
+              if (swipe < -10000 || offset.x < -100) {
+                paginate(1);
+              } else if (swipe > 10000 || offset.x > 100) {
+                paginate(-1);
+              }
+            }}
+            className="absolute inset-0 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+          >
+            {/* Full Image background with automatic .jpg <-> .png fallback */}
+            <img
+              src={analogueMaps[activeIndex].src}
+              alt={analogueMaps[activeIndex].title}
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src.endsWith(".png")) {
+                  target.src = target.src.replace(".png", ".jpg");
+                } else if (target.src.endsWith(".jpg")) {
+                  target.src = target.src.replace(".jpg", ".png");
                 }
               }}
-              className="absolute inset-0 w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
-            >
-              {/* Full Image with automatic .jpg <-> .png fallback */}
-              <img
-                src={analogueMaps[activeIndex].src}
-                alt={analogueMaps[activeIndex].title}
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (target.src.endsWith(".jpg")) {
-                    target.src = target.src.replace(".jpg", ".png");
-                  }
-                }}
-                className="w-full h-full object-contain sm:object-cover select-none pointer-events-none"
-              />
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Floating Prev Button */}
-          <button
-            onClick={() => paginate(-1)}
-            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-xl group/btn"
-            aria-label="Previous map slide"
-          >
-            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform group-hover/btn:-translate-x-0.5" />
-          </button>
-
-          {/* Floating Next Button */}
-          <button
-            onClick={() => paginate(1)}
-            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/70 hover:bg-black text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-xl group/btn"
-            aria-label="Next map slide"
-          >
-            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white transition-transform group-hover/btn:translate-x-0.5" />
-          </button>
-
-          {/* Top Tag Badge */}
-          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 pointer-events-none">
-            <span className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold tracking-wider bg-black/80 backdrop-blur-md text-[#f97316] border border-[#f97316]/40 shadow-lg">
-              {analogueMaps[activeIndex].tag}
-            </span>
-          </div>
-
-          {/* Top Slide Counter Badge */}
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 pointer-events-none">
-            <span className="px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold tracking-tight bg-black/80 backdrop-blur-md text-white border border-white/10 shadow-lg">
-              {String(activeIndex + 1).padStart(2, "0")} / {String(analogueMaps.length).padStart(2, "0")}
-            </span>
-          </div>
-        </div>
-
-        {/* Indicators (Dots / Pills) */}
-        <div className="flex justify-center items-center gap-3 mt-6 sm:mt-8">
-          {analogueMaps.map((map, i) => (
-            <button
-              key={map.id}
-              onClick={() => setSlide(i)}
-              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                i === activeIndex
-                  ? "w-12 bg-[#f97316] shadow-sm"
-                  : "w-3 bg-white/20 hover:bg-white/40"
-              }`}
-              aria-label={`Go to slide ${i + 1}`}
+              className="w-full h-full object-cover object-center select-none pointer-events-none"
             />
-          ))}
-        </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* 1. SEAMLESS TOP & BOTTOM GRADIENTS TO BLEND WITH ADJACENT PAGES */}
+      <div className="absolute top-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-b from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-t from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
+
+      {/* 2. FLOATING PREV BUTTON */}
+      <button
+        onClick={() => paginate(-1)}
+        className="absolute left-4 sm:left-8 md:left-12 top-1/2 -translate-y-1/2 z-20 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-2xl group/btn"
+        aria-label="Previous map slide"
+      >
+        <ArrowLeft className="w-5 h-5 sm:w-7 sm:h-7 text-white transition-transform group-hover/btn:-translate-x-1" />
+      </button>
+
+      {/* 3. FLOATING NEXT BUTTON */}
+      <button
+        onClick={() => paginate(1)}
+        className="absolute right-4 sm:right-8 md:right-12 top-1/2 -translate-y-1/2 z-20 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-2xl group/btn"
+        aria-label="Next map slide"
+      >
+        <ArrowRight className="w-5 h-5 sm:w-7 sm:h-7 text-white transition-transform group-hover/btn:translate-x-1" />
+      </button>
+
+      {/* 4. SLIDE COUNTER (TOP RIGHT BADGE) */}
+      <div className="absolute top-6 right-6 sm:top-10 sm:right-12 z-20 pointer-events-none">
+        <span className="px-4 py-2 rounded-full text-xs font-mono font-bold tracking-widest bg-black/60 backdrop-blur-md text-white border border-white/15 shadow-xl">
+          {String(activeIndex + 1).padStart(2, "0")} / {String(analogueMaps.length).padStart(2, "0")}
+        </span>
+      </div>
+
+      {/* 5. BOTTOM INDICATORS (PILLS / DOTS) */}
+      <div className="absolute bottom-6 sm:bottom-10 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/10 shadow-xl">
+        {analogueMaps.map((map, i) => (
+          <button
+            key={map.id}
+            onClick={() => setSlide(i)}
+            className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+              i === activeIndex
+                ? "w-12 bg-[#f97316] shadow-md shadow-[#f97316]/50"
+                : "w-3 bg-white/30 hover:bg-white/60"
+            }`}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
       </div>
     </section>
   );

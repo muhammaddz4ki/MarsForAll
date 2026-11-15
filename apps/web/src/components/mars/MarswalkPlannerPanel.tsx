@@ -275,6 +275,113 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
         </span>
       </div>
 
+      {/* Route Safety Rationale & Multi-Layer Synthesis (RULE 2: Zero Gradients, Tabular Typography) */}
+      {routeResult.safetyRationale && (
+        <div className={`p-2.5 border ${
+          routeResult.safetyRationale.verdictLevel === "SAFE"
+            ? "border-emerald-700/80 bg-[#07130e]"
+            : routeResult.safetyRationale.verdictLevel === "CAUTION"
+            ? "border-amber-700/80 bg-[#161208]"
+            : "border-red-700/80 bg-[#1a0808]"
+        } space-y-2 font-mono text-xs`}>
+          {/* Header & Verdict */}
+          <div className="flex items-center justify-between border-b pb-1.5 border-slate-800">
+            <div>
+              <span className="text-[9px] uppercase tracking-wider text-slate-400 block font-bold">
+                {t("safetyRationaleTitle")}
+              </span>
+              <span className={`text-[11px] font-bold ${
+                routeResult.safetyRationale.verdictLevel === "SAFE"
+                  ? "text-emerald-400"
+                  : routeResult.safetyRationale.verdictLevel === "CAUTION"
+                  ? "text-amber-400"
+                  : "text-red-400"
+              }`}>
+                {routeResult.safetyRationale.verdictTag}
+              </span>
+            </div>
+            <span className="text-[9px] px-2 py-0.5 bg-black/50 border border-slate-700 text-slate-300 font-bold tabular-nums">
+              INDEX: {routeResult.overallSafetyIndex}/100
+            </span>
+          </div>
+
+          {/* Executive Summary */}
+          <p className="text-[10px] leading-relaxed text-slate-200 font-sans">
+            {routeResult.safetyRationale.executiveSummary}
+          </p>
+
+          {/* 5-Layer Multi-Attribute Scientific Breakdown */}
+          <div className="space-y-1.5 pt-1 border-t border-slate-800/80 text-[9px]">
+            {/* 1. Topografi & Lereng */}
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-cyan-400">{t("topoSection")}</span>
+                <span className="text-emerald-400 font-bold tabular-nums">
+                  {routeResult.safetyRationale.slopeAnalysis.statusTag}
+                </span>
+              </div>
+              <p className="text-slate-300 font-sans text-[9px] leading-tight">
+                {routeResult.safetyRationale.slopeAnalysis.description}
+              </p>
+            </div>
+
+            {/* 2. Geofisika & Deteksi Pasir Hisap (THEMIS Night IR & TES) */}
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-400">{t("sandTrapSection")}</span>
+                <span className={`font-bold tabular-nums ${
+                  routeResult.sandTrapWarningCount === 0 ? "text-emerald-400" : "text-amber-400"
+                }`}>
+                  {routeResult.safetyRationale.sandTrapAnalysis.statusTag}
+                </span>
+              </div>
+              <p className="text-slate-300 font-sans text-[9px] leading-tight">
+                {routeResult.safetyRationale.sandTrapAnalysis.description}
+              </p>
+            </div>
+
+            {/* 3. Radiasi & Perisai Magnetik Kerak (MGS MAG & RAD) */}
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-indigo-400">{t("radiationSection")}</span>
+                <span className="text-cyan-400 font-bold tabular-nums">
+                  {routeResult.safetyRationale.radiationAnalysis.statusTag}
+                </span>
+              </div>
+              <p className="text-slate-300 font-sans text-[9px] leading-tight">
+                {routeResult.safetyRationale.radiationAnalysis.description}
+              </p>
+            </div>
+
+            {/* 4. Mineralogi & Kimia (CRISM & GRS/DAN) */}
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-400">{t("mineralogySection")}</span>
+                <span className="text-emerald-400 font-bold">
+                  {routeResult.safetyRationale.mineralogyAnalysis.statusTag}
+                </span>
+              </div>
+              <p className="text-slate-300 font-sans text-[9px] leading-tight">
+                {routeResult.safetyRationale.mineralogyAnalysis.description}
+              </p>
+            </div>
+
+            {/* 5. Logistik & Cadangan Baterai/O2 */}
+            <div className="p-2 bg-[#0b0f17] border border-slate-800 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-cyan-300">{t("consumablesSection")}</span>
+                <span className="text-emerald-400 font-bold tabular-nums">
+                  {routeResult.safetyRationale.consumableAnalysis.statusTag}
+                </span>
+              </div>
+              <p className="text-slate-300 font-sans text-[9px] leading-tight">
+                {routeResult.safetyRationale.consumableAnalysis.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lambertian Photometric Scattering Telemetry (NASA AMMOS & Paper 2132) */}
       {routeResult.photometry && (
         <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border font-mono`}>

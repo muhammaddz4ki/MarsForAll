@@ -158,7 +158,13 @@
     "elevationLabel": "Elevación",
     "slopeLabel": "Pendiente",
     "hazardTitle": "[PELIGRO DETECTADO: SUPERA LA PENDIENTE NOMINAL]",
-    "checklistTitle": "LISTA DE CONTROL PROTOCOLO EVA"
+    "checklistTitle": "LISTA DE CONTROL PROTOCOLO EVA",
+    "safetyRationaleTitle": "SÍNTESIS: JUSTIFICACIÓN DE SEGURIDAD DE LA RUTA",
+    "topoSection": "1. TOPOGRAFÍA Y UMBRAL DE PENDIENTE (HiRISE/MOLA)",
+    "sandTrapSection": "2. GEOFÍSICA Y DETECCIÓN DE ARENAS MOVEDIZAS (THEMIS/TES)",
+    "radiationSection": "3. RADIACIÓN Y ESCUDO MAGNÉTICO DE LA CORTEZA (MGS MAG/RAD)",
+    "mineralogySection": "4. MINERALOGÍA Y ESTABILIDAD DEL SUSTRATO (CRISM)",
+    "consumablesSection": "5. LOGÍSTICA Y RESERVAS DE ENERGÍA DE EVA"
   },
   "analogue": {
     "targetRequiredDesc": "Seleccione un objetivo en Mount Sharp para comparar con bancos de prueba de análogos terrestres.",

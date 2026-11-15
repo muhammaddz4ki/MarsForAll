@@ -158,7 +158,13 @@
     "elevationLabel": "高程",
     "slopeLabel": "坡度",
     "hazardTitle": "[检测到地形危险: 局部坡度超出安全作业包线]",
-    "checklistTitle": "舱外活动 (EVA) 规程核对清单"
+    "checklistTitle": "舱外活动 (EVA) 规程核对清单",
+    "safetyRationaleTitle": "综合评估：路线安全理由与验证",
+    "topoSection": "1. 地形与坡度阈值 (HiRISE/MOLA)",
+    "sandTrapSection": "2. 地球物理与流沙陷阱探测 (THEMIS/TES)",
+    "radiationSection": "3. 辐射与地壳磁场屏蔽 (MGS MAG/RAD)",
+    "mineralogySection": "4. 矿物学与基底稳定性 (CRISM)",
+    "consumablesSection": "5. 后勤补给与舱外活动能源储备"
   },
   "analogue": {
     "targetRequiredDesc": "请在夏普山地图上选择目标航路点，以匹配地球行星类似物试验场。",

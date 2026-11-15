@@ -158,7 +158,13 @@
     "elevationLabel": "Élévation",
     "slopeLabel": "Pente",
     "hazardTitle": "[DANGER DÉTECTÉ: DÉPASSEMENT DE L'ENVELOPPE DE PENTE]",
-    "checklistTitle": "LISTE DE CONTRÔLE DU PROTOCOLE EVA"
+    "checklistTitle": "LISTE DE CONTRÔLE DU PROTOCOLE EVA",
+    "safetyRationaleTitle": "SYNTHÈSE : JUSTIFICATION DE LA SÉCURITÉ DE L'ITINÉRAIRE",
+    "topoSection": "1. TOPOGRAPHIE ET SEUIL DE PENTE (HiRISE/MOLA)",
+    "sandTrapSection": "2. GÉOPHYSIQUE ET DÉTECTION DES PIÈGES DE SABLE (THEMIS/TES)",
+    "radiationSection": "3. RAYONNEMENT ET BLINDAGE MAGNÉTIQUE DE LA CROÛTE (MGS MAG/RAD)",
+    "mineralogySection": "4. MINÉRALOGIE ET STABILITÉ DU SUBSTRAT (CRISM)",
+    "consumablesSection": "5. LOGISTIQUE ET RÉSERVES D'ÉNERGIE DE L'EVA"
   },
   "analogue": {
     "targetRequiredDesc": "Sélectionnez un point de repère cible sur Mount Sharp pour le comparer aux sites d'essais analogues terrestres.",

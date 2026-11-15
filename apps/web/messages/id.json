@@ -158,7 +158,13 @@
     "elevationLabel": "Elevasi",
     "slopeLabel": "Kemiringan",
     "hazardTitle": "[BAHAYA TERDETEKSI: MELEBIHI BATAS KEMIRINGAN NOMINAL]",
-    "checklistTitle": "DAFTAR PROTOKOL EVA"
+    "checklistTitle": "DAFTAR PROTOKOL EVA",
+    "safetyRationaleTitle": "KESIMPULAN SINTESIS KESELAMATAN RUTE",
+    "topoSection": "1. TOPOGRAFI & AMBANG LERENG (HiRISE/MOLA)",
+    "sandTrapSection": "2. GEOFISIKA & DETEKSI PASIR HISAP (THEMIS/TES)",
+    "radiationSection": "3. RADIASI & PERISAI MAGNETIK KERAK (MGS MAG/RAD)",
+    "mineralogySection": "4. MINERALOGI & STABILITAS SUBSTRAT (CRISM)",
+    "consumablesSection": "5. LOGISTIK & CADANGAN DAYA EVA"
   },
   "analogue": {
     "targetRequiredDesc": "Pilih titik jalan target Mount Sharp untuk dicocokkan dengan lokasi uji analogi Bumi planet.",

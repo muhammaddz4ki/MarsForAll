@@ -158,7 +158,13 @@
     "elevationLabel": "Elevation",
     "slopeLabel": "Slope",
     "hazardTitle": "[HAZARD DETECTED: EXCEEDING NOMINAL SLOPE ENVELOPE]",
-    "checklistTitle": "EVA PROTOCOL CHECKLIST"
+    "checklistTitle": "EVA PROTOCOL CHECKLIST",
+    "safetyRationaleTitle": "SYNTHESIS: ROUTE SAFETY RATIONALE",
+    "topoSection": "1. TOPOGRAPHY & SLOPE THRESHOLD (HiRISE/MOLA)",
+    "sandTrapSection": "2. GEOPHYSICS & SAND TRAP DETECTOR (THEMIS/TES)",
+    "radiationSection": "3. RADIATION & CRUSTAL MAGNETIC SHIELDING (MGS MAG/RAD)",
+    "mineralogySection": "4. MINERALOGY & SUBSTRATE STABILITY (CRISM)",
+    "consumablesSection": "5. LOGISTICS & EVA POWER RESERVES"
   },
   "analogue": {
     "targetRequiredDesc": "Select a Mount Sharp target waypoint to match against planetary Earth analogue testbeds.",
