@@ -64,6 +64,11 @@ interface AresMapViewerProps {
   onOpen360Manager?: () => void;
   custom360Waypoints?: MountSharpWaypoint[];
   hoveredRoutePoint?: HighDensityPointTelemetry | null;
+  showRoverTraverse?: boolean;
+  showGraticule?: boolean;
+  showFloatingLegend?: boolean;
+  onToggleFloatingLegend?: () => void;
+  reCenterTrigger?: number;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -240,6 +245,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onOpen360Manager,
   custom360Waypoints = [],
   hoveredRoutePoint,
+  showRoverTraverse = true,
+  showGraticule = false,
+  showFloatingLegend = true,
+  onToggleFloatingLegend,
+  reCenterTrigger = 0,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -255,9 +265,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const routeTargetMarkerRef = useRef<Marker | null>(null);
   const landmarkMarkersRef = useRef<Marker[]>([]);
 
-  const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
-  const [showGraticule, setShowGraticule] = useState<boolean>(false);
-  const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(true);
   const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
 
   // Live Cursor Telemetry & Scale Bar States
@@ -1238,6 +1245,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     map.easeTo({ bearing: 0, duration: 500 });
   }, [resetNorthTrigger]);
 
+  // Re-center mission site on trigger
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || reCenterTrigger === 0) return;
+    const center = currentSite === "jezero_crater" ? JEZERO_CRATER_CENTER : MOUNT_SHARP_CENTER;
+    const zoom = currentSite === "jezero_crater" ? JEZERO_DEFAULT_ZOOM : MOUNT_SHARP_DEFAULT_ZOOM;
+    map.flyTo({ center, zoom, duration: 1000 });
+  }, [reCenterTrigger, currentSite]);
+
   // Sync Layer Visibility Toggles
   useEffect(() => {
     const map = mapRef.current;
@@ -1813,159 +1829,35 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
-      {/* MMGIS Spatial Analysis Toolbar (Single Unified Horizontal Row with Dynamic Offset) */}
-      <div
-        className={`absolute top-3 z-20 flex flex-nowrap items-center gap-1.5 font-mono text-[10px] transition-all duration-200 select-none ${
-          isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
-        }`}
-      >
-        {/* Re-Center Active Mission Site Button */}
-        <button
-          onClick={() => {
-            const map = mapRef.current;
-            if (!map) return;
-            const center = currentSite === "jezero_crater" ? JEZERO_CRATER_CENTER : MOUNT_SHARP_CENTER;
-            const zoom = currentSite === "jezero_crater" ? JEZERO_DEFAULT_ZOOM : MOUNT_SHARP_DEFAULT_ZOOM;
-            map.flyTo({ center, zoom, duration: 1000 });
-          }}
-          title={currentSite === "jezero_crater" ? "Re-center Jezero Crater" : "Re-center Gale Crater"}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
-            isDark
-              ? "bg-[#0b0f17] text-amber-400 border-slate-700 hover:text-amber-300 hover:border-amber-500"
-              : "bg-white text-amber-700 border-slate-300 hover:text-amber-900 shadow-sm"
+      {/* Active Tool Floating Banner (Appears ONLY when Measure / Viewshed / ZOI is active) */}
+      {activeMmgisTool !== "none" && (
+        <div
+          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${
+            isLeftDrawerOpen ? "left-[416px]" : "left-[64px]"
           }`}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
-          <span>RE-CENTER</span>
-        </button>
-
-        {/* 360° Waypoint Panorama Manager */}
-        <button
-          onClick={() => onOpen360Manager?.()}
-          className="h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold bg-[#083344] text-[#38bdf8] border-[#0284c7] hover:bg-[#0c4a6e]"
-          title="Kelola & Tambah Waypoint Foto Panorama 360° Permukaan Mars"
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
-          <span>+ WAYPOINT 360°</span>
-        </button>
-
-        {/* Measure / Elevation Profile */}
-        <button
-          onClick={() => {
-            const nextTool = activeMmgisTool === "measure" ? "none" : "measure";
-            onSelectMmgisTool?.(nextTool);
-          }}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
-            activeMmgisTool === "measure"
-              ? "bg-[#083344] text-[#a5f3fc] border-[#06b6d4] font-bold"
-              : isDark
-              ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-cyan-500 hover:text-cyan-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-cyan-800 shadow-sm"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 ${activeMmgisTool === "measure" ? "bg-cyan-400" : "bg-slate-500"}`} />
-          <span>{activeMmgisTool === "measure" ? tMmgis("measureActive") : tMmgis("measureTool")}</span>
-        </button>
-
-        {/* Viewshed 360° */}
-        <button
-          onClick={() => {
-            const nextTool = activeMmgisTool === "viewshed" ? "none" : "viewshed";
-            onSelectMmgisTool?.(nextTool);
-          }}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
-            activeMmgisTool === "viewshed"
-              ? "bg-[#064e3b] text-[#34d399] border-[#10b981] font-bold"
-              : isDark
-              ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-emerald-500 hover:text-emerald-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-emerald-800 shadow-sm"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 ${activeMmgisTool === "viewshed" ? "bg-emerald-400" : "bg-slate-500"}`} />
-          <span>{activeMmgisTool === "viewshed" ? tMmgis("viewshedActive") : tMmgis("viewshedTool")}</span>
-        </button>
-
-        {/* + Mark Zone of Interest (ZOI) */}
-        <button
-          onClick={() => {
-            const nextTool = activeMmgisTool === "zoi" ? "none" : "zoi";
-            onSelectMmgisTool?.(nextTool);
-          }}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
-            activeMmgisTool === "zoi"
-              ? "bg-[#451a03] text-[#fed7aa] border-[#ea580c] font-bold"
-              : isDark
-              ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-orange-500 hover:text-orange-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-orange-800 shadow-sm"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 ${activeMmgisTool === "zoi" ? "bg-orange-400" : "bg-slate-500"}`} />
-          <span>{activeMmgisTool === "zoi" ? tMmgis("zoiActive") : tMmgis("markZoi")}</span>
-        </button>
-
-        {/* Export .GeoJSON */}
-        <button
-          onClick={() => onExportGeoJson?.()}
-          className={`h-7 px-2.5 border transition-colors font-bold ${
-            isDark
-              ? "bg-[#111827] text-slate-200 border-slate-700 hover:bg-slate-800 hover:text-white"
-              : "bg-white text-slate-800 border-slate-300 hover:bg-slate-50 shadow-sm"
-          }`}
-        >
-          {tMmgis("exportGeoJson")}
-        </button>
-
-        {/* Rover Traverse Toggle */}
-        <button
-          onClick={() => setShowRoverTraverse((prev) => !prev)}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
-            showRoverTraverse
-              ? "bg-[#713f12] text-[#fef08a] border-[#eab308]"
-              : isDark
-              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
-              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
-          }`}
-        >
-          <span className={`w-2 h-2 rounded-full ${showRoverTraverse ? "bg-[#facc15]" : "bg-slate-500"}`} />
-          <span>{currentSite === "jezero_crater" ? "PERSEVERANCE" : "CURIOSITY"} {showRoverTraverse ? t("on") : t("off")}</span>
-        </button>
-
-        {/* Graticule Grid Toggle */}
-        <button
-          onClick={() => setShowGraticule((prev) => !prev)}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
-            showGraticule
-              ? "bg-[#1e293b] text-[#93c5fd] border-[#60a5fa]"
-              : isDark
-              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
-              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
-          }`}
-        >
-          <span className={`w-2 h-2 ${showGraticule ? "bg-[#60a5fa]" : "bg-slate-500"}`} />
-          <span>[ {tMmgis("graticuleGrid")} {showGraticule ? t("on") : t("off")} ]</span>
-        </button>
-
-        {/* Floating Scientific Legend Toggle (Image 1 Ref) */}
-        <button
-          onClick={() => setShowFloatingLegend((prev) => !prev)}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
-            showFloatingLegend
-              ? "bg-[#1e1b4b] text-[#c7d2fe] border-[#818cf8]"
-              : isDark
-              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
-              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
-          }`}
-        >
-          <span className={`w-2 h-2 ${showFloatingLegend ? "bg-[#818cf8]" : "bg-slate-500"}`} />
-          <span>[ LEGEND {showFloatingLegend ? t("on") : t("off")} ]</span>
-        </button>
-      </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-bold shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <span>
+              {activeMmgisTool === "measure" && (
+                <>
+                  {tMmgis("activeMeasuringPill")}
+                  {measurePoints.length > 0 && ` (${measurePoints.length} NODES)`}
+                </>
+              )}
+              {activeMmgisTool === "viewshed" && tMmgis("activeViewshedPill")}
+              {activeMmgisTool === "zoi" && tMmgis("activeZoiPill")}
+            </span>
+            <button
+              onClick={() => onSelectMmgisTool?.("none")}
+              className="ml-2 px-1.5 py-0.5 bg-red-950/80 border border-red-500 text-red-300 hover:bg-red-900 transition-colors"
+              title="Deactivate Tool"
+            >
+              {tMmgis("doneBtn")}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Scientific Map Legend (Ref Image 1: Bioscape / MMGIS Legend Window) */}
       {showFloatingLegend && (
@@ -1982,7 +1874,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               <span>LEGEND</span>
             </span>
             <button
-              onClick={() => setShowFloatingLegend(false)}
+              onClick={() => onToggleFloatingLegend?.()}
               className="text-slate-400 hover:text-white px-1 text-[11px]"
             >
               ✕

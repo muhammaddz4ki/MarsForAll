@@ -26,6 +26,7 @@
   "docks": {
     "layers": "COUCHES OPÉRATIONNELLES (5)",
     "marswalk": "PARCOURS MARSWALK",
+    "spatialTools": "OUTILS SPATIAUX ET COUCHES",
     "prospector": "PROSPECTOR ML",
     "earthAnalogues": "ANALOGUES TERRESTRES"
   },
@@ -332,7 +333,22 @@
     "identifierSlope": "PENTE DU TERRAIN",
     "identifierMineral": "MINÉRAL DOMINANT",
     "openPov": "[ OUVRIR POV 360° ]",
-    "analyzeProspector": "[ ANALYSER PROSPECTOR ]"
+    "analyzeProspector": "[ ANALYSER PROSPECTOR ]",
+    "spatialAnalysisTitle": "ANALYSE SPATIALE ET TRANSECTS",
+    "pano360Title": "PANORAMA 360° ET POINTS",
+    "mapOverlaysTitle": "AFFICHAGE ET COUCHES",
+    "recenterSite": "RE-CENTRER LE SITE DE MISSION",
+    "roverTraverse": "TRAVERSÉE HISTORIQUE DU ROVER",
+    "floatingLegend": "LÉGENDE SCIENTIFIQUE DE CARTE",
+    "cameraPitch": "PERSPECTIVE DE CAMÉRA 3D",
+    "exportGeoJsonBtn": "EXPORTER DONNÉES GIS .GEOJSON",
+    "manage360Btn": "+ GÉRER / CHARGER PANO 360°",
+    "open360PovBtn": "OUVRIR POV DE SURFACE 360°",
+    "clearMeasureBtn": "EFFACER POINTS DE MESURE",
+    "activeMeasuringPill": "MESURE ACTIVE • CLIQUEZ SUR LA CARTE",
+    "activeViewshedPill": "VIEWSHED 360° ACTIF • CLIQUEZ SUR LA POSITION DE L'OBSERVATEUR",
+    "activeZoiPill": "MODE ZOI ACTIF • CLIQUEZ SUR LA CARTE POUR PLACER UN PIN",
+    "doneBtn": "TERMINÉ [✕]"
   },
   "landing": {
     "telemetry": {

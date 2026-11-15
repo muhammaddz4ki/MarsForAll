@@ -26,6 +26,7 @@
   "docks": {
     "layers": "LAYERS (5)",
     "marswalk": "MARSWALK TRAVERSE",
+    "spatialTools": "SPATIAL TOOLS & OVERLAYS",
     "prospector": "PROSPECTOR ML",
     "earthAnalogues": "EARTH ANALOGUES"
   },
@@ -332,7 +333,22 @@
     "identifierSlope": "TERRAIN SLOPE",
     "identifierMineral": "DOMINANT MINERAL",
     "openPov": "[ OPEN 360° POV ]",
-    "analyzeProspector": "[ ANALYZE PROSPECTOR ]"
+    "analyzeProspector": "[ ANALYZE PROSPECTOR ]",
+    "spatialAnalysisTitle": "SPATIAL ANALYSIS & TRANSECTS",
+    "pano360Title": "360° PANORAMA & WAYPOINTS",
+    "mapOverlaysTitle": "MAP DISPLAY & OVERLAYS",
+    "recenterSite": "RE-CENTER MISSION SITE",
+    "roverTraverse": "ROVER HISTORICAL TRAVERSE",
+    "floatingLegend": "SCIENTIFIC MAP LEGEND",
+    "cameraPitch": "3D CAMERA PERSPECTIVE",
+    "exportGeoJsonBtn": "EXPORT .GEOJSON GIS DATA",
+    "manage360Btn": "+ MANAGE / UPLOAD 360° PANO",
+    "open360PovBtn": "OPEN 360° SURFACE POV",
+    "clearMeasureBtn": "CLEAR MEASURE TRANSECT",
+    "activeMeasuringPill": "MEASURE TOOL ACTIVE • CLICK MAP TO PLOT TRANSECT",
+    "activeViewshedPill": "VIEWSHED 360° ACTIVE • CLICK OBSERVER LOCATION",
+    "activeZoiPill": "ZOI MODE ACTIVE • CLICK MAP TO PLACE RESEARCH PIN",
+    "doneBtn": "DONE [✕]"
   },
   "landing": {
     "telemetry": {

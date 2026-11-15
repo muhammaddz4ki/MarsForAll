@@ -26,6 +26,7 @@
   "docks": {
     "layers": "CAPAS OPERATIVAS (5)",
     "marswalk": "TRAYECTO MARSWALK",
+    "spatialTools": "HERRAMIENTAS ESPACIALES Y CAPAS",
     "prospector": "PROSPECTOR ML",
     "earthAnalogues": "ANÁLOGOS TERRESTRES"
   },
@@ -332,7 +333,22 @@
     "identifierSlope": "PENDIENTE DEL TERRENO",
     "identifierMineral": "MINERAL DOMINANTE",
     "openPov": "[ ABRIR POV 360° ]",
-    "analyzeProspector": "[ ANALIZAR PROSPECTOR ]"
+    "analyzeProspector": "[ ANALIZAR PROSPECTOR ]",
+    "spatialAnalysisTitle": "ANÁLISIS ESPACIAL Y TRANSECTOS",
+    "pano360Title": "PANORAMA 360° Y PUNTOS",
+    "mapOverlaysTitle": "VISUALIZACIÓN Y CAPAS",
+    "recenterSite": "RE-CENTRAR SITIO DE MISIÓN",
+    "roverTraverse": "TRAYECTORIA HISTÓRICA DEL ROVER",
+    "floatingLegend": "LEYENDA CIENTÍFICA DEL MAPA",
+    "cameraPitch": "PERSPECTIVA DE CÁMARA 3D",
+    "exportGeoJsonBtn": "EXPORTAR DATOS GIS .GEOJSON",
+    "manage360Btn": "+ GESTIONAR / SUBIR PANO 360°",
+    "open360PovBtn": "ABRIR POV DE SUPERFICIE 360°",
+    "clearMeasureBtn": "LIMPIAR PUNTOS DE MEDICIÓN",
+    "activeMeasuringPill": "MODO MEDICIÓN ACTIVO • HAGA CLIC EN EL MAPA",
+    "activeViewshedPill": "VIEWSHED 360° ACTIVO • HAGA CLIC EN LA POSICIÓN DEL OBSERVADOR",
+    "activeZoiPill": "MODO ZOI ACTIVO • HAGA CLIC EN EL MAPA PARA COLOCAR UN PIN",
+    "doneBtn": "LISTO [✕]"
   },
   "landing": {
     "telemetry": {

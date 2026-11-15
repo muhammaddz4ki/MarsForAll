@@ -26,6 +26,7 @@
   "docks": {
     "layers": "LAPISAN OPERASIONAL (5)",
     "marswalk": "LINTASAN MARSWALK",
+    "spatialTools": "ALAT SPASIAL & PETA",
     "prospector": "PROSPECTOR ML",
     "earthAnalogues": "ANALOGI BUMI"
   },
@@ -332,7 +333,22 @@
     "identifierSlope": "KEMIRINGAN LERENG",
     "identifierMineral": "MINERAL DOMINAN",
     "openPov": "[ BUKA POV 360° ]",
-    "analyzeProspector": "[ ANALISIS PROSPEKTOR ]"
+    "analyzeProspector": "[ ANALISIS PROSPEKTOR ]",
+    "spatialAnalysisTitle": "ANALISIS SPASIAL & TRANSEK",
+    "pano360Title": "PANORAMA 360° & WAYPOINT",
+    "mapOverlaysTitle": "KONTROL TAMPILAN PETA",
+    "recenterSite": "RE-CENTER PUSAT MISI",
+    "roverTraverse": "JALUR PENJELAJAHAN ROVER",
+    "floatingLegend": "LEGENDA ILMIAH PETA",
+    "cameraPitch": "SUDUT KAMERA 3D",
+    "exportGeoJsonBtn": "EKSPOR DATA GIS .GEOJSON",
+    "manage360Btn": "+ KELOLA / UPLOAD FOTO 360°",
+    "open360PovBtn": "BUKA 360° SURFACE POV",
+    "clearMeasureBtn": "BERSIHKAN TITIK PENGUKUR",
+    "activeMeasuringPill": "MODE PENGUKUR AKTIF • KLIK PETA UNTUK MENAMBAH TITIK",
+    "activeViewshedPill": "VIEWSHED 360° AKTIF • KLIK TITIK PENGAMAT DI PETA",
+    "activeZoiPill": "MODE ZOI AKTIF • KLIK PETA UNTUK MENARUH PIN ZONA RISET",
+    "doneBtn": "SELESAI [✕]"
   },
   "landing": {
     "telemetry": {

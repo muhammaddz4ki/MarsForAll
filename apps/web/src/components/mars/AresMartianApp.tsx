@@ -81,8 +81,12 @@ const MarswalkProfileDock = dynamic(() => import("./MarswalkProfileDock"), {
   ssr: false,
 });
 
+const MmgisToolsPanel = dynamic(() => import("./MmgisToolsPanel"), {
+  ssr: false,
+});
+
 export type ViewMode = "mission_control" | "visor_hud" | "planet_globe";
-export type ActiveDrawerTool = "layers" | "marswalk" | "prospector" | "analogue" | null;
+export type ActiveDrawerTool = "layers" | "marswalk" | "tools" | "prospector" | "analogue" | null;
 
 export const AresMartianApp: React.FC = () => {
   const router = useRouter();
@@ -142,6 +146,10 @@ export const AresMartianApp: React.FC = () => {
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
   const [elevationProfile, setElevationProfile] = useState<ElevationProfileResult | null>(null);
   const [zoiList, setZoiList] = useState<ZoiFeature[]>([]);
+  const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
+  const [showGraticule, setShowGraticule] = useState<boolean>(false);
+  const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(true);
+  const [reCenterTrigger, setReCenterTrigger] = useState<number>(0);
 
   const handleAddZoi = useCallback((newZoi: ZoiFeature) => {
     setZoiList((prev) => [...prev, newZoi]);
@@ -258,7 +266,7 @@ export const AresMartianApp: React.FC = () => {
     setActiveTool("prospector");
   }, []);
 
-  const handleToggleTool = useCallback((tool: "layers" | "marswalk" | "prospector" | "analogue") => {
+  const handleToggleTool = useCallback((tool: Exclude<ActiveDrawerTool, null>) => {
     setActiveTool((prev) => (prev === tool ? null : tool));
   }, []);
 
@@ -614,7 +622,25 @@ export const AresMartianApp: React.FC = () => {
             </svg>
           </button>
 
-          {/* Tool 3: Prospector ML 35-Parameter Fusion */}
+          {/* Tool 3: Spatial Analysis & Map Controls */}
+          <button
+            onClick={() => handleToggleTool("tools")}
+            title="Spatial Analysis Tools & Map Controls"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "tools" && viewMode === "mission_control"
+              ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+              : isDark
+                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+              }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
+              <path d="m12.4 8.6 2.8 2.8" />
+              <path d="M2 2h4v4H2z" />
+            </svg>
+          </button>
+
+          {/* Tool 4: Prospector ML 35-Parameter Fusion */}
           <button
             onClick={() => handleToggleTool("prospector")}
             title="Prospector ML Fusion (35 Martian Parameters)"
@@ -679,6 +705,7 @@ export const AresMartianApp: React.FC = () => {
                 <span className="font-bold uppercase tracking-wider text-slate-200">
                   {activeTool === "layers" && tDocks("layers")}
                   {activeTool === "marswalk" && tDocks("marswalk")}
+                  {activeTool === "tools" && tDocks("spatialTools")}
                   {activeTool === "prospector" && tDocks("prospector")}
                   {activeTool === "analogue" && tDocks("earthAnalogues")}
                 </span>
@@ -712,6 +739,33 @@ export const AresMartianApp: React.FC = () => {
                   selectedWaypoint={selectedWaypoint}
                   onRouteCalculated={setActiveRoute}
                   availableWaypoints={allWaypoints}
+                  theme={theme}
+                />
+              )}
+              {activeTool === "tools" && (
+                <MmgisToolsPanel
+                  currentSite={currentSite}
+                  activeMmgisTool={activeMmgisTool}
+                  onSelectMmgisTool={setActiveMmgisTool}
+                  measurePoints={measurePoints}
+                  onClearMeasurePoints={() => {
+                    setMeasurePoints([]);
+                    setElevationProfile(null);
+                  }}
+                  zoiList={zoiList}
+                  onRemoveZoi={(id) => setZoiList((prev) => prev.filter((z) => z.id !== id))}
+                  showRoverTraverse={showRoverTraverse}
+                  onToggleRoverTraverse={() => setShowRoverTraverse((prev) => !prev)}
+                  showGraticule={showGraticule}
+                  onToggleGraticule={() => setShowGraticule((prev) => !prev)}
+                  showFloatingLegend={showFloatingLegend}
+                  onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
+                  pitch3D={pitch3D}
+                  onTogglePitch={() => setPitch3D((prev) => !prev)}
+                  onReCenter={() => setReCenterTrigger((prev) => prev + 1)}
+                  onOpen360Manager={() => setIs360ManagerOpen(true)}
+                  onOpenPovModal={() => setIsPovOpen(true)}
+                  onExportGeoJson={handleExportGeoJson}
                   theme={theme}
                 />
               )}
@@ -765,6 +819,11 @@ export const AresMartianApp: React.FC = () => {
           onOpen360Manager={() => setIs360ManagerOpen(true)}
           custom360Waypoints={custom360List}
           hoveredRoutePoint={hoveredRoutePoint}
+          showRoverTraverse={showRoverTraverse}
+          showGraticule={showGraticule}
+          showFloatingLegend={showFloatingLegend}
+          onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
+          reCenterTrigger={reCenterTrigger}
         />
 
         {/* High-Density 5-Meter Marswalk Transect Profile Dock (NASA MMGIS Ref 4) */}

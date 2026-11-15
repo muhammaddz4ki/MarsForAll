@@ -26,6 +26,7 @@
   "docks": {
     "layers": "科学观测图层 (5)",
     "marswalk": "火星漫步路线规划",
+    "spatialTools": "空间分析与图层控制",
     "prospector": "PROSPECTOR 勘探算法",
     "earthAnalogues": "地球类似物对标"
   },
@@ -332,7 +333,22 @@
     "identifierSlope": "地形坡度",
     "identifierMineral": "优势矿物",
     "openPov": "[ 打开 360° POV ]",
-    "analyzeProspector": "[ 分析勘探指标 ]"
+    "analyzeProspector": "[ 分析勘探指标 ]",
+    "spatialAnalysisTitle": "空间分析与剖面测绘",
+    "pano360Title": "360°全景与路标",
+    "mapOverlaysTitle": "地图显示与图层控制",
+    "recenterSite": "重置到任务中心",
+    "roverTraverse": "火星车历史巡视路线",
+    "floatingLegend": "科学地图图例",
+    "cameraPitch": "3D倾斜相机视角",
+    "exportGeoJsonBtn": "导出.GEOJSON空间数据",
+    "manage360Btn": "+ 管理/上传360°全景照片",
+    "open360PovBtn": "打开360°火星表面第一视角",
+    "clearMeasureBtn": "清除测距剖面点",
+    "activeMeasuringPill": "测绘工具已激活 • 点击地图添加剖面测量点",
+    "activeViewshedPill": "360°视域分析已激活 • 点击地图选择观察点",
+    "activeZoiPill": "兴趣区标记已激活 • 点击地图放置科研区域图钉",
+    "doneBtn": "完成 [✕]"
   },
   "landing": {
     "telemetry": {
