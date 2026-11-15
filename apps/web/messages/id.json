@@ -552,5 +552,20 @@
     "btnSaveAndOpen360": "Simpan & Buka POV 360°",
     "btnFocusMap": "Pusatkan Peta",
     "btnOpen360": "Buka 360°"
+  },
+  "navigationHud": {
+    "activeBadge": "NAVIGASI 3D MARSWALK",
+    "viewPovTarget": "LIHAT POV 360° DI TARGET",
+    "recenter3d": "PUSATKAN 3D",
+    "toggleTransect": "PROFIL TRANSEK 5M",
+    "visorHud": "VISOR HUD",
+    "planner": "PERENCANA",
+    "o2Remaining": "O2:",
+    "battRemaining": "BATERAI:",
+    "mgsShield": "PERISAI:",
+    "safeVerdict": "[100% TERVERIFIKASI AMAN // BEBAS TEBING // BATUAN DASAR PADAT]",
+    "cautionVerdict": "[PERINGATAN // TERDETEKSI KELERENGAN SEDANG]",
+    "hazardVerdict": "[BAHAYA // HINDARI LERENG CURAM]",
+    "turnByTurn": "MANUVER LANGKAH-DEMI-LANGKAH KORIDOR"
   }
 }

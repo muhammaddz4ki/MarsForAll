@@ -69,6 +69,7 @@ interface AresMapViewerProps {
   showFloatingLegend?: boolean;
   onToggleFloatingLegend?: () => void;
   reCenterTrigger?: number;
+  flyToCoord?: [number, number] | null;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -250,9 +251,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   showFloatingLegend = true,
   onToggleFloatingLegend,
   reCenterTrigger = 0,
+  flyToCoord = null,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const [mapLoaded, setMapLoaded] = useState<boolean>(false);
 
   const markersRef = useRef<Marker[]>([]);
   const curiosityMarkersRef = useRef<Marker[]>([]);
@@ -690,10 +693,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "marswalk_route_source",
         paint: {
           "line-color": "#000000",
-          "line-width": 12,
-          "line-offset": 3,
-          "line-blur": 4,
-          "line-opacity": 0.7,
+          "line-width": 14,
+          "line-offset": 4,
+          "line-blur": 6,
+          "line-opacity": 0.75,
         },
       });
 
@@ -703,9 +706,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "line",
         source: "marswalk_route_source",
         paint: {
-          "line-color": "#050811",
-          "line-width": 8,
-          "line-opacity": 0.98,
+          "line-color": "#020617",
+          "line-width": 9.6,
+          "line-opacity": 1.0,
         },
       });
 
@@ -720,7 +723,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             ["get", "color"],
             "#10b981"
           ],
-          "line-width": 4.8,
+          "line-width": 5.8,
         },
       });
 
@@ -731,9 +734,22 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "marswalk_route_source",
         paint: {
           "line-color": "#ffffff",
-          "line-width": 1.6,
+          "line-width": 2.0,
           "line-offset": -1.2,
-          "line-opacity": 0.88,
+          "line-opacity": 0.9,
+        },
+      });
+
+      // Layer 5: Directional Dashed Lane Navigation Markers (Google Maps Highway aesthetic)
+      map.addLayer({
+        id: "marswalk_route_lane_dashed",
+        type: "line",
+        source: "marswalk_route_source",
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": 1.4,
+          "line-dasharray": [2, 3],
+          "line-opacity": 0.85,
         },
       });
 
@@ -751,13 +767,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "circle",
         source: "marswalk_route_dots_source",
         paint: {
-          "circle-radius": 3.5,
+          "circle-radius": 4.0,
           "circle-color": [
             "coalesce",
             ["get", "color"],
             "#34d399"
           ],
-          "circle-stroke-width": 1.4,
+          "circle-stroke-width": 1.5,
           "circle-stroke-color": "#07090e",
           "circle-opacity": 0.95,
           "circle-pitch-alignment": "map",
@@ -837,6 +853,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       });
 
       updateScaleBar(map);
+      setMapLoaded(true);
     });
 
     // Error handler for external tiles
@@ -908,6 +925,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       mapRef.current = null;
     };
   }, []);
+
+  // Fly to coordinate when triggered (e.g. from Navigation Turn-by-Turn Maneuvers)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToCoord) return;
+    map.flyTo({ center: flyToCoord, zoom: 13.8, duration: 800, pitch: 48 });
+  }, [flyToCoord]);
 
   // Update cursor style depending on active MMGIS tool
   useEffect(() => {
@@ -1117,7 +1141,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         .addTo(map);
       measureMarkersRef.current.push(m);
     });
-  }, [measurePoints]);
+  }, [measurePoints, mapLoaded]);
 
   // Sync ZOI Markers
   useEffect(() => {
@@ -1145,7 +1169,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         .addTo(map);
       zoiMarkersRef.current.push(m);
     });
-  }, [zoiList]);
+  }, [zoiList, mapLoaded]);
 
   // Dynamic Opacity Synchronization
   useEffect(() => {
@@ -1209,7 +1233,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         0.88 * opacities.layer_optical_geologic
       );
     }
-  }, [layerOpacities]);
+  }, [layerOpacities, mapLoaded]);
 
   // Sync background color with theme
   useEffect(() => {
@@ -1229,7 +1253,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         isDark ? "#8f371a" : "#b44c28"
       );
     }
-  }, [isDark]);
+  }, [isDark, mapLoaded]);
 
   // Update pitch when pitch3D prop changes
   useEffect(() => {
@@ -1301,7 +1325,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         activeLayers["layer_safety_magnetic"] ? "visible" : "none"
       );
     }
-  }, [activeLayers]);
+  }, [activeLayers, mapLoaded]);
 
   // Reactive NASA Mars Trek Satellite Imagery Synchronization
   useEffect(() => {
@@ -1354,7 +1378,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           : "none"
       );
     }
-  }, [orbitalSource, tileMode, currentSite]);
+  }, [orbitalSource, tileMode, currentSite, mapLoaded]);
 
   // Sync Rover Historical Traverse (Curiosity vs Perseverance) Visibility & Coordinates
   useEffect(() => {
@@ -1396,7 +1420,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       const el = m.getElement();
       if (el) el.style.display = showRoverTraverse ? "block" : "none";
     });
-  }, [showRoverTraverse, currentSite]);
+  }, [showRoverTraverse, currentSite, mapLoaded]);
 
   // Sync MMGIS Graticule Grid Layer
   useEffect(() => {
@@ -1415,7 +1439,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         showGraticule ? "visible" : "none"
       );
     }
-  }, [showGraticule, currentSite]);
+  }, [showGraticule, currentSite, mapLoaded]);
 
   // Render Marswalk Path on Route Calculation
   useEffect(() => {
@@ -1519,9 +1543,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       startEl.className = "select-none pointer-events-none";
       startEl.innerHTML = `
         <div class="relative flex flex-col items-center -translate-y-5">
-          <div class="flex items-center gap-1.5 px-2 py-0.5 bg-[#064e3b] text-[#34d399] border-2 border-[#10b981] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(16,185,129,0.9)]">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-ping"></span>
-            <span>[ 🚀 START: ${activeRoute.startWaypoint.name.toUpperCase().slice(0, 18)} ]</span>
+          <div class="flex items-center gap-1.5 px-2.5 py-0.5 bg-[#064e3b] text-[#34d399] border-2 border-[#10b981] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(16,185,129,0.9)]">
+            <svg class="w-3 h-3 text-[#34d399] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <span>[ START: ${activeRoute.startWaypoint.name.toUpperCase().slice(0, 20)} ]</span>
           </div>
           <div class="w-0.5 h-3 bg-[#10b981]"></div>
           <div class="w-3 h-3 rounded-full bg-[#10b981] border-2 border-[#07090e] shadow-[0_0_8px_rgba(16,185,129,0.9)]"></div>
@@ -1536,9 +1560,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       targetEl.className = "select-none pointer-events-none";
       targetEl.innerHTML = `
         <div class="relative flex flex-col items-center -translate-y-5">
-          <div class="flex items-center gap-1.5 px-2 py-0.5 bg-[#78350f] text-[#fde68a] border-2 border-[#f59e0b] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(245,158,11,0.9)]">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-ping"></span>
-            <span>[ 🎯 TARGET: ${activeRoute.targetWaypoint.name.toUpperCase().slice(0, 18)} ]</span>
+          <div class="flex items-center gap-1.5 px-2.5 py-0.5 bg-[#78350f] text-[#fde68a] border-2 border-[#f59e0b] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(245,158,11,0.9)]">
+            <svg class="w-3 h-3 text-[#f59e0b] animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="2" /></svg>
+            <span>[ TARGET: ${activeRoute.targetWaypoint.name.toUpperCase().slice(0, 20)} ]</span>
           </div>
           <div class="w-0.5 h-3 bg-[#f59e0b]"></div>
           <div class="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-[#07090e] shadow-[0_0_8px_rgba(245,158,11,0.9)]"></div>
@@ -1591,7 +1615,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         });
       }
     }
-  }, [activeRoute, isLeftDrawerOpen]);
+  }, [activeRoute, isLeftDrawerOpen, mapLoaded]);
 
   // Synchronized Scrubbing Cursor Marker along Route (NASA MMGIS Ref 4)
   useEffect(() => {
@@ -1720,7 +1744,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints]);
+  }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints, mapLoaded]);
 
   // Render Martian Topographic Landmarks & Geomorphic Formations (Ref Image 2 & 3 Standard)
   useEffect(() => {
@@ -1757,7 +1781,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         .addTo(map);
       landmarkMarkersRef.current.push(marker);
     });
-  }, [currentSite]);
+  }, [currentSite, mapLoaded]);
 
   // Render Custom Click Pin Marker
   useEffect(() => {
@@ -1825,7 +1849,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       curiosityMarkersRef.current.push(marker);
     });
-  }, [showRoverTraverse, currentSite, isDark]);
+  }, [showRoverTraverse, currentSite, isDark, mapLoaded]);
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
@@ -1940,7 +1964,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5">
                   <span className="w-4 h-4 rounded-full bg-white border border-slate-900 flex items-center justify-center text-[7px] text-slate-900 font-black shrink-0">
-                    📷
+                    <svg className="w-2.5 h-2.5 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3" /><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
                   </span>
                   <span className="text-slate-200">Station Photographic Node</span>
                 </div>

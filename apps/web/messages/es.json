@@ -552,5 +552,20 @@
     "btnSaveAndOpen360": "Guardar y Abrir POV 360°",
     "btnFocusMap": "Enfocar Mapa",
     "btnOpen360": "Abrir 360°"
+  },
+  "navigationHud": {
+    "activeBadge": "NAVEGACIÓN 3D MARSWALK",
+    "viewPovTarget": "VER POV 360° EN DESTINO",
+    "recenter3d": "RE-CENTRAR 3D",
+    "toggleTransect": "PERFIL TRANSECTO 5M",
+    "visorHud": "VISOR HUD",
+    "planner": "PLANIFICADOR",
+    "o2Remaining": "O2:",
+    "battRemaining": "BATERÍA:",
+    "mgsShield": "ESCUDO:",
+    "safeVerdict": "[100% VERIFICADO SEGURO // SIN ACANTILADOS // LECHO ROCOSO FIRME]",
+    "cautionVerdict": "[PRECAUCIÓN // PENDIENTES MODERADAS DETECTADAS]",
+    "hazardVerdict": "[PELIGRO // DESVIAR PENDIENTES PRONUNCIADAS]",
+    "turnByTurn": "MANIOBRAS PASO A PASO DEL CORREDOR"
   }
 }

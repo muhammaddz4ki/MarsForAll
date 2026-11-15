@@ -16,7 +16,11 @@ import {
   getWaypointsForSite,
 } from "@/lib/martian/mountSharpWaypoints";
 import { get360WaypointsAsMountSharp } from "@/lib/martian/customPanoramas";
-import { MarswalkRouteResult, HighDensityPointTelemetry } from "@/lib/martian/marswalkRouter";
+import {
+  MarswalkRouteResult,
+  HighDensityPointTelemetry,
+  planMarswalkRoute,
+} from "@/lib/martian/marswalkRouter";
 import {
   OrbitalImagerySource,
   WmtsStreamStatus,
@@ -78,6 +82,10 @@ const Custom360ManagerModal = dynamic(() => import("./Custom360ManagerModal"), {
 });
 
 const MarswalkProfileDock = dynamic(() => import("./MarswalkProfileDock"), {
+  ssr: false,
+});
+
+const MarsNavigationHud = dynamic(() => import("./MarsNavigationHud"), {
   ssr: false,
 });
 
@@ -157,7 +165,20 @@ export const AresMartianApp: React.FC = () => {
     setTimeout(() => setExportNotification(null), 2500);
   }, []);
 
-  const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
+  const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(() => {
+    try {
+      return planMarswalkRoute({
+        startWaypointId: "gale_hab_alpha",
+        targetWaypointId: "curiosity_boxwork_2025",
+        supportMode: "PAIRED_CREW_MULE_ROVER",
+        avoidHighRadiationRidges: true,
+      });
+    } catch {
+      return null;
+    }
+  });
+  const [isProfileDockOpen, setIsProfileDockOpen] = useState<boolean>(true);
+  const [navFlyToCoord, setNavFlyToCoord] = useState<[number, number] | null>(null);
   const [hoveredRoutePoint, setHoveredRoutePoint] = useState<HighDensityPointTelemetry | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
@@ -206,6 +227,20 @@ export const AresMartianApp: React.FC = () => {
     setCurrentSite(site);
     const siteWaypoints = getWaypointsForSite(site);
     setSelectedWaypoint(siteWaypoints[1] || siteWaypoints[0]);
+    try {
+      const defaultStart = site === "gale_crater" ? "gale_hab_alpha" : "jzr_hab_alpha";
+      const defaultTarget = site === "gale_crater" ? "curiosity_boxwork_2025" : "jzr_three_forks_delta";
+      const newRoute = planMarswalkRoute({
+        startWaypointId: defaultStart,
+        targetWaypointId: defaultTarget,
+        supportMode: "PAIRED_CREW_MULE_ROVER",
+        avoidHighRadiationRidges: true,
+      });
+      setActiveRoute(newRoute);
+      setIsProfileDockOpen(true);
+    } catch {
+      // fallback
+    }
   }, []);
 
   const custom360List = useMemo(() => {
@@ -824,14 +859,31 @@ export const AresMartianApp: React.FC = () => {
           showFloatingLegend={showFloatingLegend}
           onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
           reCenterTrigger={reCenterTrigger}
+          flyToCoord={navFlyToCoord}
         />
 
-        {/* High-Density 5-Meter Marswalk Transect Profile Dock (NASA MMGIS Ref 4) */}
+        {/* Floating Google Maps Martian Navigation HUD */}
         {activeRoute && viewMode === "mission_control" && (
+          <MarsNavigationHud
+            route={activeRoute}
+            isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
+            onOpenPovModal={handleOpenPovModal}
+            onOpenMarswalkPlanner={() => setActiveTool("marswalk")}
+            onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
+            isProfileDockOpen={isProfileDockOpen}
+            onSwitchToVisorHud={() => setViewMode("visor_hud")}
+            onReCenterCorridor={() => setReCenterTrigger((c) => c + 1)}
+            onCloseRoute={() => setActiveRoute(null)}
+            onFlyToCoord={(coord) => setNavFlyToCoord(coord)}
+          />
+        )}
+
+        {/* High-Density 5-Meter Marswalk Transect Profile Dock (NASA MMGIS Ref 4) */}
+        {activeRoute && isProfileDockOpen && viewMode === "mission_control" && (
           <MarswalkProfileDock
             route={activeRoute}
             onHoverPoint={setHoveredRoutePoint}
-            onClose={() => setActiveRoute(null)}
+            onClose={() => setIsProfileDockOpen(false)}
             isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
           />
         )}

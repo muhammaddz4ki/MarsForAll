@@ -552,5 +552,20 @@
     "btnSaveAndOpen360": "保存并开启 360° 视口",
     "btnFocusMap": "聚焦地图",
     "btnOpen360": "开启 360°"
+  },
+  "navigationHud": {
+    "activeBadge": "3D火星漫步导航",
+    "viewPovTarget": "查看目标点360°全景视口",
+    "recenter3d": "重置3D视角",
+    "toggleTransect": "5米剖面图谱",
+    "visorHud": "头盔平视显示HUD",
+    "planner": "路径规划器",
+    "o2Remaining": "氧气:",
+    "battRemaining": "电池:",
+    "mgsShield": "磁屏蔽:",
+    "safeVerdict": "[100%验证安全 // 零绝壁险情 // 基岩稳固]",
+    "cautionVerdict": "[注意 // 检测到中度坡度]",
+    "hazardVerdict": "[危险 // 需避开陡峭险坡]",
+    "turnByTurn": "走廊分段逐级机动指引"
   }
 }

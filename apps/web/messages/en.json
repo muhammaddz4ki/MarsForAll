@@ -552,5 +552,20 @@
     "btnSaveAndOpen360": "Save & Launch 360° POV",
     "btnFocusMap": "Focus Map",
     "btnOpen360": "Open 360°"
+  },
+  "navigationHud": {
+    "activeBadge": "3D MARSWALK NAVIGATION",
+    "viewPovTarget": "VIEW 360° POV AT TARGET",
+    "recenter3d": "RE-CENTER 3D",
+    "toggleTransect": "5M TRANSECT PROFILE",
+    "visorHud": "VISOR HUD",
+    "planner": "PLANNER",
+    "o2Remaining": "O2:",
+    "battRemaining": "BATT:",
+    "mgsShield": "SHIELD:",
+    "safeVerdict": "[100% VERIFIED SAFE // ZERO CLIFFS // BEDROCK FIRM]",
+    "cautionVerdict": "[CAUTION // MODERATE SLOPES DETECTED]",
+    "hazardVerdict": "[HAZARD // BYPASS HIGH SLOPES]",
+    "turnByTurn": "TURN-BY-TURN CORRIDOR MANEUVERS"
   }
 }
