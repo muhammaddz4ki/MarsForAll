@@ -259,6 +259,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const zoiMarkersRef = useRef<Marker[]>([]);
   const viewshedMarkerRef = useRef<Marker | null>(null);
   const scrubMarkerRef = useRef<Marker | null>(null);
+  const routeStartMarkerRef = useRef<Marker | null>(null);
+  const routeTargetMarkerRef = useRef<Marker | null>(null);
   const landmarkMarkersRef = useRef<Marker[]>([]);
 
   const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
@@ -483,12 +485,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         id: "mars_terrain_lines",
         type: "line",
         source: "mars_procedural_terrain",
-        filter: ["==", "$type", "LineString"],
         paint: {
-          "line-color": "#ffffff",
-          "line-width": 1.2,
-          "line-opacity": 0.4,
-          "line-dasharray": [4, 3],
+          "line-color": "#94a3b8",
+          "line-width": 0.9,
+          "line-opacity": 0.45,
+          "line-dasharray": [3, 2],
         },
       });
 
@@ -508,7 +509,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.16,
+          "fill-opacity": 0.10,
         },
       });
 
@@ -586,7 +587,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": "#06b6d4",
-          "fill-opacity": 0.28,
+          "fill-opacity": 0.12,
         },
       });
 
@@ -600,7 +601,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": "#8b5cf6",
-          "fill-opacity": 0.22,
+          "fill-opacity": 0.10,
         },
       });
 
@@ -652,14 +653,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
+      // Rover Candidate / Historical Traverse (Subtle Dashed Gray Track ala NASA MMGIS)
       map.addLayer({
         id: "curiosity_traverse_casing",
         type: "line",
         source: "curiosity_traverse_source",
         paint: {
           "line-color": "#07090e",
-          "line-width": 4,
-          "line-opacity": 0.95,
+          "line-width": 2.8,
+          "line-opacity": 0.35,
         },
       });
 
@@ -668,12 +670,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "line",
         source: "curiosity_traverse_source",
         paint: {
-          "line-color": "#facc15",
-          "line-width": 2,
+          "line-color": "#94a3b8",
+          "line-width": 1.6,
+          "line-dasharray": [4, 4],
+          "line-opacity": 0.55,
         },
       });
 
-      // Marswalk Route Line (Dual-Layer Line Casing ala MMGIS)
+      // Marswalk Route 3D Elevated Highway Source
       map.addSource("marswalk_route_source", {
         type: "geojson",
         data: {
@@ -682,17 +686,33 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
+      // Layer 1: Ground Ambient Occlusion Shadow (Creates Elevated 3D Floating Effect)
+      map.addLayer({
+        id: "marswalk_route_shadow",
+        type: "line",
+        source: "marswalk_route_source",
+        paint: {
+          "line-color": "#000000",
+          "line-width": 12,
+          "line-offset": 3,
+          "line-blur": 4,
+          "line-opacity": 0.7,
+        },
+      });
+
+      // Layer 2: 3D Outer Structural Tube Casing
       map.addLayer({
         id: "marswalk_route_casing",
         type: "line",
         source: "marswalk_route_source",
         paint: {
-          "line-color": "#07090e",
-          "line-width": 5.5,
-          "line-opacity": 0.95,
+          "line-color": "#050811",
+          "line-width": 8,
+          "line-opacity": 0.98,
         },
       });
 
+      // Layer 3: 3D Luminous Core Corridor (Emerald Safe / Amber Caution / Red Hazard)
       map.addLayer({
         id: "marswalk_route_core",
         type: "line",
@@ -703,11 +723,24 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             ["get", "color"],
             "#10b981"
           ],
-          "line-width": 3.5,
+          "line-width": 4.8,
         },
       });
 
-      // 5-Meter High Density Sampling Dots Layer (Ref Image 2: Dotted Traverse Track)
+      // Layer 4: 3D Specular Highlight Spine (Cylindrical Glass / Chrome Gleam)
+      map.addLayer({
+        id: "marswalk_route_highlight",
+        type: "line",
+        source: "marswalk_route_source",
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": 1.6,
+          "line-offset": -1.2,
+          "line-opacity": 0.88,
+        },
+      });
+
+      // 5-Meter High Density Sampling Dots Layer (3D Map Pitch Aligned)
       map.addSource("marswalk_route_dots_source", {
         type: "geojson",
         data: {
@@ -721,15 +754,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "circle",
         source: "marswalk_route_dots_source",
         paint: {
-          "circle-radius": 3.0,
+          "circle-radius": 3.5,
           "circle-color": [
             "coalesce",
             ["get", "color"],
-            "#ffffff"
+            "#34d399"
           ],
-          "circle-stroke-width": 1.2,
+          "circle-stroke-width": 1.4,
           "circle-stroke-color": "#07090e",
           "circle-opacity": 0.95,
+          "circle-pitch-alignment": "map",
         },
       });
 
@@ -880,6 +914,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     return () => {
       if (rafHoverId) cancelAnimationFrame(rafHoverId);
       if (rafMoveId) cancelAnimationFrame(rafMoveId);
+      if (routeStartMarkerRef.current) routeStartMarkerRef.current.remove();
+      if (routeTargetMarkerRef.current) routeTargetMarkerRef.current.remove();
       map.remove();
       mapRef.current = null;
     };
@@ -1140,42 +1176,42 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setPaintProperty(
         "geology_fills",
         "fill-opacity",
-        Math.min(0.85, 0.4 * (opacities.layer_optical_geologic / 0.8))
+        Math.min(0.25, 0.12 * (opacities.layer_optical_geologic / 0.8))
       );
     }
     if (map.getLayer("geology_borders")) {
       map.setPaintProperty(
         "geology_borders",
         "line-opacity",
-        Math.min(1.0, opacities.layer_optical_geologic)
+        Math.min(0.85, 0.65 * (opacities.layer_optical_geologic / 0.8))
       );
     }
     if (map.getLayer("hazard_slopes")) {
       map.setPaintProperty(
         "hazard_slopes",
         "line-opacity",
-        Math.min(1.0, opacities.layer_topographic_hazard)
+        Math.min(0.85, 0.7 * (opacities.layer_topographic_hazard / 0.8))
       );
     }
     if (map.getLayer("thermal_subsurface_circles")) {
       map.setPaintProperty(
         "thermal_subsurface_circles",
         "fill-opacity",
-        Math.min(0.85, 0.45 * (opacities.layer_thermal_subsurface / 0.8))
+        Math.min(0.3, 0.14 * (opacities.layer_thermal_subsurface / 0.8))
       );
     }
     if (map.getLayer("science_mineral_fills")) {
       map.setPaintProperty(
         "science_mineral_fills",
         "fill-opacity",
-        Math.min(0.85, 0.35 * (opacities.layer_science_mineral / 0.8))
+        Math.min(0.25, 0.12 * (opacities.layer_science_mineral / 0.8))
       );
     }
     if (map.getLayer("safety_magnetic_fills")) {
       map.setPaintProperty(
         "safety_magnetic_fills",
         "fill-opacity",
-        Math.min(0.85, 0.3 * (opacities.layer_safety_magnetic / 0.8))
+        Math.min(0.22, 0.10 * (opacities.layer_safety_magnetic / 0.8))
       );
     }
     if (map.getLayer("mars-raster-hirise")) {
@@ -1471,7 +1507,51 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         }
       }
 
-      // Auto-fit camera comfortably close to the route
+      // Render 3D Holographic Start & Target Beacon Markers
+      if (routeStartMarkerRef.current) {
+        routeStartMarkerRef.current.remove();
+        routeStartMarkerRef.current = null;
+      }
+      if (routeTargetMarkerRef.current) {
+        routeTargetMarkerRef.current.remove();
+        routeTargetMarkerRef.current = null;
+      }
+
+      // 3D Start Beacon (Base Station)
+      const startEl = document.createElement("div");
+      startEl.className = "select-none pointer-events-none";
+      startEl.innerHTML = `
+        <div class="relative flex flex-col items-center -translate-y-5">
+          <div class="flex items-center gap-1.5 px-2 py-0.5 bg-[#064e3b] text-[#34d399] border-2 border-[#10b981] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(16,185,129,0.9)]">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-ping"></span>
+            <span>[ 🚀 START: ${activeRoute.startWaypoint.name.toUpperCase().slice(0, 18)} ]</span>
+          </div>
+          <div class="w-0.5 h-3 bg-[#10b981]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#10b981] border-2 border-[#07090e] shadow-[0_0_8px_rgba(16,185,129,0.9)]"></div>
+        </div>
+      `;
+      routeStartMarkerRef.current = new maplibregl.Marker({ element: startEl })
+        .setLngLat(activeRoute.startWaypoint.coordinates)
+        .addTo(map);
+
+      // 3D Target Objective Beacon
+      const targetEl = document.createElement("div");
+      targetEl.className = "select-none pointer-events-none";
+      targetEl.innerHTML = `
+        <div class="relative flex flex-col items-center -translate-y-5">
+          <div class="flex items-center gap-1.5 px-2 py-0.5 bg-[#78350f] text-[#fde68a] border-2 border-[#f59e0b] font-mono font-bold text-[9px] shadow-[0_0_14px_rgba(245,158,11,0.9)]">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b] animate-ping"></span>
+            <span>[ 🎯 TARGET: ${activeRoute.targetWaypoint.name.toUpperCase().slice(0, 18)} ]</span>
+          </div>
+          <div class="w-0.5 h-3 bg-[#f59e0b]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#f59e0b] border-2 border-[#07090e] shadow-[0_0_8px_rgba(245,158,11,0.9)]"></div>
+        </div>
+      `;
+      routeTargetMarkerRef.current = new maplibregl.Marker({ element: targetEl })
+        .setLngLat(activeRoute.targetWaypoint.coordinates)
+        .addTo(map);
+
+      // Auto-fit camera comfortably close to the route with 3D pitch perspective
       if (activeRoute.pathCoordinates.length > 1) {
         const lons = activeRoute.pathCoordinates.map((c) => c[0]);
         const lats = activeRoute.pathCoordinates.map((c) => c[1]);
@@ -1486,13 +1566,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             [maxLon, maxLat],
           ],
           {
-            padding: { top: 75, bottom: 180, left: isLeftDrawerOpen ? 430 : 90, right: 90 },
-            maxZoom: 14.5,
+            padding: { top: 90, bottom: 200, left: isLeftDrawerOpen ? 430 : 90, right: 90 },
+            maxZoom: 15.0,
             duration: 900,
+            pitch: 48, // 3D elevated highway perspective
           }
         );
       }
     } else {
+      if (routeStartMarkerRef.current) {
+        routeStartMarkerRef.current.remove();
+        routeStartMarkerRef.current = null;
+      }
+      if (routeTargetMarkerRef.current) {
+        routeTargetMarkerRef.current.remove();
+        routeTargetMarkerRef.current = null;
+      }
+
       source.setData({
         type: "FeatureCollection",
         features: [],
@@ -1720,8 +1810,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.style.display = showRoverTraverse ? "block" : "none";
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
-          <div class="w-2.5 h-2.5 rounded-full bg-[#facc15] border-[1.5px] border-[#07090e] shadow-sm transition-transform group-hover:scale-125"></div>
-          <div class="absolute -bottom-3.5 whitespace-nowrap text-[#facc15] font-mono font-bold text-[8px] tracking-tight drop-shadow-[0_1px_2px_rgba(7,9,14,0.95)]">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-400 border border-slate-900 opacity-60 transition-transform group-hover:scale-125 group-hover:opacity-100"></div>
+          <div class="absolute -bottom-3 whitespace-nowrap text-slate-400 font-mono font-medium text-[7px] tracking-tight opacity-50 group-hover:opacity-100">
             SOL ${pt.sol}
           </div>
         </div>

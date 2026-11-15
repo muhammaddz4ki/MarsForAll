@@ -354,22 +354,22 @@ export const AresMartianApp: React.FC = () => {
       },
       marswalkPlan: activeRoute
         ? {
-            origin: activeRoute.startWaypoint.name,
-            destination: activeRoute.targetWaypoint.name,
-            supportMode: activeRoute.supportMode,
-            distanceKm: activeRoute.totalDistanceKm,
-            estimatedDurationHours: activeRoute.estimatedDurationHours,
-            o2ConsumedLiters: activeRoute.totalO2ConsumedLiters,
-            remainingO2Percent: activeRoute.remainingO2Percent,
-            batteryConsumedWh: activeRoute.totalBatteryWh,
-            remainingBatteryPercent: activeRoute.remainingBatteryPercent,
-            averageCrustalMagNt: activeRoute.averageCrustalMagNt,
-            magneticShieldingReductionPercent: activeRoute.magneticShieldingReductionPercent,
-            sandTrapWarningCount: activeRoute.sandTrapWarningCount,
-            safetyScore: activeRoute.overallSafetyIndex,
-            hazardAlerts: activeRoute.hazardAlerts,
-            photometry: activeRoute.photometry,
-          }
+          origin: activeRoute.startWaypoint.name,
+          destination: activeRoute.targetWaypoint.name,
+          supportMode: activeRoute.supportMode,
+          distanceKm: activeRoute.totalDistanceKm,
+          estimatedDurationHours: activeRoute.estimatedDurationHours,
+          o2ConsumedLiters: activeRoute.totalO2ConsumedLiters,
+          remainingO2Percent: activeRoute.remainingO2Percent,
+          batteryConsumedWh: activeRoute.totalBatteryWh,
+          remainingBatteryPercent: activeRoute.remainingBatteryPercent,
+          averageCrustalMagNt: activeRoute.averageCrustalMagNt,
+          magneticShieldingReductionPercent: activeRoute.magneticShieldingReductionPercent,
+          sandTrapWarningCount: activeRoute.sandTrapWarningCount,
+          safetyScore: activeRoute.overallSafetyIndex,
+          hazardAlerts: activeRoute.hazardAlerts,
+          photometry: activeRoute.photometry,
+        }
         : "Direct Surface Excursion Mode (No Calculated Corridor)",
       topEarthAnalogueTestbed: {
         siteName: "Haughton Impact Crater, Devon Island (Canada)",
@@ -405,40 +405,35 @@ export const AresMartianApp: React.FC = () => {
   const isDark = theme === "dark";
 
   return (
-    <div className={`relative w-screen h-screen overflow-hidden ${
-      isDark ? "bg-[#07090e] text-slate-100" : "bg-[#f8fafc] text-slate-900"
-    } flex flex-col font-sans select-none`}>
+    <div className={`relative w-screen h-screen overflow-hidden ${isDark ? "bg-[#07090e] text-slate-100" : "bg-[#f8fafc] text-slate-900"
+      } flex flex-col font-sans select-none`}>
       {/* 1. TOP NAVIGATION BAR (h-11, px-3, MMGIS Compact Single-Row Layout) */}
-      <header className={`h-11 ${
-        isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
-      } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-x-auto gap-2`}>
+      <header className={`h-11 ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
+        } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-x-auto gap-2`}>
         {/* SLOT KIRI: Badge + Segmented Mission Site Selector */}
         <div className="flex items-center gap-2 shrink-0">
           <MarsForAllBadge size={26} showSubtext={false} />
-          <div className={`flex items-center ${
-            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-          } border p-0.5 font-mono text-[10px]`}>
+          <div className={`flex items-center ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+            } border p-0.5 font-mono text-[10px]`}>
             <button
               onClick={() => handleSwitchSite("gale_crater")}
-              className={`px-2 py-0.5 font-bold transition-colors ${
-                currentSite === "gale_crater"
-                  ? "bg-amber-600 text-slate-950"
-                  : isDark
+              className={`px-2 py-0.5 font-bold transition-colors ${currentSite === "gale_crater"
+                ? "bg-amber-600 text-slate-950"
+                : isDark
                   ? "text-slate-400 hover:text-slate-200"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               {tNav("siteGale")}
             </button>
             <button
               onClick={() => handleSwitchSite("jezero_crater")}
-              className={`px-2 py-0.5 font-bold transition-colors ${
-                currentSite === "jezero_crater"
-                  ? "bg-amber-600 text-slate-950"
-                  : isDark
+              className={`px-2 py-0.5 font-bold transition-colors ${currentSite === "jezero_crater"
+                ? "bg-amber-600 text-slate-950"
+                : isDark
                   ? "text-slate-400 hover:text-slate-200"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               {tNav("siteJezero")}
             </button>
@@ -447,18 +442,16 @@ export const AresMartianApp: React.FC = () => {
 
         {/* SLOT TENGAH: Symmetrical Segmented Mode Control [ 2D MAP | 3D GLOBE | VISOR HUD ] */}
         <div className="flex-1 flex justify-center">
-          <div className={`flex items-center ${
-            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-          } border p-0.5 font-mono text-[11px] shrink-0`}>
+          <div className={`flex items-center ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+            } border p-0.5 font-mono text-[11px] shrink-0`}>
             <button
               onClick={() => setViewMode("mission_control")}
-              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-                viewMode === "mission_control"
-                  ? "bg-amber-600 text-slate-950 font-bold"
-                  : isDark
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${viewMode === "mission_control"
+                ? "bg-amber-600 text-slate-950 font-bold"
+                : isDark
                   ? "text-slate-400 hover:text-slate-200"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
@@ -470,13 +463,12 @@ export const AresMartianApp: React.FC = () => {
 
             <button
               onClick={() => setViewMode("planet_globe")}
-              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-                viewMode === "planet_globe"
-                  ? "bg-purple-700 text-slate-100 font-bold"
-                  : isDark
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${viewMode === "planet_globe"
+                ? "bg-purple-700 text-slate-100 font-bold"
+                : isDark
                   ? "text-slate-400 hover:text-slate-200"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
@@ -488,13 +480,12 @@ export const AresMartianApp: React.FC = () => {
 
             <button
               onClick={() => setViewMode("visor_hud")}
-              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${
-                viewMode === "visor_hud"
-                  ? "bg-cyan-600 text-slate-950 font-bold"
-                  : isDark
+              className={`flex items-center gap-1 px-2.5 py-0.5 transition-colors ${viewMode === "visor_hud"
+                ? "bg-cyan-600 text-slate-950 font-bold"
+                : isDark
                   ? "text-slate-400 hover:text-slate-200"
                   : "text-slate-600 hover:text-slate-900"
-              }`}
+                }`}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M2 12h20M4 12v5a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5M6 12V7a6 6 0 0 1 12 0v5" />
@@ -507,20 +498,18 @@ export const AresMartianApp: React.FC = () => {
         {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
         <div className="flex items-center gap-1 shrink-0">
           {/* Multi-Language Selector [ EN | ID | ES | FR | ZH ] */}
-          <div className={`flex items-center ${
-            isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
-          } border p-0.5 font-mono text-[9px]`}>
+          <div className={`flex items-center ${isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
+            } border p-0.5 font-mono text-[9px]`}>
             {(["en", "id", "es", "fr", "zh"] as const).map((loc) => (
               <button
                 key={loc}
                 onClick={() => handleChangeLanguage(loc)}
-                className={`px-1 py-0.5 uppercase font-bold transition-colors ${
-                  currentLocale === loc
-                    ? "bg-amber-600 text-slate-950"
-                    : isDark
+                className={`px-1 py-0.5 uppercase font-bold transition-colors ${currentLocale === loc
+                  ? "bg-amber-600 text-slate-950"
+                  : isDark
                     ? "text-slate-400 hover:text-white"
                     : "text-slate-600 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 {loc}
               </button>
@@ -531,9 +520,8 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={handleToggleTheme}
             title="Toggle Dark / Light Theme"
-            className={`px-1.5 py-0.5 ${
-              isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
-            } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
+            className={`px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
+              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
             {theme === "dark" ? `[${tNav("themeDark")}]` : `[${tNav("themeLight")}]`}
           </button>
@@ -541,9 +529,8 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setPitch3D(!pitch3D)}
             title="Toggle 2.5D / 3D Terrain Pitch"
-            className={`flex items-center gap-1 px-1.5 py-0.5 ${
-              isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
-            } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
+            className={`flex items-center gap-1 px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
+              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
             <span>{pitch3D ? tNav("pitch3D") : tNav("pitch2D")}</span>
           </button>
@@ -551,9 +538,8 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setResetNorthTrigger((n) => n + 1)}
             title="Reset North Heading"
-            className={`flex items-center gap-1 px-1.5 py-0.5 ${
-              isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
-            } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
+            className={`flex items-center gap-1 px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
             <span>{tNav("resetNorth")}</span>
           </button>
@@ -574,9 +560,8 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => setIsInfoOpen(true)}
             title="Scientific Attribution & Mission Brief"
-            className={`flex items-center justify-center px-2 py-0.5 ${
-              isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
-            } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
+            className={`flex items-center justify-center px-2 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
+              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
           >
             {tNav("info")}
           </button>
@@ -593,20 +578,18 @@ export const AresMartianApp: React.FC = () => {
       {/* 2. MAIN WORKSPACE AREA WITH MMGIS VERTICAL LEFT RAIL */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex">
         {/* MMGIS VERTICAL LEFT TOOL RAIL (w-11 = 44px) */}
-        <nav className={`w-11 h-full ${
-          isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-        } border-r flex flex-col items-center py-2 z-30 shrink-0 select-none font-mono`}>
+        <nav className={`w-11 h-full ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+          } border-r flex flex-col items-center py-2 z-30 shrink-0 select-none font-mono`}>
           {/* Tool 1: Scientific Layers */}
           <button
             onClick={() => handleToggleTool("layers")}
             title="Scientific Layers & WMTS Catalog"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              activeTool === "layers" && viewMode === "mission_control"
-                ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
-                : isDark
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "layers" && viewMode === "mission_control"
+              ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+              : isDark
                 ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-            }`}
+              }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -619,13 +602,12 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => handleToggleTool("marswalk")}
             title="Marswalk EVA Route Planner (Dijkstra A*)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              activeTool === "marswalk" && viewMode === "mission_control"
-                ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
-                : isDark
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "marswalk" && viewMode === "mission_control"
+              ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
+              : isDark
                 ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-            }`}
+              }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="6" cy="19" r="3" />
@@ -637,13 +619,12 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => handleToggleTool("prospector")}
             title="Prospector ML Fusion (35 Martian Parameters)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              activeTool === "prospector" && viewMode === "mission_control"
-                ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
-                : isDark
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "prospector" && viewMode === "mission_control"
+              ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+              : isDark
                 ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-            }`}
+              }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
@@ -656,13 +637,12 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => handleToggleTool("analogue")}
             title="Earth Analogue Matcher (Terrestrial Testbeds)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              activeTool === "analogue" && viewMode === "mission_control"
-                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                : isDark
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "analogue" && viewMode === "mission_control"
+              ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+              : isDark
                 ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-            }`}
+              }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
@@ -676,11 +656,10 @@ export const AresMartianApp: React.FC = () => {
           <button
             onClick={() => handleOpenPovModal(selectedWaypoint)}
             title="Open 360° Real Rover Panorama (Mastcam-Z / MSL)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${
-              isDark
-                ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
-                : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
-            }`}
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${isDark
+              ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
+              : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
+              }`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
@@ -691,13 +670,11 @@ export const AresMartianApp: React.FC = () => {
 
         {/* MMGIS SINGLE CLEAN DRAWER PANEL (w-[350px], left-11) */}
         {viewMode === "mission_control" && activeTool !== null && (
-          <aside className={`absolute left-11 top-0 bottom-14 w-[350px] z-20 pointer-events-auto ${
-            isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
-          } border-r flex flex-col shadow-2xl`}>
+          <aside className={`absolute left-11 top-0 bottom-14 w-[350px] z-20 pointer-events-auto ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
+            } border-r flex flex-col shadow-2xl`}>
             {/* Drawer Header with Title and Close Button */}
-            <div className={`flex items-center justify-between px-3 py-2 border-b ${
-              isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
-            } shrink-0 font-mono text-xs`}>
+            <div className={`flex items-center justify-between px-3 py-2 border-b ${isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
+              } shrink-0 font-mono text-xs`}>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-amber-400" />
                 <span className="font-bold uppercase tracking-wider text-slate-200">
@@ -710,9 +687,8 @@ export const AresMartianApp: React.FC = () => {
               <button
                 onClick={() => setActiveTool(null)}
                 title={tNav("collapse")}
-                className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${
-                  isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
-                } font-mono text-[10px] font-bold`}
+                className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
+                  } font-mono text-[10px] font-bold`}
               >
                 [ X ]
               </button>
@@ -848,9 +824,8 @@ export const AresMartianApp: React.FC = () => {
         {/* 3. UNIFIED BOTTOM TELEMETRY BAR (Simetris h-9, bottom-4 left-14 right-4, zero overlap with left rail) */}
         <div className="absolute bottom-4 left-14 right-4 z-20 flex justify-between items-center gap-3 pointer-events-none select-none">
           {/* Slot Kiri Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums) */}
-          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
-            isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-          } gap-2.5 max-w-[55%]`}>
+          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+            } gap-2.5 max-w-[55%]`}>
             {viewMode === "mission_control" ? (
               <>
                 <span className="text-amber-500 font-bold">MARSFORALL</span>
@@ -860,13 +835,12 @@ export const AresMartianApp: React.FC = () => {
                 <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                 <span
-                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
-                    selectedWaypoint.sandTrapRisk === "HIGH"
-                      ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
-                      : selectedWaypoint.sandTrapRisk === "MODERATE"
+                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${selectedWaypoint.sandTrapRisk === "HIGH"
+                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
+                    : selectedWaypoint.sandTrapRisk === "MODERATE"
                       ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
                       : "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                  }`}
+                    }`}
                 >
                   [{selectedWaypoint.surfaceFirmness}]
                 </span>
@@ -876,11 +850,10 @@ export const AresMartianApp: React.FC = () => {
                 </span>
                 <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                 <span
-                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
-                    wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
-                      ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                      : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                  }`}
+                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
+                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                    : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                    }`}
                 >
                   {wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
                     ? "[JPL WMTS STREAMING]"
@@ -889,25 +862,23 @@ export const AresMartianApp: React.FC = () => {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setTileMode("live_trek")}
-                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
-                      tileMode === "live_trek"
-                        ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                        : isDark
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "live_trek"
+                      ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                      : isDark
                         ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                         : "bg-slate-100 text-slate-600 border-slate-300"
-                    }`}
+                      }`}
                   >
                     [JPL TREK]
                   </button>
                   <button
                     onClick={() => setTileMode("offline_procedural")}
-                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
-                      tileMode === "offline_procedural"
-                        ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                        : isDark
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "offline_procedural"
+                      ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                      : isDark
                         ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                         : "bg-slate-100 text-slate-600 border-slate-300"
-                    }`}
+                      }`}
                   >
                     [OFFLINE]
                   </button>
@@ -942,9 +913,8 @@ export const AresMartianApp: React.FC = () => {
           </div>
 
           {/* Slot Kanan Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums): Sol Clock & Weather Scrubber */}
-          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${
-            isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-          } gap-3`}>
+          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+            } gap-3`}>
             {/* Sol Clock Selector */}
             <div className="flex items-center gap-1">
               <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
@@ -954,13 +924,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   key={sol}
                   onClick={() => setCurrentSol(sol)}
-                  className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${
-                    currentSol === sol
-                      ? "bg-[#1e293b] text-amber-400 border-amber-400"
-                      : isDark
+                  className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${currentSol === sol
+                    ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                    : isDark
                       ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                       : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   {sol}
                 </button>
@@ -973,25 +942,23 @@ export const AresMartianApp: React.FC = () => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setDustStormActive(false)}
-                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
-                  !dustStormActive
-                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                    : isDark
+                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${!dustStormActive
+                  ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                  : isDark
                     ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                     : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 {tScrubber("clearSky")}
               </button>
               <button
                 onClick={() => setDustStormActive(true)}
-                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${
-                  dustStormActive
-                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
-                    : isDark
+                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${dustStormActive
+                  ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                  : isDark
                     ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                     : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 {tScrubber("dustStorm")}
               </button>
