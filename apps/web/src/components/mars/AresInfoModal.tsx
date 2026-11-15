@@ -51,7 +51,7 @@ export const AresInfoModal: React.FC<AresInfoModalProps> = ({
               MISSION BRIEF &amp; ARCHITECTURAL SCOPE
             </h4>
             <p className="font-mono text-[11px]">
-              <strong>MARSFORALL // GALE-01</strong> is an autonomous planetary GIS, machine learning prospector,
+              <strong>MARSFORALL</strong> is an autonomous planetary GIS, machine learning prospector,
               and Marswalk route navigation system developed for the <strong>NASA Space Apps Challenge 2026</strong> submission:
               <em>"Interplanetary Survival Guide: Martian Map"</em>.
             </p>

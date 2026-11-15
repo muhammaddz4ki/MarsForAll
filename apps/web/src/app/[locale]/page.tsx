@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import AresMartianApp from "@/components/mars/AresMartianApp";
+import DiBisalitasLanding from "@/components/landing/DiBisalitasLanding";
 
 export const metadata: Metadata = {
   title: "MarsForAll | Interplanetary Survival Guide: Martian Map",
-  description: "NASA Space Apps Challenge 2026: Hyperlocalized Martian Excursion Map, ML Prospector & Terrain-Aware Marswalk Planner",
+  description:
+    "NASA Space Apps Challenge 2026: Hyperlocalized Mount Sharp (Gale Crater) Surface Map, 5 NASA Operational Layers, ML Prospector Fusion & Curiosity Historical Traverse.",
 };
 
 export default function HomePage() {
-  return <AresMartianApp />;
+  return <DiBisalitasLanding />;
 }

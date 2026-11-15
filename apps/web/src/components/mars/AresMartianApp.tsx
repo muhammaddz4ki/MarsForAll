@@ -286,7 +286,7 @@ export const AresMartianApp: React.FC = () => {
   // 1-Click Export EVA Mission Manifest
   const handleExportEvaManifest = () => {
     const manifest = {
-      mission: "MARSFORALL // GALE-01",
+      mission: "MARSFORALL",
       challenge: "NASA Space Apps Challenge 2026",
       theme: "Interplanetary Survival Guide: Martian Map",
       generatedAtSol: currentSol,

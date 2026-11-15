@@ -9,10 +9,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck"
+    "build": "turbo run build --filter=@marsforall/web",
+    "dev": "pnpm --filter @marsforall/web dev",
+    "dev:web": "pnpm --filter @marsforall/web dev",
+    "dev:all": "turbo run dev",
+    "lint": "pnpm --filter @marsforall/web lint",
+    "typecheck": "pnpm --filter @marsforall/web typecheck"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

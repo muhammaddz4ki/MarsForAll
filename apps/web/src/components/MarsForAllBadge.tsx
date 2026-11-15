@@ -9,7 +9,7 @@ interface MarsForAllBadgeProps {
 }
 
 /**
- * MARSFORALL // GALE-01 Mission Badge & Official Team Logo Component
+ * MARSFORALL Mission Badge & Official Team Logo Component
  * Compliant with strict mission branding rules (ZERO NASA logos, zero gradients, flat matte styling).
  */
 export const MarsForAllBadge: React.FC<MarsForAllBadgeProps> = ({
@@ -29,7 +29,7 @@ export const MarsForAllBadge: React.FC<MarsForAllBadgeProps> = ({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imgError ? "/images/marsforall-badge.svg" : "/images/marsforall-logo.png"}
+          src={imgError ? "/images/marsforall-logo.png" : "/favicon.png"}
           alt="MARSFORALL Team Logo"
           width={pixelSize}
           height={pixelSize}
@@ -41,7 +41,7 @@ export const MarsForAllBadge: React.FC<MarsForAllBadgeProps> = ({
       {showSubtext && (
         <div className="flex flex-col text-left">
           <span className="font-mono text-xs font-bold tracking-widest text-amber-500">
-            MARSFORALL // GALE-01
+            MARSFORALL
           </span>
           <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
             Interplanetary Survival Guide

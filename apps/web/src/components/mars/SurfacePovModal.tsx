@@ -1275,7 +1275,7 @@ export const SurfacePovModal: React.FC<SurfacePovModalProps> = ({
           <MarsForAllBadge size={20} showSubtext={false} />
           <div className="flex items-center gap-2 text-slate-300 truncate text-[11px]">
             <span className="font-bold text-amber-400 whitespace-nowrap">
-              {isJezero ? "MARSFORALL // JEZERO-02" : "MARSFORALL // GALE-01"}
+              {isJezero ? "MARSFORALL // JEZERO" : "MARSFORALL"}
             </span>
             <span className="text-slate-600">|</span>
             <span className="text-emerald-400 font-bold whitespace-nowrap">

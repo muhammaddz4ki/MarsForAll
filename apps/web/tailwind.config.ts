@@ -1,19 +1,12 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Tailwind is layered onto the existing hand-written design system in
- * globals.css rather than replacing it.
- *
- * - Colours read the CSS theme variables (set per `[data-theme]` on <html>),
- *   so utilities like `bg-surface` / `text-accent` swap automatically between
- *   light and dark, no `dark:` variants needed for colour.
- * - Preflight (Tailwind's global reset) is OFF: the existing CSS depends on
- *   default browser styling for unclassed headings/lists, so enabling it would
- *   regress the current pages. All other utilities still work normally.
+ * Tailwind is layered onto the existing design system in globals.css.
+ * Supports both class-based dark mode (.dark) and [data-theme="dark"].
  */
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
-  darkMode: ["selector", '[data-theme="dark"]'],
+  darkMode: ["selector", '.dark, [data-theme="dark"]'],
   corePlugins: {
     preflight: false,
   },
@@ -43,6 +36,13 @@ const config: Config = {
       },
       backdropBlur: {
         glass: "20px",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "Overpass", "Fira Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        mono: ["var(--font-mono)", "Fira Code", "monospace"],
+        serif: ["var(--font-serif)", "Playfair Display", "Georgia", "serif"],
+        bebas: ["var(--font-bebas)", "Bebas Neue", "Impact", "sans-serif"],
+        display: ["var(--font-bebas)", "Bebas Neue", "Impact", "sans-serif"],
       },
     },
   },
