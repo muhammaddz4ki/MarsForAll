@@ -2348,13 +2348,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </div>
       )}
 
-      {/* Floating Guidance Prompt when no point is selected */}
-      {!identifiedFeature && activeMmgisTool === "none" && !activeRoute && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-[#07090e]/90 border border-slate-700/80 text-slate-300 font-mono text-[9px] font-bold tracking-wider pointer-events-none select-none shadow-md flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span>{tMmgis("clickPrompt")}</span>
-        </div>
-      )}
 
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (
