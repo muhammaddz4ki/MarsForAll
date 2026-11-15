@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   MountSharpWaypoint,
@@ -30,6 +30,29 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
   const t = useTranslations("prospector");
   const isDark = theme === "dark";
   const [activeTab, setActiveTab] = useState<"ml_fusion" | "params_35" | "sharad_radar">("ml_fusion");
+  const [sharadProduct, setSharadProduct] = useState<any>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSharad() {
+      if (!waypoint) return;
+      try {
+        const res = await fetch(`/api/mars-ode?type=sharad&lon=${waypoint.coordinates[0]}&lat=${waypoint.coordinates[1]}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (isMounted && json.products && json.products.length > 0) {
+            setSharadProduct(json.products[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("[Prospector] Live ODE SHARAD fetch fallback", err);
+      }
+    }
+    loadSharad();
+    return () => {
+      isMounted = false;
+    };
+  }, [waypoint]);
 
   const evaluation: ProspectorEvaluationResult = useMemo(() => {
     if (!waypoint) {
@@ -490,6 +513,30 @@ export const ProspectorPanel: React.FC<ProspectorPanelProps> = ({
                 <span className="text-emerald-400 font-bold">{t("radarAttenuationLow")}</span>
               </div>
             </div>
+
+            {/* Live MRO SHARAD Radargram Preview from Mars ODE REST */}
+            {sharadProduct?.browseImageUrl && (
+              <div className="mt-3 p-2 bg-[#0b0f17] border border-slate-700 space-y-1">
+                <div className="flex justify-between items-center text-[9px]">
+                  <span className="text-cyan-400 font-bold uppercase tracking-wider">
+                    CITRA RADARGRAM SHARAD AKTIF
+                  </span>
+                  <span className="text-slate-400 text-[8px] font-mono">
+                    {sharadProduct.productId}
+                  </span>
+                </div>
+                <div className="relative aspect-[16/7] w-full overflow-hidden border border-slate-800 bg-black">
+                  <img
+                    src={sharadProduct.browseImageUrl}
+                    alt="SHARAD Radargram Penampang Bawah Tanah"
+                    className="w-full h-full object-cover filter contrast-125"
+                  />
+                </div>
+                <p className="text-[8px] text-slate-400 leading-tight">
+                  Penampang radargram orbital MRO SHARAD memverifikasi lapisan reflektor bawah tanah dan formasi batuan dasar padat di sekitar koordinat target.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

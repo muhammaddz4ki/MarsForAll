@@ -673,8 +673,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "line",
         source: "marswalk_route_source",
         paint: {
-          "line-color": "#22d3ee",
-          "line-width": 2.2,
+          "line-color": [
+            "coalesce",
+            ["get", "color"],
+            "#10b981"
+          ],
+          "line-width": 3.0,
         },
       });
 
@@ -1333,17 +1337,47 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     if (!source) return;
 
     if (activeRoute && activeRoute.pathCoordinates.length > 1) {
-      const lineFeature = {
-        type: "Feature" as const,
-        properties: {},
-        geometry: {
-          type: "LineString" as const,
-          coordinates: activeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
-        },
-      };
+      const features: any[] = [];
+
+      if (activeRoute.segments && activeRoute.segments.length > 0) {
+        // Individual multi-hazard colored segments
+        activeRoute.segments.forEach((seg) => {
+          const isHazard = seg.sandTrapRisk === "HIGH" || seg.slopeDeg > 22 || seg.isHazardWarning;
+          const isCaution = seg.slopeDeg > 15 || seg.sandTrapRisk === "MODERATE";
+          const color = isHazard ? "#ef4444" : isCaution ? "#f59e0b" : "#10b981";
+
+          features.push({
+            type: "Feature",
+            properties: {
+              segmentIndex: seg.segmentIndex,
+              slopeDeg: seg.slopeDeg,
+              hazard: isHazard ? "HAZARD" : isCaution ? "CAUTION" : "SAFE",
+              color,
+            },
+            geometry: {
+              type: "LineString",
+              coordinates: [seg.fromCoordinate, seg.toCoordinate],
+            },
+          });
+        });
+      } else {
+        // Fallback continuous line
+        features.push({
+          type: "Feature",
+          properties: {
+            color: "#10b981",
+            hazard: "SAFE",
+          },
+          geometry: {
+            type: "LineString",
+            coordinates: activeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
+          },
+        });
+      }
+
       source.setData({
         type: "FeatureCollection",
-        features: [lineFeature],
+        features,
       } as any);
     } else {
       source.setData({

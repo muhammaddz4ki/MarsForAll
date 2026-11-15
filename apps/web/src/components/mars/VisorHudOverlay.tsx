@@ -6,6 +6,7 @@ import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
 import { computeRadioLineOfSight } from "@/lib/martian/scientificParams";
 import type { SpaceWeatherTelemetry } from "@/app/api/space-weather/route";
+import type { MartianWeatherFeed } from "@/app/api/mars-weather/route";
 
 interface VisorHudOverlayProps {
   selectedWaypoint: MountSharpWaypoint | null;
@@ -30,28 +31,38 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
 
   // Real NASA DONKI + MSL RAD Telemetry State
   const [spaceWeather, setSpaceWeather] = useState<SpaceWeatherTelemetry | null>(null);
+  const [martianWeather, setMartianWeather] = useState<MartianWeatherFeed | null>(null);
 
-  // Fetch real NASA DONKI / MSL RAD surface dosimetry telemetry
+  const isJezero = target?.id?.startsWith("jzr_") ?? false;
+
+  // Fetch real NASA DONKI / MSL RAD and REMS/MEDA weather telemetry
   useEffect(() => {
     let isMounted = true;
-    async function loadSpaceWeather() {
+    async function loadTelemetry() {
       try {
-        const res = await fetch("/api/space-weather");
-        if (res.ok) {
-          const data: SpaceWeatherTelemetry = await res.json();
-          if (isMounted) setSpaceWeather(data);
+        const [swRes, wxRes] = await Promise.all([
+          fetch("/api/space-weather"),
+          fetch(`/api/mars-weather?mission=${isJezero ? "m2020" : "msl"}`),
+        ]);
+        if (swRes.ok && isMounted) {
+          const swData: SpaceWeatherTelemetry = await swRes.json();
+          setSpaceWeather(swData);
+        }
+        if (wxRes.ok && isMounted) {
+          const wxData: MartianWeatherFeed = await wxRes.json();
+          setMartianWeather(wxData);
         }
       } catch (err) {
-        console.warn("[VisorHud] Live space weather fetch fallback to calibrated baseline", err);
+        console.warn("[VisorHud] Live telemetry fetch fallback to calibrated baseline", err);
       }
     }
-    loadSpaceWeather();
-    const refreshTimer = setInterval(loadSpaceWeather, 60000);
+    loadTelemetry();
+    const refreshTimer = setInterval(loadTelemetry, 60000);
     return () => {
       isMounted = false;
       clearInterval(refreshTimer);
     };
-  }, []);
+  }, [isJezero]);
 
   // Deterministic physiological heart rate based on terrain slope and EVA metabolic rate (NO random jitter)
   // Base resting EVA: ~74 BPM + 2.2 BPM per degree slope grade + 16 BPM elevated under dust storm conditions
@@ -74,9 +85,17 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
     ? computeRadioLineOfSight(target.coordinates[0], target.coordinates[1], target.elevationM)
     : "CONNECTED";
 
-  // Telemetry values derived from real planetary environment models
-  const windSpeed = dustStormActive ? "24.8 m/s GUSTS" : "6.4 m/s ESE";
-  const dustTau = dustStormActive ? "TAU 2.4 (EXTREME)" : "TAU 0.3 (CLEAR)";
+  // Telemetry values derived from real planetary environment models & live REMS/MEDA feed
+  const windSpeed = dustStormActive
+    ? "24.8 m/s GUSTS"
+    : martianWeather
+    ? `${martianWeather.windSpeedMs.toFixed(1)} m/s ${martianWeather.windDirection}`
+    : "5.4 m/s ESE";
+  const dustTau = dustStormActive
+    ? "TAU 2.4 (EXTREME)"
+    : martianWeather
+    ? `TAU ${martianWeather.dustOpacityTau.toFixed(2)} (${martianWeather.atmoOpacity.toUpperCase()})`
+    : "TAU 0.32 (CLEAR)";
   const solarFlux = dustStormActive ? "112 W/m²" : "590 W/m²";
   const batteryPct = dustStormActive
     ? Math.max(30, (activeRoute?.remainingBatteryPercent ?? 88) - 22)
@@ -193,8 +212,10 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
             </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
-            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("solarFlux")}</span>
-            <span className={`font-bold ${isDark ? "text-white" : "text-slate-900"} tabular-nums`}>{solarFlux}</span>
+            <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>ATM / SUHU</span>
+            <span className={`font-bold ${isDark ? "text-white" : "text-slate-900"} tabular-nums`}>
+              {martianWeather ? `${martianWeather.maxTempC}°C | ${Math.round(martianWeather.atmosphericPressurePa)} Pa` : "-18°C | 745 Pa"}
+            </span>
           </div>
           <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-slate-50 border-slate-200"} p-1.5 border`}>
             <span className={`${isDark ? "text-slate-400" : "text-slate-500"} block uppercase`}>{t("donkiSpaceWx")}</span>
