@@ -348,7 +348,11 @@
     "activeMeasuringPill": "MODO MEDICIÓN ACTIVO • HAGA CLIC EN EL MAPA",
     "activeViewshedPill": "VIEWSHED 360° ACTIVO • HAGA CLIC EN LA POSICIÓN DEL OBSERVADOR",
     "activeZoiPill": "MODO ZOI ACTIVO • HAGA CLIC EN EL MAPA PARA COLOCAR UN PIN",
-    "doneBtn": "LISTO [✕]"
+    "doneBtn": "LISTO [✕]",
+    "solWeatherTitle": "CRONOLOGÍA SOL Y SIMULADOR ATMOSFÉRICO",
+    "solTimelineDesc": "Salte entre soles de misiones históricas del rover o simule tormentas de polvo atmosférico marciano con extinción de profundidad óptica (tau) en vivo.",
+    "weatherSim": "PROFUNDIDAD ÓPTICA ATMOSFÉRICA",
+    "bottomScrubberToggle": "SUPERPOSICIÓN DE LÍNEA DE TIEMPO INFERIOR"
   },
   "landing": {
     "telemetry": {

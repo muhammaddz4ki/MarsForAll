@@ -348,7 +348,11 @@
     "activeMeasuringPill": "MESURE ACTIVE • CLIQUEZ SUR LA CARTE",
     "activeViewshedPill": "VIEWSHED 360° ACTIF • CLIQUEZ SUR LA POSITION DE L'OBSERVATEUR",
     "activeZoiPill": "MODE ZOI ACTIF • CLIQUEZ SUR LA CARTE POUR PLACER UN PIN",
-    "doneBtn": "TERMINÉ [✕]"
+    "doneBtn": "TERMINÉ [✕]",
+    "solWeatherTitle": "CHRONOLOGIE SOL & SIMULATEUR ATMOSPHÉRIQUE",
+    "solTimelineDesc": "Passez d'un sol historique de rover à l'autre ou simulez les tempêtes de poussière atmosphérique martienne avec extinction de profondeur optique (tau) en direct.",
+    "weatherSim": "PROFONDEUR OPTIQUE ATMOSPHÉRIQUE",
+    "bottomScrubberToggle": "SUPERPOSITION DE BARRE DE TEMPS INFÉRIEURE"
   },
   "landing": {
     "telemetry": {

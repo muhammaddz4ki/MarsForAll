@@ -348,7 +348,11 @@
     "activeMeasuringPill": "MEASURE TOOL ACTIVE • CLICK MAP TO PLOT TRANSECT",
     "activeViewshedPill": "VIEWSHED 360° ACTIVE • CLICK OBSERVER LOCATION",
     "activeZoiPill": "ZOI MODE ACTIVE • CLICK MAP TO PLACE RESEARCH PIN",
-    "doneBtn": "DONE [✕]"
+    "doneBtn": "DONE [✕]",
+    "solWeatherTitle": "SOL TIMELINE & ATMOSPHERIC SIMULATOR",
+    "solTimelineDesc": "Jump between historical rover mission sols or simulate Martian atmospheric dust storm conditions with live optical depth (tau) extinction.",
+    "weatherSim": "ATMOSPHERIC OPTICAL DEPTH",
+    "bottomScrubberToggle": "BOTTOM TIMELINE SCRUBBER OVERLAY"
   },
   "landing": {
     "telemetry": {

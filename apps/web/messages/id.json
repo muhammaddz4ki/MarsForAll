@@ -348,7 +348,11 @@
     "activeMeasuringPill": "MODE PENGUKUR AKTIF • KLIK PETA UNTUK MENAMBAH TITIK",
     "activeViewshedPill": "VIEWSHED 360° AKTIF • KLIK TITIK PENGAMAT DI PETA",
     "activeZoiPill": "MODE ZOI AKTIF • KLIK PETA UNTUK MENARUH PIN ZONA RISET",
-    "doneBtn": "SELESAI [✕]"
+    "doneBtn": "SELESAI [✕]",
+    "solWeatherTitle": "TIMELINE SOL & SIMULATOR ATMOSFER",
+    "solTimelineDesc": "Lompat antar sol misi rover bersejarah atau simulasikan kondisi badai debu atmosfer Mars dengan kepunahan kedalaman optik (tau) langsung.",
+    "weatherSim": "KEDALAMAN OPTIK ATMOSFER",
+    "bottomScrubberToggle": "OVERLAY SCRUBBER TIMELINE BAWAH"
   },
   "landing": {
     "telemetry": {

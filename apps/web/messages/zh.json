@@ -348,7 +348,11 @@
     "activeMeasuringPill": "测绘工具已激活 • 点击地图添加剖面测量点",
     "activeViewshedPill": "360°视域分析已激活 • 点击地图选择观察点",
     "activeZoiPill": "兴趣区标记已激活 • 点击地图放置科研区域图钉",
-    "doneBtn": "完成 [✕]"
+    "doneBtn": "完成 [✕]",
+    "solWeatherTitle": "火星日时间轴与大气模拟器",
+    "solTimelineDesc": "在历史漫游车火星日之间跳转，或模拟具有实时光学厚度 (tau) 消光特性的火星大气沙尘暴环境。",
+    "weatherSim": "大气光学厚度",
+    "bottomScrubberToggle": "底部时间轴微调悬浮条"
   },
   "landing": {
     "telemetry": {

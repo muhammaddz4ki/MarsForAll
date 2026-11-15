@@ -1,6 +1,6 @@
 import React, { memo } from "react";
 import { useTranslations } from "next-intl";
-import { MissionSiteId } from "@/lib/martian/mountSharpWaypoints";
+import { MissionSiteId, getRoverTraverseForSite } from "@/lib/martian/mountSharpWaypoints";
 import { ZoiFeature } from "@/lib/martian/mmgisSpatialAnalysis";
 
 interface MmgisToolsPanelProps {
@@ -24,6 +24,12 @@ interface MmgisToolsPanelProps {
   onOpenPovModal: () => void;
   onExportGeoJson: () => void;
   theme?: "dark" | "light";
+  currentSol?: number;
+  onSelectSol?: (sol: number) => void;
+  dustStormActive?: boolean;
+  onToggleDustStorm?: (active: boolean) => void;
+  showSolWeatherScrubber?: boolean;
+  onToggleSolWeatherScrubber?: () => void;
 }
 
 export const MmgisToolsPanel: React.FC<MmgisToolsPanelProps> = memo(({
@@ -47,6 +53,12 @@ export const MmgisToolsPanel: React.FC<MmgisToolsPanelProps> = memo(({
   onOpenPovModal,
   onExportGeoJson,
   theme = "dark",
+  currentSol = 4180,
+  onSelectSol,
+  dustStormActive = false,
+  onToggleDustStorm,
+  showSolWeatherScrubber = true,
+  onToggleSolWeatherScrubber,
 }) => {
   const tMmgis = useTranslations("mmgis");
   const isDark = theme === "dark";
@@ -364,6 +376,101 @@ export const MmgisToolsPanel: React.FC<MmgisToolsPanelProps> = memo(({
               </svg>
               <span>{tMmgis("exportGeoJsonBtn")}</span>
             </button>
+          </div>
+        </section>
+
+        {/* SECTION 4: SOL TIMELINE & ATMOSPHERIC SIMULATOR */}
+        <section className={`border ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-50 border-slate-200"} p-2.5`}>
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <span className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
+              4. {tMmgis("solWeatherTitle")}
+            </span>
+            <span className="text-[9px] px-1 py-0.2 bg-[#78350f] text-[#fef3c7] border border-[#f59e0b]">
+              SIMULATOR
+            </span>
+          </div>
+
+          <p className="text-[9px] text-slate-400 leading-tight mb-2.5">
+            {tMmgis("solTimelineDesc")}
+          </p>
+
+          <div className="space-y-2">
+            {/* Weather Atmospheric Simulator */}
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                {tMmgis("weatherSim")}
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => onToggleDustStorm?.(false)}
+                  className={`py-1 px-2 border text-[9px] font-bold transition-colors ${
+                    !dustStormActive
+                      ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                      : isDark
+                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                      : "bg-white text-slate-600 border-slate-300 hover:text-slate-900"
+                  }`}
+                >
+                  CLEAR (TAU 0.3)
+                </button>
+                <button
+                  onClick={() => onToggleDustStorm?.(true)}
+                  className={`py-1 px-2 border text-[9px] font-bold transition-colors ${
+                    dustStormActive
+                      ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                      : isDark
+                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                      : "bg-white text-slate-600 border-slate-300 hover:text-slate-900"
+                  }`}
+                >
+                  STORM (TAU 2.4)
+                </button>
+              </div>
+            </div>
+
+            {/* Sol Milestone Time Travel Buttons */}
+            <div className="pt-2 border-t border-slate-800">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                HISTORICAL MISSION SOLS
+              </span>
+              <div className="grid grid-cols-4 gap-1">
+                {getRoverTraverseForSite(currentSite).map((pt) => (
+                  <button
+                    key={pt.sol}
+                    onClick={() => onSelectSol?.(pt.sol)}
+                    className={`py-1 px-1 border text-[9px] font-bold truncate transition-colors ${
+                      currentSol === pt.sol
+                        ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                        : isDark
+                        ? "bg-[#111827] text-slate-300 border-slate-800 hover:text-white"
+                        : "bg-white text-slate-700 border-slate-300 hover:text-black"
+                    }`}
+                    title={`Sol ${pt.sol}: ${pt.name}`}
+                  >
+                    SOL {pt.sol}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Scrubber Overlay Toggle */}
+            <div className="pt-2 border-t border-slate-800">
+              <button
+                onClick={onToggleSolWeatherScrubber}
+                className={`w-full py-1.5 px-2 border font-bold text-[10px] transition-colors flex items-center justify-between ${
+                  showSolWeatherScrubber
+                    ? "bg-[#161e2e] text-slate-200 border-slate-600"
+                    : isDark
+                    ? "bg-[#111827] text-slate-500 border-slate-800"
+                    : "bg-white text-slate-400 border-slate-200"
+                }`}
+              >
+                <span>{tMmgis("bottomScrubberToggle")}</span>
+                <span className={`text-[9px] font-bold ${showSolWeatherScrubber ? "text-amber-400" : "text-slate-500"}`}>
+                  [{showSolWeatherScrubber ? "VISIBLE" : "HIDDEN"}]
+                </span>
+              </button>
+            </div>
           </div>
         </section>
 

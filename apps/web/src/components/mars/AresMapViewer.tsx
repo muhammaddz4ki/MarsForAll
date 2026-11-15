@@ -47,6 +47,8 @@ interface AresMapViewerProps {
   tileMode?: "live_trek" | "offline_procedural";
   orbitalSource?: OrbitalImagerySource;
   onWmtsStatusChange?: (status: WmtsStreamStatus) => void;
+  dustStormActive?: boolean;
+  currentSol?: number;
 
   // MMGIS Spatial Analysis Props
   activeMmgisTool?: "none" | "measure" | "viewshed" | "zoi";
@@ -230,6 +232,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   tileMode = "live_trek",
   orbitalSource = "jpl_hirise",
   onWmtsStatusChange,
+  dustStormActive = false,
+  currentSol = 4180,
   // MMGIS
   activeMmgisTool = "none",
   onSelectMmgisTool,
@@ -1255,6 +1259,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     }
   }, [isDark, mapLoaded]);
 
+  // Atmospheric Dust Storm Extinction Sync on Map Tiles
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const layers = ["mars-raster-ctx-gale", "mars-raster-ctx-jezero", "mars-raster-viking", "mars-raster-openplanetary"];
+    layers.forEach((id) => {
+      if (map.getLayer(id)) {
+        map.setPaintProperty(
+          id,
+          "raster-contrast",
+          dustStormActive ? -0.2 : 0.25
+        );
+      }
+    });
+  }, [dustStormActive, mapLoaded]);
+
   // Update pitch when pitch3D prop changes
   useEffect(() => {
     const map = mapRef.current;
@@ -2102,6 +2123,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* Main Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
+
+      {/* Dynamic Martian Atmospheric Dust Storm Visual Simulation */}
+      {dustStormActive && (
+        <div className="absolute inset-0 pointer-events-none z-10 bg-[#7c2d12]/28 mix-blend-multiply transition-opacity duration-700">
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#451a03]/95 border border-[#ea580c] text-[#fdba74] font-mono text-[9px] font-bold flex items-center gap-2 shadow-xl animate-pulse">
+            <span className="w-2 h-2 bg-[#ea580c] rounded-full animate-ping" />
+            <span>[ MARS ATMOSPHERE: DUST STORM ACTIVE // OPTICAL DEPTH TAU: 2.40 // EXTREME SCATTERING ]</span>
+          </div>
+        </div>
+      )}
 
       {/* 3. Bottom HUD: Live Cursor Telemetry & Dynamic Metric Scale Bar */}
       <div className="absolute bottom-2 left-3 right-3 z-20 flex items-center justify-between pointer-events-none font-mono text-[9px]">

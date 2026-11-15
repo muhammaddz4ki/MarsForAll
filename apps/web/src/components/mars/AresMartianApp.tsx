@@ -14,6 +14,7 @@ import {
   MountSharpWaypoint,
   MissionSiteId,
   getWaypointsForSite,
+  getRoverTraverseForSite,
 } from "@/lib/martian/mountSharpWaypoints";
 import { get360WaypointsAsMountSharp } from "@/lib/martian/customPanoramas";
 import {
@@ -119,6 +120,7 @@ export const AresMartianApp: React.FC = () => {
   // Sol & Atmospheric Simulation State
   const [currentSol, setCurrentSol] = useState<number>(4180);
   const [dustStormActive, setDustStormActive] = useState<boolean>(false);
+  const [showSolWeatherScrubber, setShowSolWeatherScrubber] = useState<boolean>(true);
   const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
   const [orbitalSource, setOrbitalSource] = useState<OrbitalImagerySource>("jpl_hirise");
   const [wmtsStatus, setWmtsStatus] = useState<WmtsStreamStatus>("streaming");
@@ -242,6 +244,21 @@ export const AresMartianApp: React.FC = () => {
       // fallback
     }
   }, []);
+
+  const activeTraverseSols = useMemo(() => {
+    return getRoverTraverseForSite(currentSite);
+  }, [currentSite]);
+
+  const handleSelectSol = useCallback((sol: number) => {
+    setCurrentSol(sol);
+    const traverse = getRoverTraverseForSite(currentSite);
+    const match = traverse.find((p) => p.sol === sol);
+    if (match) {
+      setNavFlyToCoord(match.coordinates);
+      setExportNotification(`ROVER TIME-TRAVEL: SOL ${sol} - ${match.name.toUpperCase()}`);
+      setTimeout(() => setExportNotification(null), 3500);
+    }
+  }, [currentSite]);
 
   const custom360List = useMemo(() => {
     return get360WaypointsAsMountSharp(currentSite);
@@ -802,6 +819,12 @@ export const AresMartianApp: React.FC = () => {
                   onOpenPovModal={() => setIsPovOpen(true)}
                   onExportGeoJson={handleExportGeoJson}
                   theme={theme}
+                  currentSol={currentSol}
+                  onSelectSol={handleSelectSol}
+                  dustStormActive={dustStormActive}
+                  onToggleDustStorm={(active) => setDustStormActive(active)}
+                  showSolWeatherScrubber={showSolWeatherScrubber}
+                  onToggleSolWeatherScrubber={() => setShowSolWeatherScrubber((prev) => !prev)}
                 />
               )}
               {activeTool === "prospector" && (
@@ -860,6 +883,8 @@ export const AresMartianApp: React.FC = () => {
           onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
           reCenterTrigger={reCenterTrigger}
           flyToCoord={navFlyToCoord}
+          dustStormActive={dustStormActive}
+          currentSol={currentSol}
         />
 
         {/* Floating Google Maps Martian Navigation HUD */}
@@ -1020,58 +1045,80 @@ export const AresMartianApp: React.FC = () => {
             )}
           </div>
 
-          {/* Slot Kanan Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums): Sol Clock & Weather Scrubber */}
-          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-            } gap-3`}>
-            {/* Sol Clock Selector */}
-            <div className="flex items-center gap-1">
-              <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
-                {tScrubber("solClock")}:
-              </span>
-              {[4180, 4181, 4182, 4183, 4184, 4185].map((sol) => (
+          {/* Slot Kanan Bawah: Sol Clock & Weather Scrubber */}
+          {showSolWeatherScrubber && (
+            <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+              } gap-2.5`}>
+              {/* Sol Clock Selector */}
+              <div className="flex items-center gap-1">
+                <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
+                  {tScrubber("solClock")}:
+                </span>
+                {activeTraverseSols.map((pt) => (
+                  <button
+                    key={pt.sol}
+                    onClick={() => handleSelectSol(pt.sol)}
+                    title={`Jump to Sol ${pt.sol}: ${pt.name}`}
+                    className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${currentSol === pt.sol
+                      ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                      : isDark
+                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                        : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
+                      }`}
+                  >
+                    {pt.sol}
+                  </button>
+                ))}
+              </div>
+
+              <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+
+              {/* Atmospheric Condition Scrubber */}
+              <div className="flex items-center gap-1">
                 <button
-                  key={sol}
-                  onClick={() => setCurrentSol(sol)}
-                  className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${currentSol === sol
-                    ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                  onClick={() => {
+                    setDustStormActive(false);
+                    setExportNotification("ATMOSPHERE: CLEAR SKY // OPTICAL TAU 0.30");
+                    setTimeout(() => setExportNotification(null), 2500);
+                  }}
+                  className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${!dustStormActive
+                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
                     : isDark
                       ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                       : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
                     }`}
                 >
-                  {sol}
+                  {tScrubber("clearSky")}
                 </button>
-              ))}
-            </div>
+                <button
+                  onClick={() => {
+                    setDustStormActive(true);
+                    setExportNotification("WARNING: MARS DUST STORM EVENT // TAU 2.40");
+                    setTimeout(() => setExportNotification(null), 3000);
+                  }}
+                  className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${dustStormActive
+                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                    : isDark
+                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                      : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
+                    }`}
+                >
+                  {tScrubber("dustStorm")}
+                </button>
+              </div>
 
-            <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+              <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
 
-            {/* Atmospheric Condition Scrubber */}
-            <div className="flex items-center gap-1">
+              {/* Dismiss / Close Button */}
               <button
-                onClick={() => setDustStormActive(false)}
-                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${!dustStormActive
-                  ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                  : isDark
-                    ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                    : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                  }`}
+                onClick={() => setShowSolWeatherScrubber(false)}
+                className="px-1 text-slate-500 hover:text-slate-300 transition-colors text-[10px] font-bold"
+                title="Hide Sol & Weather Scrubber"
               >
-                {tScrubber("clearSky")}
-              </button>
-              <button
-                onClick={() => setDustStormActive(true)}
-                className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${dustStormActive
-                  ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
-                  : isDark
-                    ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                    : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                  }`}
-              >
-                {tScrubber("dustStorm")}
+                ✕
               </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
