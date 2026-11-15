@@ -14,7 +14,7 @@ import {
   getRoverTraverseForSite,
   BRADBURY_LANDING_ELLIPSE,
 } from "@/lib/martian/mountSharpWaypoints";
-import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
+import { MarswalkRouteResult, HighDensityPointTelemetry } from "@/lib/martian/marswalkRouter";
 import {
   OrbitalImagerySource,
   WmtsStreamStatus,
@@ -65,6 +65,7 @@ interface AresMapViewerProps {
   onAnalyzeProspector?: (wp: MountSharpWaypoint) => void;
   onOpen360Manager?: () => void;
   custom360Waypoints?: MountSharpWaypoint[];
+  hoveredRoutePoint?: HighDensityPointTelemetry | null;
 }
 
 const MOUNT_SHARP_CENTER: [number, number] = [137.40, -4.74];
@@ -242,6 +243,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   onAnalyzeProspector,
   onOpen360Manager,
   custom360Waypoints = [],
+  hoveredRoutePoint,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -256,9 +258,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const measureMarkersRef = useRef<Marker[]>([]);
   const zoiMarkersRef = useRef<Marker[]>([]);
   const viewshedMarkerRef = useRef<Marker | null>(null);
+  const scrubMarkerRef = useRef<Marker | null>(null);
 
   const [showRoverTraverse, setShowRoverTraverse] = useState<boolean>(true);
   const [showGraticule, setShowGraticule] = useState<boolean>(false);
+  const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(true);
   const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
   const [swipePosition, setSwipePosition] = useState<number>(50); // percentage 0 - 100
   const isDraggingDivider = useRef<boolean>(false);
@@ -683,6 +687,32 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             "#10b981"
           ],
           "line-width": 3.0,
+        },
+      });
+
+      // 5-Meter High Density Sampling Dots Layer (Ref Image 2: Dotted Traverse Track)
+      map.addSource("marswalk_route_dots_source", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [],
+        },
+      });
+
+      map.addLayer({
+        id: "marswalk_route_dots",
+        type: "circle",
+        source: "marswalk_route_dots_source",
+        paint: {
+          "circle-radius": 2.2,
+          "circle-color": [
+            "coalesce",
+            ["get", "color"],
+            "#ffffff"
+          ],
+          "circle-stroke-width": 1.0,
+          "circle-stroke-color": "#07090e",
+          "circle-opacity": 0.9,
         },
       });
 
@@ -1338,6 +1368,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     if (!map || !map.isStyleLoaded()) return;
 
     const source = map.getSource("marswalk_route_source") as maplibregl.GeoJSONSource | undefined;
+    const dotsSource = map.getSource("marswalk_route_dots_source") as maplibregl.GeoJSONSource | undefined;
     if (!source) return;
 
     if (activeRoute && activeRoute.pathCoordinates.length > 1) {
@@ -1383,13 +1414,106 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "FeatureCollection",
         features,
       } as any);
+
+      // Populate 5m high-density sampling nodes (Image 2 MMGIS standard)
+      if (dotsSource) {
+        if (activeRoute.highDensityRoutePoints && activeRoute.highDensityRoutePoints.length > 0) {
+          dotsSource.setData({
+            type: "FeatureCollection",
+            features: activeRoute.highDensityRoutePoints.map((pt) => {
+              const dotColor =
+                pt.slopeCategory === "HAZARD"
+                  ? "#ef4444"
+                  : pt.slopeCategory === "CAUTION"
+                  ? "#f59e0b"
+                  : "#ffffff";
+              return {
+                type: "Feature",
+                properties: {
+                  distanceM: pt.cumulativeDistanceM,
+                  slopeDeg: pt.slopeDeg,
+                  color: dotColor,
+                },
+                geometry: {
+                  type: "Point",
+                  coordinates: pt.coordinates,
+                },
+              };
+            }),
+          } as any);
+        } else {
+          dotsSource.setData({
+            type: "FeatureCollection",
+            features: [],
+          });
+        }
+      }
+
+      // Auto-fit camera comfortably close to the route
+      if (activeRoute.pathCoordinates.length > 1) {
+        const lons = activeRoute.pathCoordinates.map((c) => c[0]);
+        const lats = activeRoute.pathCoordinates.map((c) => c[1]);
+        const minLon = Math.min(...lons);
+        const maxLon = Math.max(...lons);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+
+        map.fitBounds(
+          [
+            [minLon, minLat],
+            [maxLon, maxLat],
+          ],
+          {
+            padding: { top: 75, bottom: 180, left: isLeftDrawerOpen ? 430 : 90, right: 90 },
+            maxZoom: 14.5,
+            duration: 900,
+          }
+        );
+      }
     } else {
       source.setData({
         type: "FeatureCollection",
         features: [],
       });
+      if (dotsSource) {
+        dotsSource.setData({
+          type: "FeatureCollection",
+          features: [],
+        });
+      }
     }
-  }, [activeRoute]);
+  }, [activeRoute, isLeftDrawerOpen]);
+
+  // Synchronized Scrubbing Cursor Marker along Route (NASA MMGIS Ref 4)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (scrubMarkerRef.current) {
+      scrubMarkerRef.current.remove();
+      scrubMarkerRef.current = null;
+    }
+
+    if (hoveredRoutePoint) {
+      const el = document.createElement("div");
+      el.className = "select-none pointer-events-none";
+      el.innerHTML = `
+        <div class="relative flex items-center justify-center">
+          <div class="w-4 h-4 rounded-full bg-yellow-400 border-2 border-[#07090e] shadow-[0_0_12px_rgba(250,204,21,0.9)] animate-ping absolute"></div>
+          <div class="w-3.5 h-3.5 rounded-full bg-yellow-400 border border-[#07090e] shadow-[0_0_8px_rgba(250,204,21,0.8)] z-10"></div>
+          <div class="absolute -top-7 whitespace-nowrap bg-[#0b0f17] border border-yellow-400 text-yellow-300 font-mono font-bold text-[9px] px-1.5 py-0.5 z-20 shadow-lg">
+            ${hoveredRoutePoint.cumulativeDistanceM}m [${hoveredRoutePoint.slopeDeg}°]
+          </div>
+        </div>
+      `;
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(hoveredRoutePoint.coordinates)
+        .addTo(map);
+
+      scrubMarkerRef.current = marker;
+    }
+  }, [hoveredRoutePoint]);
 
   // Render Flat Scientific Waypoint Markers
   useEffect(() => {
@@ -1410,53 +1534,74 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       }
     });
 
-    combinedWaypoints.forEach((wp) => {
+    combinedWaypoints.forEach((wp, idx) => {
       const el = document.createElement("div");
       el.className = "cursor-pointer select-none group";
 
       const isSelected = selectedWaypoint?.id === wp.id;
       const has360 = wp.has360Pov || !!(wp as any).customPanoramaUrl;
+      const wpNumber = idx + 1;
 
-      const codeMeta = has360
-        ? {
-            code: "360",
-            color: "bg-[#083344]",
-            border: isSelected ? "border-cyan-300" : "border-[#06b6d4]",
-            text: "text-[#22d3ee]",
-          }
-        : WAYPOINT_SHORT_CODES[wp.id] || {
-            code: "SCI",
-            color: "bg-[#1e293b]",
-            border: "border-[#94a3b8]",
-            text: "text-slate-200",
-          };
-
-      el.innerHTML = `
-        <div class="relative flex flex-col items-center">
-          <div class="flex items-center justify-center w-7 h-7 ${codeMeta.color} border ${codeMeta.border} ${codeMeta.text} text-[10px] font-mono font-bold shadow-none transition-transform group-hover:scale-105 ${
-            has360 ? "ring-1 ring-cyan-400/40" : ""
-          }">
-            ${codeMeta.code}
+      // Image 2 MMGIS Standard: Circular Camera Badge with Sol / Index Number
+      if (has360) {
+        el.innerHTML = `
+          <div class="relative flex flex-col items-center">
+            <div class="flex items-center justify-center gap-1 px-2 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-[1.5px] ${
+              isSelected ? "border-cyan-300 ring-2 ring-cyan-400" : "border-[#06b6d4]"
+            } font-mono font-black text-[9px] shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-transform group-hover:scale-110">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
+              </svg>
+              <span>360°</span>
+            </div>
+            <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
+              isSelected
+                ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
+                : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4]"
+            }">
+              ${wp.name.split(" ")[0]}
+            </div>
           </div>
-          <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
-            isSelected
-              ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-              : has360
-              ? "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4]"
-              : isDark
-              ? "bg-[#0b0f17] text-slate-300 border border-slate-700"
-              : "bg-white text-slate-800 border border-slate-300 shadow-sm"
-          }">
-            ${has360 ? "[360°] " : ""}${wp.name.split(" ")[0]}
+        `;
+      } else {
+        el.innerHTML = `
+          <div class="relative flex flex-col items-center">
+            <div class="flex items-center justify-center gap-0.5 px-1.5 h-6 rounded-full ${
+              isSelected
+                ? "bg-amber-400 text-slate-950 border-[1.5px] border-amber-200 ring-2 ring-amber-500"
+                : "bg-white text-slate-900 border-[1.5px] border-slate-900"
+            } font-mono font-black text-[9px] shadow-sm transition-transform group-hover:scale-110">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
+              </svg>
+              <span>${wpNumber}</span>
+            </div>
+            <div class="absolute -bottom-4 whitespace-nowrap px-1.5 py-0.2 rounded-none text-[8px] font-mono font-bold tracking-wider ${
+              isSelected
+                ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
+                : isDark
+                ? "bg-[#0b0f17] text-slate-300 border border-slate-700"
+                : "bg-white text-slate-800 border border-slate-300 shadow-sm"
+            }">
+              ${wp.name.split(" ")[0]}
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
 
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectWaypoint(wp);
-        map.flyTo({ center: wp.coordinates, zoom: 12.2, duration: 600 });
+        map.flyTo({ center: wp.coordinates, zoom: 12.5, duration: 600 });
       });
+
+      // Double-click or clicking on a 360 waypoint directly launches 360 POV Modal
+      if (has360) {
+        el.addEventListener("dblclick", (e) => {
+          e.stopPropagation();
+          onOpenPovModal?.(wp);
+        });
+      }
 
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat(wp.coordinates)
@@ -1464,7 +1609,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       markersRef.current.push(marker);
     });
-  }, [selectedWaypoint, onSelectWaypoint, isDark, custom360Waypoints]);
+  }, [selectedWaypoint, onSelectWaypoint, onOpenPovModal, isDark, custom360Waypoints]);
 
   // Render Custom Click Pin Marker
   useEffect(() => {
@@ -1709,7 +1854,127 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           <span className={`w-2 h-2 ${showGraticule ? "bg-[#60a5fa]" : "bg-slate-500"}`} />
           <span>[ {tMmgis("graticuleGrid")} {showGraticule ? t("on") : t("off")} ]</span>
         </button>
+
+        {/* Floating Scientific Legend Toggle (Image 1 Ref) */}
+        <button
+          onClick={() => setShowFloatingLegend((prev) => !prev)}
+          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 font-bold ${
+            showFloatingLegend
+              ? "bg-[#1e1b4b] text-[#c7d2fe] border-[#818cf8]"
+              : isDark
+              ? "bg-[#111827] text-slate-400 border-slate-700 hover:text-white"
+              : "bg-white text-slate-600 border-slate-300 hover:text-slate-900 shadow-sm"
+          }`}
+        >
+          <span className={`w-2 h-2 ${showFloatingLegend ? "bg-[#818cf8]" : "bg-slate-500"}`} />
+          <span>[ LEGEND {showFloatingLegend ? t("on") : t("off")} ]</span>
+        </button>
       </div>
+
+      {/* Floating Scientific Map Legend (Ref Image 1: Bioscape / MMGIS Legend Window) */}
+      {showFloatingLegend && (
+        <div
+          className={`absolute top-12 right-4 z-20 w-64 border font-mono select-none shadow-xl ${
+            isDark
+              ? "bg-[#07090e]/95 border-slate-700 text-slate-200"
+              : "bg-white border-slate-300 text-slate-800"
+          }`}
+        >
+          <div className="flex items-center justify-between px-2.5 py-1 bg-[#0b0f17] border-b border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+            <span className="flex items-center gap-1.5 text-amber-400">
+              <span className="w-1.5 h-1.5 bg-amber-400" />
+              <span>LEGEND</span>
+            </span>
+            <button
+              onClick={() => setShowFloatingLegend(false)}
+              className="text-slate-400 hover:text-white px-1 text-[11px]"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="p-2.5 space-y-2 text-[9px]">
+            <div>
+              <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                Topography &amp; Mobility Hazard
+              </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#22c55e] border border-black/40" />
+                  <span className="text-slate-200">Safe Walk (&lt;15°)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#eab308] border border-black/40" />
+                  <span className="text-slate-200">Suit Caution (15°-25°)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#ef4444] border border-black/40" />
+                  <span className="text-slate-200">Cliff Hazard (&gt;25°)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-1.5 border-t border-slate-800">
+              <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                Thermal &amp; Sand Trap Risk
+              </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#0284c7] border border-black/40" />
+                  <span className="text-slate-200">[BEDROCK FIRM] (&gt;350 tiu)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#ea580c] border border-black/40" />
+                  <span className="text-slate-200">[SOFT SAND TRAP RISK]</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-1.5 border-t border-slate-800">
+              <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                Hydrated Minerals &amp; Radiation
+              </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#06b6d4] border border-black/40" />
+                  <span className="text-slate-200">CRISM High Hydration (&gt;6% WEH)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 shrink-0 bg-[#8b5cf6] border border-black/40" />
+                  <span className="text-slate-200">MGS MAG Shielding Umbrella</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-1.5 border-t border-slate-800">
+              <span className="text-[8px] uppercase tracking-wider text-slate-400 font-bold block mb-1">
+                Stations &amp; Traverse Track
+              </span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-white border border-slate-900 flex items-center justify-center text-[7px] text-slate-900 font-black shrink-0">
+                    📷
+                  </span>
+                  <span className="text-slate-200">Station Photographic Node</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-[#083344] border border-[#06b6d4] flex items-center justify-center text-[7px] text-[#22d3ee] font-black shrink-0">
+                    360
+                  </span>
+                  <span className="text-cyan-300 font-bold">360° Spherical Panoramic Station</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+                  <span className="text-yellow-300">Curiosity Historical Traverse</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-white border border-black shrink-0" />
+                  <span className="text-slate-300">5-Meter Path Sampling Nodes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* In-Map MMGIS Feature Identifier Popover */}
       {identifiedFeature && (

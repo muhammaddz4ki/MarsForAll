@@ -125,7 +125,13 @@
     "legendTitle": "LÉGENDE & RAMPES STRATIGRAPHIQUES",
     "source": "SOURCE: {source}",
     "pdsDocs": "[DOCS PDS]",
-    "opacity": "OPACITÉ"
+    "opacity": "OPACITÉ",
+    "searchPlaceholder": "Rechercher des couches (# pour les tags)...",
+    "groupTopography": "1. TOPOGRAPHIE & MEDAN JALAN",
+    "groupThermal": "2. PHYSIQUE THERMIQUE & SABLES MOUVANTS",
+    "groupMinerals": "3. MINÉRALOGIE & RESSOURCES HYDRATÉES",
+    "groupRadiation": "4. BOUCLIER RADIATIF & MAGNÉTIQUE",
+    "groupWeather": "5. MÉTÉO MARSIENNE & TRAJECTOIRE ROVER"
   },
   "marswalk": {
     "title": "PLANIFICATEUR D'ITINÉRAIRE MARSWALK A*",
@@ -285,6 +291,7 @@
   },
   "mmgis": {
     "toolbarTitle": "OUTILS MMGIS",
+    "floatingLegendTitle": "LÉGENDE SCIENTIFIQUE DE CARTE",
     "measureTool": "MESURER / PROFIL",
     "measureActive": "MESURE EN COURS...",
     "measureInstruction": "Cliquez sur la carte pour tracer une coupe d'élévation.",

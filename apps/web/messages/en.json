@@ -125,7 +125,13 @@
     "legendTitle": "LEGEND & STRATIGRAPHIC RAMPS",
     "source": "SOURCE: {source}",
     "pdsDocs": "[PDS DOCS]",
-    "opacity": "OPACITY"
+    "opacity": "OPACITY",
+    "searchPlaceholder": "Search layers (# for tags)...",
+    "groupTopography": "1. TOPOGRAPHY & MEDAN JALAN",
+    "groupThermal": "2. FISIK TERMAL & PASIR AMBLAS",
+    "groupMinerals": "3. MINERALOGI & SUMBER DAYA HIDRAT",
+    "groupRadiation": "4. PERISAI RADIASI & MAGNETIK KERAK",
+    "groupWeather": "5. CUACA MARS & LINTASAN ROVER"
   },
   "marswalk": {
     "title": "MARSWALK A* ROUTE PLANNER",
@@ -285,6 +291,7 @@
   },
   "mmgis": {
     "toolbarTitle": "MMGIS TOOLS",
+    "floatingLegendTitle": "MAP SCIENTIFIC LEGEND",
     "measureTool": "MEASURE / PROFILE",
     "measureActive": "MEASURING...",
     "measureInstruction": "Click map points to plot elevation cross-section.",

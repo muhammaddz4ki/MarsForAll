@@ -125,7 +125,13 @@
     "legendTitle": "地层图例与高程分色条带",
     "source": "科学数据来源: {source}",
     "pdsDocs": "[PDS 官方档案文档]",
-    "opacity": "不透明度"
+    "opacity": "不透明度",
+    "searchPlaceholder": "搜索科学图层 (# 标签筛选)...",
+    "groupTopography": "1. 地形与路径地貌 (TOPOGRAPHY)",
+    "groupThermal": "2. 热物理与沉陷沙陷 (THERMAL & HAZARDS)",
+    "groupMinerals": "3. 矿物分布与水合资源 (MINERALOGY)",
+    "groupRadiation": "4. 空间辐射与地壳磁屏蔽 (RADIATION & SAFETY)",
+    "groupWeather": "5. 火星天气与漫游车路线 (WEATHER & TRAVERSE)"
   },
   "marswalk": {
     "title": "MARSWALK A* 自主路径规划引擎",
@@ -285,6 +291,7 @@
   },
   "mmgis": {
     "toolbarTitle": "MMGIS 工具箱",
+    "floatingLegendTitle": "科学地图悬浮图例",
     "measureTool": "测距 / 高程剖面",
     "measureActive": "测量中...",
     "measureInstruction": "点击地图点绘制地形高程剖面断面线。",

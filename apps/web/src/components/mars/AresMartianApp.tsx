@@ -16,7 +16,7 @@ import {
   getWaypointsForSite,
 } from "@/lib/martian/mountSharpWaypoints";
 import { get360WaypointsAsMountSharp } from "@/lib/martian/customPanoramas";
-import { MarswalkRouteResult } from "@/lib/martian/marswalkRouter";
+import { MarswalkRouteResult, HighDensityPointTelemetry } from "@/lib/martian/marswalkRouter";
 import {
   OrbitalImagerySource,
   WmtsStreamStatus,
@@ -74,6 +74,10 @@ const MarsGlobeViewer = dynamic(() => import("./MarsGlobeViewer"), {
 });
 
 const Custom360ManagerModal = dynamic(() => import("./Custom360ManagerModal"), {
+  ssr: false,
+});
+
+const MarswalkProfileDock = dynamic(() => import("./MarswalkProfileDock"), {
   ssr: false,
 });
 
@@ -147,6 +151,7 @@ export const AresMartianApp: React.FC = () => {
   }, []);
 
   const [activeRoute, setActiveRoute] = useState<MarswalkRouteResult | null>(null);
+  const [hoveredRoutePoint, setHoveredRoutePoint] = useState<HighDensityPointTelemetry | null>(null);
   const [isPovOpen, setIsPovOpen] = useState<boolean>(false);
   const [isInfoOpen, setIsInfoOpen] = useState<boolean>(false);
   const [is360ManagerOpen, setIs360ManagerOpen] = useState<boolean>(false);
@@ -786,7 +791,18 @@ export const AresMartianApp: React.FC = () => {
           onAnalyzeProspector={handleAnalyzeProspector}
           onOpen360Manager={() => setIs360ManagerOpen(true)}
           custom360Waypoints={custom360List}
+          hoveredRoutePoint={hoveredRoutePoint}
         />
+
+        {/* High-Density 5-Meter Marswalk Transect Profile Dock (NASA MMGIS Ref 4) */}
+        {activeRoute && viewMode === "mission_control" && (
+          <MarswalkProfileDock
+            route={activeRoute}
+            onHoverPoint={setHoveredRoutePoint}
+            onClose={() => setActiveRoute(null)}
+            isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
+          />
+        )}
 
         {/* 3D PLANET GLOBE ENGINE (MMGIS Architecture) */}
         {viewMode === "planet_globe" && (

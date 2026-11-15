@@ -125,7 +125,13 @@
     "legendTitle": "LEYENDA Y RAMPAS ESTRATIGRÁFICAS",
     "source": "FUENTE: {source}",
     "pdsDocs": "[DOCS PDS]",
-    "opacity": "OPACIDAD"
+    "opacity": "OPACIDAD",
+    "searchPlaceholder": "Buscar capas (# para etiquetas)...",
+    "groupTopography": "1. TOPOGRAFÍA Y TERRENO DE RUTA",
+    "groupThermal": "2. FÍSICA TÉRMICA Y ARENAS MOVEDIZAS",
+    "groupMinerals": "3. MINERALOGÍA Y RECURSOS HIDRATADOS",
+    "groupRadiation": "4. ESCUDO DE RADIACIÓN Y MAGNETISMO",
+    "groupWeather": "5. CLIMA MARCIANO Y TRAYECTORIA ROVER"
   },
   "marswalk": {
     "title": "PLANIFICADOR DE RUTAS MARSWALK A*",
@@ -285,6 +291,7 @@
   },
   "mmgis": {
     "toolbarTitle": "HERRAMIENTAS MMGIS",
+    "floatingLegendTitle": "LEYENDA CIENTÍFICA DEL MAPA",
     "measureTool": "MEDIR / PERFIL",
     "measureActive": "MIDIENDO...",
     "measureInstruction": "Haga clic en el mapa para trazar perfil de elevación transversal.",

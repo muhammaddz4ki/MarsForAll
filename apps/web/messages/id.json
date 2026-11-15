@@ -125,7 +125,13 @@
     "legendTitle": "LEGENDA & RAMP STRATIGRAFI",
     "source": "SUMBER: {source}",
     "pdsDocs": "[DOKUMEN PDS]",
-    "opacity": "OPASITAS"
+    "opacity": "OPASITAS",
+    "searchPlaceholder": "Cari layer (# untuk tag)...",
+    "groupTopography": "1. TOPOGRAFI & MEDAN JALAN",
+    "groupThermal": "2. FISIK TERMAL & PASIR AMBLAS",
+    "groupMinerals": "3. MINERALOGI & SUMBER DAYA HIDRAT",
+    "groupRadiation": "4. PERISAI RADIASI & MAGNETIK KERAK",
+    "groupWeather": "5. CUACA MARS & LINTASAN ROVER"
   },
   "marswalk": {
     "title": "PERENCANA RUTE MARSWALK A*",
@@ -285,6 +291,7 @@
   },
   "mmgis": {
     "toolbarTitle": "ALAT MMGIS",
+    "floatingLegendTitle": "LEGENDA ILMIAH PETA",
     "measureTool": "UKUR / PROFIL",
     "measureActive": "MENGUKUR...",
     "measureInstruction": "Klik titik pada peta untuk membuat profil elevasi melintang.",

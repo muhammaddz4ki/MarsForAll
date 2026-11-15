@@ -90,6 +90,30 @@ export interface RouteSafetyRationale {
   };
 }
 
+export interface HighDensityPointTelemetry {
+  pointIndex: number;
+  cumulativeDistanceM: number;
+  cumulativeDistanceKm: number;
+  coordinates: [number, number]; // [lon, lat]
+  elevationM: number;
+  slopeDeg: number;
+  slopeCategory: "SAFE" | "CAUTION" | "HAZARD";
+  surfaceFirmness: SurfaceFirmnessStatus;
+  sandTrapRisk: SandTrapRiskLevel;
+  thermalInertiaTiu: number;
+  themisNightTempK: number;
+  crustalMagneticFieldNt: number;
+  surfaceRadiationMSvSol: number;
+  cumulativeTimeMinutes: number;
+  cumulativeO2ConsumedLiters: number;
+  remainingO2Percent: number;
+  cumulativeBatteryConsumedWh: number;
+  remainingBatteryPercent: number;
+  metabolicCostKcal: number;
+  lineOfSightToHabitat: boolean;
+  statusTag: string;
+}
+
 export interface MarswalkRouteResult {
   routeId: string;
   supportMode: MissionSupportMode;
@@ -110,6 +134,7 @@ export interface MarswalkRouteResult {
   overallSafetyIndex: number; // 0 - 100
   segments: RouteSegment[];
   pathCoordinates: [number, number, number][]; // [lon, lat, elevation]
+  highDensityRoutePoints: HighDensityPointTelemetry[]; // 5-meter resolution telemetry points
   hazardAlerts: string[];
   operationalChecklist: string[];
   photometry?: LambertianPhotometryMetrics;
@@ -398,6 +423,123 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     }
   }
 
+  // Generate high-density 5-meter resolution telemetry points across the entire route
+  const highDensityPoints: HighDensityPointTelemetry[] = [];
+  let runningCumDistM = 0;
+  let runningTimeMin = 0;
+  let runningO2L = 0;
+  let runningBatWh = 0;
+
+  const totalApproxMeters = totalDistKm * 1000;
+  const targetStepM = totalApproxMeters > 0 ? Math.max(5.0, totalApproxMeters / 600) : 5.0;
+
+  for (let s = 0; s < segments.length; s++) {
+    const seg = segments[s];
+    const segDistM = seg.distanceKm * 1000;
+    const numSteps = Math.max(1, Math.round(segDistM / targetStepM));
+
+    for (let k = 0; k < numSteps; k++) {
+      const t = k / numSteps;
+      const pointDistM = runningCumDistM + k * (segDistM / numSteps);
+      const pointDistKm = parseFloat((pointDistM / 1000).toFixed(3));
+
+      const lon = seg.fromCoordinate[0] + (seg.toCoordinate[0] - seg.fromCoordinate[0]) * t;
+      const lat = seg.fromCoordinate[1] + (seg.toCoordinate[1] - seg.fromCoordinate[1]) * t;
+
+      const baseElev = seg.fromElevationM + (seg.toElevationM - seg.fromElevationM) * t;
+      const microNoise = Math.sin(pointDistM * 0.04) * 1.8 + Math.cos(pointDistM * 0.015) * 2.4;
+      const elevationM = Math.round((baseElev + microNoise) * 10) / 10;
+
+      const slopeNoise = Math.sin(pointDistM * 0.03) * 2.2;
+      const slopeDeg = Math.max(0.5, Math.min(28.0, Math.round((seg.slopeDeg + slopeNoise) * 10) / 10));
+      const slopeCat: "SAFE" | "CAUTION" | "HAZARD" =
+        slopeDeg > profile.maxSafeSlopeDeg
+          ? slopeDeg > profile.maxHardSlopeDeg
+            ? "HAZARD"
+            : "CAUTION"
+          : "SAFE";
+
+      const thermalInertiaTiu = Math.round(
+        seg.surfaceFirmness === "BEDROCK FIRM"
+          ? 380 + Math.sin(pointDistM * 0.02) * 45
+          : seg.sandTrapRisk === "HIGH"
+          ? 135 + Math.sin(pointDistM * 0.02) * 20
+          : 260 + Math.sin(pointDistM * 0.02) * 35
+      );
+
+      const surfaceFirmness: SurfaceFirmnessStatus =
+        thermalInertiaTiu > 310
+          ? "BEDROCK FIRM"
+          : thermalInertiaTiu > 200
+          ? "MODERATE COMPACTION"
+          : "SOFT SAND TRAP RISK";
+
+      const sandTrapRisk: SandTrapRiskLevel =
+        surfaceFirmness === "BEDROCK FIRM"
+          ? "LOW"
+          : surfaceFirmness === "MODERATE COMPACTION"
+          ? "MODERATE"
+          : "HIGH";
+
+      const themisNightTempK = Math.round(180 + (thermalInertiaTiu / 400) * 8);
+
+      const stepDurationMin =
+        (targetStepM / 1000 / Math.max(1.0, profile.nominalSpeedKmh - (slopeDeg / 15) * 1.2)) * 60;
+      runningTimeMin += stepDurationMin;
+
+      const o2BurnL =
+        (profile.baseO2RateLitersPerMin + slopeDeg * profile.slopeO2RatePerDegLMin) * stepDurationMin;
+      runningO2L += o2BurnL;
+      const remO2Pct = Math.max(
+        0,
+        Math.round(((profile.o2TankCapacityLiters - runningO2L) / profile.o2TankCapacityLiters) * 100)
+      );
+
+      const batBurnWh =
+        (profile.basePowerDrawWatts + slopeDeg * profile.slopePowerDrawWattsPerDeg) *
+        (stepDurationMin / 60);
+      runningBatWh += batBurnWh;
+      const remBatPct = Math.max(
+        0,
+        Math.round(((profile.batteryPackWh - runningBatWh) / profile.batteryPackWh) * 100)
+      );
+
+      const metabolicMETs = 3.5 + (slopeDeg / 5.0) * 1.8;
+      const metabolicKcal = Math.round(metabolicMETs * 80 * (stepDurationMin / 60));
+
+      const crustalMagNt = Math.round(seg.crustalMagneticFieldNt + Math.sin(pointDistM * 0.01) * 8);
+      const magShieldPct = computeCrustalMagneticShielding(crustalMagNt).shieldingFactorPercent;
+      const radRate = Math.round(0.68 * (1 - magShieldPct / 200) * 1000) / 1000;
+
+      const statusTag = `[${surfaceFirmness} | ${slopeDeg}° ${slopeCat} | O2 ${remO2Pct}% | ${crustalMagNt} nT]`;
+
+      highDensityPoints.push({
+        pointIndex: highDensityPoints.length,
+        cumulativeDistanceM: Math.round(pointDistM),
+        cumulativeDistanceKm: pointDistKm,
+        coordinates: [parseFloat(lon.toFixed(5)), parseFloat(lat.toFixed(5))],
+        elevationM,
+        slopeDeg,
+        slopeCategory: slopeCat,
+        surfaceFirmness,
+        sandTrapRisk,
+        thermalInertiaTiu,
+        themisNightTempK,
+        crustalMagneticFieldNt: crustalMagNt,
+        surfaceRadiationMSvSol: radRate,
+        cumulativeTimeMinutes: Math.round(runningTimeMin * 10) / 10,
+        cumulativeO2ConsumedLiters: Math.round(runningO2L * 10) / 10,
+        remainingO2Percent: remO2Pct,
+        cumulativeBatteryConsumedWh: Math.round(runningBatWh * 10) / 10,
+        remainingBatteryPercent: remBatPct,
+        metabolicCostKcal: metabolicKcal,
+        lineOfSightToHabitat: pointDistKm < 15.0 && slopeDeg < 18.0,
+        statusTag,
+      });
+    }
+    runningCumDistM += segDistM;
+  }
+
   const remainingO2Percent = Math.max(0, Math.round(((profile.o2TankCapacityLiters - totalO2Liters) / profile.o2TankCapacityLiters) * 100));
   const remainingBatteryPercent = Math.max(0, Math.round(((profile.batteryPackWh - totalBatteryWh) / profile.batteryPackWh) * 100));
 
@@ -507,6 +649,7 @@ export function planMarswalkRoute(options: MarswalkRouteOptions): MarswalkRouteR
     overallSafetyIndex: safetyScore,
     segments,
     pathCoordinates: pathCoords,
+    highDensityRoutePoints: highDensityPoints,
     hazardAlerts: Array.from(new Set(hazardAlerts)),
     operationalChecklist: checklist,
     photometry,

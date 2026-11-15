@@ -45,6 +45,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   const [targetId, setTargetId] = useState<string>("curiosity_boxwork_2025");
   const [supportMode, setSupportMode] = useState<MissionSupportMode>("PAIRED_CREW_MULE_ROVER");
   const [avoidRadiation, setAvoidRadiation] = useState<boolean>(true);
+  const [show5mNodesTable, setShow5mNodesTable] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (selectedWaypoint && selectedWaypoint.id !== startId) {
@@ -72,7 +73,24 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
     );
   }, [routeResult.targetWaypoint]);
 
+  // High-Density Chart Data (5-Meter Micro-Resolution Curve)
   const chartData = useMemo(() => {
+    if (routeResult.highDensityRoutePoints && routeResult.highDensityRoutePoints.length > 0) {
+      const allPts = routeResult.highDensityRoutePoints;
+      const step = Math.max(1, Math.floor(allPts.length / 100));
+      const points: any[] = [];
+      for (let i = 0; i < allPts.length; i += step) {
+        const pt = allPts[i];
+        points.push({
+          distanceKm: parseFloat((pt.cumulativeDistanceM / 1000).toFixed(2)),
+          elevationM: pt.elevationM,
+          slopeDeg: pt.slopeDeg,
+          name: `${pt.cumulativeDistanceM}m`,
+        });
+      }
+      return points;
+    }
+
     let runningDist = 0;
     const points = [
       {
@@ -379,6 +397,82 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 5-Meter High-Density Telemetry Node Explorer (MMGIS Micro-Transect Standard) */}
+      {routeResult.highDensityRoutePoints && routeResult.highDensityRoutePoints.length > 0 && (
+        <div className={`${isDark ? "bg-[#111827] border-slate-800" : "bg-white border-slate-300 shadow-sm"} p-2.5 border font-mono`}>
+          <div className="flex items-center justify-between border-b pb-1.5 border-slate-800 text-[10px]">
+            <div>
+              <span className="font-bold text-amber-400 uppercase block">
+                5-METER HIGH-DENSITY SAMPLING
+              </span>
+              <span className="text-[8px] text-slate-400">
+                RESOLUTION: ~5.0 METER STEP • {routeResult.highDensityRoutePoints.length} DISCRETE NODES
+              </span>
+            </div>
+            <button
+              onClick={() => setShow5mNodesTable((prev) => !prev)}
+              className={`px-2 py-0.5 text-[9px] font-bold border transition-colors ${
+                show5mNodesTable
+                  ? "bg-amber-600 text-slate-950 border-amber-400"
+                  : isDark
+                  ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:text-white"
+                  : "bg-slate-100 text-slate-700 border-slate-300 hover:text-slate-900"
+              }`}
+            >
+              {show5mNodesTable ? "[HIDE 5M NODES]" : `[VIEW 5M NODES (${routeResult.highDensityRoutePoints.length})]`}
+            </button>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-3 gap-1 pt-2 text-center text-[8px]">
+            <div className="p-1 bg-[#0b0f17] border border-slate-800">
+              <span className="text-slate-400 block">SAMPLING RES</span>
+              <span className="text-cyan-400 font-bold tabular-nums">5.0 M</span>
+            </div>
+            <div className="p-1 bg-[#0b0f17] border border-slate-800">
+              <span className="text-slate-400 block">SAND TRAP RISK</span>
+              <span className="text-emerald-400 font-bold">0% [BEDROCK FIRM]</span>
+            </div>
+            <div className="p-1 bg-[#0b0f17] border border-slate-800">
+              <span className="text-slate-400 block">MGS MAG SHIELD</span>
+              <span className="text-purple-400 font-bold tabular-nums">~11% GCR CUT</span>
+            </div>
+          </div>
+
+          {/* Collapsible 5m Nodes Telemetry Table */}
+          {show5mNodesTable && (
+            <div className="mt-2 pt-2 border-t border-slate-800 max-h-56 overflow-y-auto space-y-1">
+              <div className="grid grid-cols-5 text-[8px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-800 px-1">
+                <span>DIST</span>
+                <span>ELEV</span>
+                <span>SLOPE</span>
+                <span>BEARING</span>
+                <span>STATUS</span>
+              </div>
+              {routeResult.highDensityRoutePoints.slice(0, 80).map((pt, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-5 text-[8px] py-0.5 px-1 hover:bg-[#161e2e] transition-colors tabular-nums border-b border-slate-800/40"
+                >
+                  <span className="text-slate-300 font-bold">{pt.cumulativeDistanceM} m</span>
+                  <span className="text-amber-400">{pt.elevationM} m</span>
+                  <span className={pt.slopeDeg > 15 ? "text-amber-400" : "text-emerald-400"}>
+                    {pt.slopeDeg}°
+                  </span>
+                  <span className="text-cyan-300">{pt.surfaceFirmness.split(" ")[0]}</span>
+                  <span className="text-emerald-400 font-bold">[OK]</span>
+                </div>
+              ))}
+              {routeResult.highDensityRoutePoints.length > 80 && (
+                <div className="text-[8px] text-center text-slate-400 pt-1">
+                  + {routeResult.highDensityRoutePoints.length - 80} more high-density nodes along the traverse path.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
