@@ -370,7 +370,8 @@
     "planRouteHere": "PLAN A* MARSWALK ROUTE HERE",
     "compareAnalogue": "EARTH ANALOGUE",
     "transectDock": "5M TRANSECT DOCK",
-    "clickPrompt": "CLICK ANY FEATURE OR WAYPOINT ON MARS SURFACE TO INSPECT & PLAN"
+    "clickPrompt": "CLICK ANY FEATURE OR WAYPOINT ON MARS SURFACE TO INSPECT & PLAN",
+    "no360Pov": "NO 360° POV"
   },
   "landing": {
     "telemetry": {

@@ -370,7 +370,8 @@
     "planRouteHere": "RENCANAKAN RUTE MARSWALK A* KE SINI",
     "compareAnalogue": "ANALOGI BUMI",
     "transectDock": "DOCK TRANSEK 5M",
-    "clickPrompt": "KLIK FITUR ATAU TITIK MANAPUN DI PERMUKAAN MARS UNTUK INSPEKSI & RUTE"
+    "clickPrompt": "KLIK FITUR ATAU TITIK MANAPUN DI PERMUKAAN MARS UNTUK INSPEKSI & RUTE",
+    "no360Pov": "TIDAK ADA 360°"
   },
   "landing": {
     "telemetry": {

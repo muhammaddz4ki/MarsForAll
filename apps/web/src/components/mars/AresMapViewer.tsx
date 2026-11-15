@@ -1820,47 +1820,32 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       const has360 = wp.has360Pov || !!(wp as any).customPanoramaUrl;
       const wpNumber = idx + 1;
 
-      // Image 2 MMGIS Standard: Circular Camera Badge with Sol / Index Number & Connecting Pin Stem
+      // Compact Circular Marker: Only show Camera Icon + 360 if has 360 view; otherwise simple clean waypoint dot
       if (has360) {
         el.innerHTML = `
-          <div class="relative flex flex-col items-center group">
-            <div class="flex items-center justify-center gap-1.5 px-2.5 h-7 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${isSelected ? "border-cyan-300 ring-4 ring-cyan-400/60" : "border-[#06b6d4]"
-          } font-mono font-black text-[9px] shadow-[0_0_12px_rgba(6,182,212,0.7)] transition-transform group-hover:scale-115">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+          <div class="relative flex flex-col items-center group" title="${wp.name} (360° POV)">
+            <div class="flex items-center justify-center gap-1 px-1.5 h-6 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${
+              isSelected ? "border-cyan-300 ring-2 ring-cyan-400" : "border-[#06b6d4]"
+            } font-mono font-bold text-[9px] shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-transform group-hover:scale-115">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
-              <span>360° POV</span>
+              <span>360</span>
             </div>
-            <div class="w-0.5 h-2 bg-[#06b6d4] -mt-0.5"></div>
-            <div class="whitespace-nowrap px-2 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${isSelected
-            ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-            : "bg-[#083344] text-[#a5f3fc] border border-[#06b6d4] shadow-md"
-          }">
-              [360°] ${wp.name}
-            </div>
+            <div class="w-0.5 h-1.5 bg-[#06b6d4] -mt-0.5"></div>
           </div>
         `;
       } else {
         el.innerHTML = `
-          <div class="relative flex flex-col items-center group">
-            <div class="flex items-center justify-center gap-1 px-2 h-6.5 rounded-full ${isSelected
-            ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-500/60"
-            : "bg-white text-slate-950 border-2 border-slate-900"
-          } font-mono font-black text-[9px] shadow-md transition-transform group-hover:scale-115">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
-              </svg>
+          <div class="relative flex flex-col items-center group" title="${wp.name}">
+            <div class="flex items-center justify-center w-5 h-5 rounded-full ${
+              isSelected
+                ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-2 ring-amber-500"
+                : "bg-[#111827] text-slate-300 border border-slate-600"
+            } font-mono font-bold text-[8px] shadow-sm transition-transform group-hover:scale-115">
               <span>${wpNumber}</span>
             </div>
-            <div class="w-0.5 h-1.5 ${isSelected ? "bg-amber-400" : "bg-slate-900"} -mt-0.5"></div>
-            <div class="whitespace-nowrap px-1.5 py-0.5 rounded-none text-[8px] font-mono font-bold tracking-wider ${isSelected
-            ? "bg-amber-500 text-slate-950 border border-amber-300 z-10"
-            : isDark
-              ? "bg-[#0b0f17] text-slate-200 border border-slate-700 shadow-sm"
-              : "bg-white text-slate-800 border border-slate-300 shadow-sm"
-          }">
-              ${wp.name}
-            </div>
+            <div class="w-0.5 h-1 ${isSelected ? "bg-amber-400" : "bg-slate-600"} -mt-0.5"></div>
           </div>
         `;
       }
@@ -2284,22 +2269,32 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
               {/* SECONDARY ACTION BUTTONS */}
               <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                {/* 360 POV */}
-                <button
-                  onClick={() => {
-                    const wp = identifiedFeature.associatedWaypoint || ({
-                      id: `custom_pt_${Date.now()}`,
-                      name: identifiedFeature.name,
-                      coordinates: identifiedFeature.coordinates,
-                      elevationM: identifiedFeature.elevationM,
-                      has360Pov: true,
-                    } as unknown as MountSharpWaypoint);
-                    onOpenPovModal?.(wp);
-                  }}
-                  className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors text-center truncate"
-                >
-                  {tMmgis("openPov")}
-                </button>
+                {/* 360 POV (Only enabled if the coordinate actually has a 360 panorama) */}
+                {identifiedFeature.associatedWaypoint &&
+                (identifiedFeature.associatedWaypoint.has360Pov ||
+                  (identifiedFeature.associatedWaypoint as any).customPanoramaUrl ||
+                  custom360Waypoints.some((c) => c.id === identifiedFeature.associatedWaypoint?.id)) ? (
+                  <button
+                    onClick={() => {
+                      if (identifiedFeature.associatedWaypoint) {
+                        onOpenPovModal?.(identifiedFeature.associatedWaypoint);
+                      }
+                    }}
+                    className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors text-center truncate flex items-center justify-center gap-1"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
+                    </svg>
+                    <span>{tMmgis("openPov")}</span>
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="py-1.5 px-2 bg-[#111827] text-slate-500 border border-slate-800 font-bold text-[9px] text-center truncate cursor-not-allowed opacity-60"
+                  >
+                    [ {tMmgis("no360Pov")} ]
+                  </button>
+                )}
 
                 {/* PROSPECTOR ML */}
                 <button
