@@ -21,14 +21,17 @@
     "themeLight": "TERANG",
     "planetGlobe": "GLOBE 3D",
     "collapse": "LIPAT",
-    "expand": "BUKA"
+    "expand": "BUKA",
+    "pointInspector": "Inspektor Titik (Regolit & Batuan Dasar)",
+    "pointInspectorShort": "INSPEKTOR"
   },
   "docks": {
     "layers": "LAPISAN OPERASIONAL (5)",
     "marswalk": "LINTASAN MARSWALK",
     "spatialTools": "ALAT SPASIAL & PETA",
     "prospector": "PROSPECTOR ML",
-    "earthAnalogues": "ANALOGI BUMI"
+    "earthAnalogues": "ANALOGI BUMI",
+    "inspector": "INSPEKSI TITIK & GEOLOGI"
   },
   "scrubber": {
     "solClock": "JAM SOL",
@@ -688,5 +691,31 @@
     "presets": "PRESET SATELIT / LANDMARK MISI",
     "scoutInFlight": "[DRONE SEDANG TERBANG...]",
     "launchFlight": "[ TERBANGKAN DRONE PENGINTAI ]"
+  },
+  "inspector": {
+    "title": "INSPEKSI TITIK",
+    "subtitle": "INSPEKSI REGOLIT & BATUAN DASAR MARS",
+    "instruction": "Klik sembarang titik pada peta Mars untuk memeriksa kekerasan tanah, elevasi, lereng, dan mineralogi.",
+    "activeStatus": "STATUS: INSPEKSI AKTIF",
+    "locationGeology": "LOKASI & GEOLOGI",
+    "molaElevation": "ELEVASI MOLA",
+    "slope": "SLOPE / LERENG",
+    "groundFirmness": "KEKERASAN TANAH",
+    "magShielding": "PERISAI MAGNETIK",
+    "coordinates": "KOORDINAT",
+    "mineralogy": "MINERALOGI TERHIDRASI",
+    "availableActions": "TINDAKAN & ANALISIS TERSEDIA",
+    "planRoute": "RENCANAKAN RUTE MARSWALK A* KE SINI",
+    "openPov": "BUKA POV 360°",
+    "no360Pov": "TIDAK ADA 360°",
+    "prospector": "PROSPEKTOR ML",
+    "earthAnalogue": "ANALOGI BUMI",
+    "transectDock": "DOCK TRANSEK 5M",
+    "safeTag": "AMAN <15°",
+    "cautionTag": "WASPADA 15-25°",
+    "hazardTag": "BAHAYA >25°",
+    "bedrockFirm": "BATUAN DASAR PADAT",
+    "moderateCompaction": "KOMPAKSI SEDANG",
+    "softSandRisk": "RISIKO PERANGKAP PASIR"
   }
 }

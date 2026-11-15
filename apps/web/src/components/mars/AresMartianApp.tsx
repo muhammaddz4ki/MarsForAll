@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import MarsForAllBadge from "../MarsForAllBadge";
-import AresMapViewer from "./AresMapViewer";
+import AresMapViewer, { IdentifiedFeatureInfo } from "./AresMapViewer";
+import { PointInspectorPanel } from "./PointInspectorPanel";
 import MmgisProfileDrawer from "./MmgisProfileDrawer";
 import ProspectorPanel from "./ProspectorPanel";
 import AnalogueMatcherPanel from "./AnalogueMatcherPanel";
@@ -100,7 +101,7 @@ const MmgisToolsPanel = dynamic(() => import("./MmgisToolsPanel"), {
 });
 
 export type ViewMode = "mission_control" | "visor_hud" | "planet_globe";
-export type ActiveDrawerTool = "layers" | "marswalk" | "tools" | "prospector" | "analogue" | null;
+export type ActiveDrawerTool = "layers" | "marswalk" | "tools" | "prospector" | "analogue" | "inspector" | null;
 
 export const AresMartianApp: React.FC = () => {
   const router = useRouter();
@@ -123,6 +124,7 @@ export const AresMartianApp: React.FC = () => {
 
   // MMGIS Left Tool Rail Active Drawer State (null = full-canvas map/globe)
   const [activeTool, setActiveTool] = useState<ActiveDrawerTool>(null);
+  const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
 
   // Sol & Atmospheric Simulation State
   const [currentSol, setCurrentSol] = useState<number>(4180);
@@ -607,6 +609,27 @@ export const AresMartianApp: React.FC = () => {
               </svg>
               <span>AERIAL SCOUT</span>
             </button>
+
+            {/* POINT INSPECTOR TOOLBAR BUTTON */}
+            <button
+              onClick={() => handleToggleTool("inspector")}
+              className={`flex items-center gap-1.5 px-2 py-0.5 transition-colors border ${activeTool === "inspector"
+                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                : isDark
+                  ? "bg-[#111827] text-cyan-400 hover:text-cyan-200 border-slate-700"
+                  : "bg-slate-100 text-cyan-700 hover:text-cyan-900 border-slate-300"
+                }`}
+              title={tNav("pointInspector")}
+            >
+              <svg className="w-3 h-3 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8" />
+                <line x1="12" y1="2" x2="12" y2="6" />
+                <line x1="12" y1="18" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="6" y2="12" />
+                <line x1="18" y1="12" x2="22" y2="12" />
+              </svg>
+              <span>{tNav("pointInspectorShort")}</span>
+            </button>
           </div>
         </div>
 
@@ -749,6 +772,27 @@ export const AresMartianApp: React.FC = () => {
             </svg>
           </button>
 
+          {/* Tool 4: Point Inspector (Surface Regolith & Bedrock) */}
+          <button
+            onClick={() => handleToggleTool("inspector")}
+            title={tNav("pointInspector")}
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "inspector" && viewMode === "mission_control"
+              ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+              : isDark
+                ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-transparent"
+                : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
+              }`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="9" />
+              <line x1="12" y1="3" x2="12" y2="7" />
+              <line x1="12" y1="17" x2="12" y2="21" />
+              <line x1="3" y1="12" x2="7" y2="12" />
+              <line x1="17" y1="12" x2="21" y2="12" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+            </svg>
+          </button>
+
           {/* Tool 4: Prospector ML 35-Parameter Fusion */}
           <button
             onClick={() => handleToggleTool("prospector")}
@@ -834,6 +878,7 @@ export const AresMartianApp: React.FC = () => {
                   {activeTool === "layers" && tDocks("layers")}
                   {activeTool === "marswalk" && tDocks("marswalk")}
                   {activeTool === "tools" && tDocks("spatialTools")}
+                  {activeTool === "inspector" && tDocks("inspector")}
                   {activeTool === "prospector" && tDocks("prospector")}
                   {activeTool === "analogue" && tDocks("earthAnalogues")}
                 </span>
@@ -918,6 +963,23 @@ export const AresMartianApp: React.FC = () => {
                   theme={theme}
                 />
               )}
+              {activeTool === "inspector" && (
+                <PointInspectorPanel
+                  feature={identifiedFeature}
+                  waypoint={selectedWaypoint}
+                  onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+                  onOpenPovModal={handleOpenPovModal}
+                  onAnalyzeProspector={handleAnalyzeProspector}
+                  onOpenAnalogueMatcher={(wp) => {
+                    setSelectedWaypoint(wp);
+                    setActiveTool("analogue");
+                  }}
+                  onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
+                  isProfileDockOpen={isProfileDockOpen}
+                  custom360Waypoints={custom360List}
+                  theme={theme}
+                />
+              )}
             </div>
           </aside>
         )}
@@ -948,6 +1010,8 @@ export const AresMartianApp: React.FC = () => {
           onExportGeoJson={handleExportGeoJson}
           onOpenPlanetGlobe={() => setViewMode("planet_globe")}
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
+          onFeatureIdentified={setIdentifiedFeature}
+          isInspectorActive={activeTool === "inspector"}
           onOpenPovModal={handleOpenPovModal}
           onAnalyzeProspector={handleAnalyzeProspector}
           onPlanRouteToWaypoint={handlePlanRouteToWaypoint}

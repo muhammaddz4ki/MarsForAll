@@ -21,14 +21,17 @@
     "themeLight": "LIGHT",
     "planetGlobe": "3D GLOBE",
     "collapse": "COLLAPSE",
-    "expand": "EXPAND"
+    "expand": "EXPAND",
+    "pointInspector": "Point Inspector (Surface Regolith & Bedrock)",
+    "pointInspectorShort": "INSPECTOR"
   },
   "docks": {
     "layers": "LAYERS (5)",
     "marswalk": "MARSWALK TRAVERSE",
     "spatialTools": "SPATIAL TOOLS & OVERLAYS",
     "prospector": "PROSPECTOR ML",
-    "earthAnalogues": "EARTH ANALOGUES"
+    "earthAnalogues": "EARTH ANALOGUES",
+    "inspector": "POINT & GEOLOGY INSPECTOR"
   },
   "scrubber": {
     "solClock": "SOL CLOCK",
@@ -688,5 +691,31 @@
     "presets": "MISSION SATELLITE / LANDMARK PRESETS",
     "scoutInFlight": "[SCOUT IN FLIGHT...]",
     "launchFlight": "[ LAUNCH AERIAL DRONE RECON ]"
+  },
+  "inspector": {
+    "title": "POINT INSPECTOR",
+    "subtitle": "MARTIAN REGOLITH & BEDROCK INSPECTION",
+    "instruction": "Click anywhere on the Martian map to inspect ground firmness, elevation, slope, and mineralogy.",
+    "activeStatus": "STATUS: ACTIVE INSPECTION",
+    "locationGeology": "LOCATION & GEOLOGY",
+    "molaElevation": "MOLA ELEVATION",
+    "slope": "SLOPE / LERENG",
+    "groundFirmness": "GROUND FIRMNESS",
+    "magShielding": "MAG SHIELDING",
+    "coordinates": "COORDINATES",
+    "mineralogy": "HYDRATED MINERALOGY",
+    "availableActions": "AVAILABLE ACTIONS & ANALYSIS",
+    "planRoute": "PLAN A* MARSWALK ROUTE HERE",
+    "openPov": "OPEN 360° POV",
+    "no360Pov": "NO 360° POV",
+    "prospector": "PROSPECTOR ML",
+    "earthAnalogue": "EARTH ANALOGUE",
+    "transectDock": "5M TRANSECT DOCK",
+    "safeTag": "SAFE <15°",
+    "cautionTag": "CAUTION 15-25°",
+    "hazardTag": "HAZARD >25°",
+    "bedrockFirm": "BEDROCK FIRM",
+    "moderateCompaction": "MODERATE COMPACTION",
+    "softSandRisk": "SOFT SAND TRAP RISK"
   }
 }

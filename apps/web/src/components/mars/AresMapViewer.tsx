@@ -62,6 +62,8 @@ interface AresMapViewerProps {
   zoiList?: ZoiFeature[];
   onAddZoi?: (zoi: ZoiFeature) => void;
   onExportGeoJson?: () => void;
+  onFeatureIdentified?: (feat: IdentifiedFeatureInfo) => void;
+  isInspectorActive?: boolean;
   onOpenPlanetGlobe?: () => void;
   isLeftDrawerOpen?: boolean;
   onOpenPovModal?: (wp: MountSharpWaypoint) => void;
@@ -170,7 +172,7 @@ const WAYPOINT_SHORT_CODES: Record<
   },
 };
 
-interface IdentifiedFeatureInfo {
+export interface IdentifiedFeatureInfo {
   name: string;
   category: string;
   stratigraphicAge: string;
@@ -266,6 +268,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   zoiList = [],
   onAddZoi,
   onExportGeoJson,
+  onFeatureIdentified,
+  isInspectorActive = false,
   onOpenPlanetGlobe,
   isLeftDrawerOpen = false,
   onOpenPovModal,
@@ -1170,47 +1174,56 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       const approxElev = getMartianElevation(lon, lat, currentSite);
       const approxSlope = getMartianSlope(lon, lat, currentSite);
 
-      if (matchedWp) {
-        setIdentifiedFeature({
-          name: matchedWp.name,
-          category: matchedWp.category.toUpperCase().replace("_", " "),
-          stratigraphicAge:
-            matchedWp.stratigraphicAge ||
-            (currentSite === "jezero_crater"
-              ? "Noachian / Early Hesperian"
-              : "Hesperian / Amazonian"),
-          elevationM: matchedWp.elevationM,
-          slopeDeg: approxSlope,
-          mineralogy: matchedWp.dominantHydratedMineral || "Phyllosilicates / Clay-Sulfate",
-          coordinates: matchedWp.coordinates,
-          associatedWaypoint: matchedWp,
-        });
-      } else {
-        const rendered = map.queryRenderedFeatures(e.point);
-        const geoFeature = rendered.find(
-          (f) => f.properties && (f.properties.unit_name || f.properties.name)
-        );
-        const unitName =
-          (geoFeature?.properties?.unit_name as string) ||
-          (currentSite === "jezero_crater"
-            ? "Deltaic Stratified Sediment Unit"
-            : "Mt Sharp Flank Layered Sulfate Unit");
+      const rendered = map.queryRenderedFeatures(e.point);
+      const geoFeature = rendered.find(
+        (f) => f.properties && (f.properties.unit_name || f.properties.name)
+      );
+      const unitName =
+        (geoFeature?.properties?.unit_name as string) ||
+        (currentSite === "jezero_crater"
+          ? "Deltaic Stratified Sediment Unit"
+          : "Mt Sharp Flank Layered Sulfate Unit");
 
-        setIdentifiedFeature({
-          name: unitName,
-          category: "MARTIAN REGOLITH / BEDROCK",
-          stratigraphicAge:
-            currentSite === "jezero_crater" ? "Noachian (~3.8 Ga)" : "Hesperian (~3.3 Ga)",
-          elevationM: approxElev,
-          slopeDeg: approxSlope,
-          mineralogy:
-            currentSite === "jezero_crater"
-              ? "Olivine-Carbonate & Smectite Clays"
-              : "Hematite, Sulfates & Amorphous Silica",
-          coordinates: [lon, lat],
-          associatedWaypoint: siteWaypoints[0],
-        });
-      }
+      const feat: IdentifiedFeatureInfo = matchedWp
+        ? {
+            name: matchedWp.name,
+            category: matchedWp.category.toUpperCase().replace("_", " "),
+            stratigraphicAge:
+              matchedWp.stratigraphicAge ||
+              (currentSite === "jezero_crater"
+                ? "Noachian / Early Hesperian"
+                : "Hesperian / Amazonian"),
+            elevationM: matchedWp.elevationM,
+            slopeDeg: approxSlope,
+            mineralogy: matchedWp.dominantHydratedMineral || "Phyllosilicates / Clay-Sulfate",
+            coordinates: matchedWp.coordinates,
+            associatedWaypoint: matchedWp,
+            surfaceFirmness: matchedWp.surfaceFirmness,
+            sandTrapRisk: matchedWp.sandTrapRisk,
+            crustalMagneticFieldNt: matchedWp.crustalMagneticFieldNt,
+            surfaceRadiationMSvSol: matchedWp.surfaceRadiationMSvSol,
+          }
+        : {
+            name: unitName,
+            category: "MARTIAN REGOLITH / BEDROCK",
+            stratigraphicAge:
+              currentSite === "jezero_crater" ? "Noachian (~3.8 Ga)" : "Hesperian (~3.3 Ga)",
+            elevationM: approxElev,
+            slopeDeg: approxSlope,
+            mineralogy:
+              currentSite === "jezero_crater"
+                ? "Olivine-Carbonate & Smectite Clays"
+                : "Hematite, Sulfates & Amorphous Silica",
+            coordinates: [lon, lat],
+            associatedWaypoint: siteWaypoints[0],
+            surfaceFirmness: approxElev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+            sandTrapRisk: approxElev > -4100 ? "LOW" : "HIGH",
+            crustalMagneticFieldNt: 38,
+            surfaceRadiationMSvSol: 0.65,
+          };
+
+      setIdentifiedFeature(feat);
+      onFeatureIdentified?.(feat);
 
       if (onMapClickCoordinate) {
         onMapClickCoordinate([lon, lat], approxElev);
@@ -2148,7 +2161,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* In-Map MMGIS Feature Identifier Popover */}
       {/* Interactive Waypoint & Feature Hub Inspector Card (Google Maps / NASA Mars Trek Standard) */}
-      {identifiedFeature && (
+      {identifiedFeature && isInspectorActive && !isLeftDrawerOpen && (
         <div
           className={`absolute top-14 z-40 w-96 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)] transition-all duration-200 ${
             isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
