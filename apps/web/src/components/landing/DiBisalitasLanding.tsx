@@ -665,45 +665,52 @@ function ImpactSection() {
       <div className="absolute top-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-b from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
       <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-t from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
 
-      {/* 2. FLOATING PREV BUTTON */}
-      <button
-        onClick={() => paginate(-1)}
-        className="absolute left-4 sm:left-8 md:left-12 top-1/2 -translate-y-1/2 z-20 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-2xl group/btn"
-        aria-label="Previous map slide"
-      >
-        <ArrowLeft className="w-5 h-5 sm:w-7 sm:h-7 text-white transition-transform group-hover/btn:-translate-x-1" />
-      </button>
+      {/* 2. UNIFIED SLEEK BOTTOM CONTROL DOCK (CLEAN, TIDY, ZERO TEXT CLASH) */}
+      <div className="absolute bottom-8 sm:bottom-12 md:bottom-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 sm:gap-4 bg-[#07090e]/85 backdrop-blur-xl px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.85)]">
+        {/* Prev Arrow */}
+        <button
+          onClick={() => paginate(-1)}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/15 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/5"
+          aria-label="Previous map slide"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+        </button>
 
-      {/* 3. FLOATING NEXT BUTTON */}
-      <button
-        onClick={() => paginate(1)}
-        className="absolute right-4 sm:right-8 md:right-12 top-1/2 -translate-y-1/2 z-20 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 flex items-center justify-center backdrop-blur-md transition-all hover:scale-110 active:scale-95 cursor-pointer shadow-2xl group/btn"
-        aria-label="Next map slide"
-      >
-        <ArrowRight className="w-5 h-5 sm:w-7 sm:h-7 text-white transition-transform group-hover/btn:translate-x-1" />
-      </button>
+        {/* Tactical Tag & Counter */}
+        <div className="flex items-center gap-2 sm:gap-3 px-1 sm:px-2">
+          <span className="text-[9px] sm:text-[11px] font-mono tracking-widest uppercase text-[#f97316] font-bold whitespace-nowrap">
+            {analogueMaps[activeIndex].tag}
+          </span>
+          <span className="text-white/20 font-mono text-xs">|</span>
+          <span className="text-[10px] sm:text-xs font-mono text-white/90 tabular-nums font-bold whitespace-nowrap">
+            {String(activeIndex + 1).padStart(2, "0")} / {String(analogueMaps.length).padStart(2, "0")}
+          </span>
+        </div>
 
-      {/* 4. SLIDE COUNTER (TOP RIGHT BADGE) */}
-      <div className="absolute top-6 right-6 sm:top-10 sm:right-12 z-20 pointer-events-none">
-        <span className="px-4 py-2 rounded-full text-xs font-mono font-bold tracking-widest bg-black/60 backdrop-blur-md text-white border border-white/15 shadow-xl">
-          {String(activeIndex + 1).padStart(2, "0")} / {String(analogueMaps.length).padStart(2, "0")}
-        </span>
-      </div>
+        {/* Slide Indicators */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          {analogueMaps.map((map, i) => (
+            <button
+              key={map.id}
+              onClick={() => setSlide(i)}
+              className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                i === activeIndex
+                  ? "w-6 sm:w-8 bg-[#f97316] shadow-sm shadow-[#f97316]/50"
+                  : "w-1.5 sm:w-2 bg-white/20 hover:bg-white/40"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
 
-      {/* 5. BOTTOM INDICATORS (PILLS / DOTS) */}
-      <div className="absolute bottom-6 sm:bottom-10 md:bottom-12 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 bg-black/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/10 shadow-xl">
-        {analogueMaps.map((map, i) => (
-          <button
-            key={map.id}
-            onClick={() => setSlide(i)}
-            className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-              i === activeIndex
-                ? "w-12 bg-[#f97316] shadow-md shadow-[#f97316]/50"
-                : "w-3 bg-white/30 hover:bg-white/60"
-            }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+        {/* Next Arrow */}
+        <button
+          onClick={() => paginate(1)}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/15 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/5"
+          aria-label="Next map slide"
+        >
+          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+        </button>
       </div>
     </section>
   );

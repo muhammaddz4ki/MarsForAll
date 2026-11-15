@@ -64,8 +64,15 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation Links (Transparan, Langsung Scroll, Tanpa Card Pengganggu) */}
+          {/* Desktop Navigation Links (Clean, Uncluttered, Direct Scroll) */}
           <nav className="hidden md:flex items-center gap-1 sm:gap-2">
+            <a
+              href="#analogi"
+              className="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              {t("analogues")}
+            </a>
+
             <a
               href="#layer-sains"
               className="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
@@ -80,13 +87,6 @@ export default function Navbar() {
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               <span>{t("cockpit")}</span>
             </Link>
-
-            <a
-              href="#analogi"
-              className="px-3 py-1.5 rounded-lg text-xs font-mono font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              {t("analogues")}
-            </a>
           </nav>
         </div>
 
