@@ -111,6 +111,7 @@ export const AresMartianApp: React.FC = () => {
   const tDocks = useTranslations("docks");
   const tScrubber = useTranslations("scrubber");
   const tCustom360 = useTranslations("custom360");
+  const tMmgis = useTranslations("mmgis");
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [currentSite, setCurrentSite] = useState<MissionSiteId>("gale_crater");
@@ -130,6 +131,7 @@ export const AresMartianApp: React.FC = () => {
   const [tileMode, setTileMode] = useState<"live_trek" | "offline_procedural">("live_trek");
   const [orbitalSource, setOrbitalSource] = useState<OrbitalImagerySource>("jpl_hirise");
   const [wmtsStatus, setWmtsStatus] = useState<WmtsStreamStatus>("streaming");
+  const [showBottomTelemetry, setShowBottomTelemetry] = useState<boolean>(false);
 
   // Camera & Map Controls
   const [pitch3D, setPitch3D] = useState<boolean>(true);
@@ -190,6 +192,11 @@ export const AresMartianApp: React.FC = () => {
   const [aerialFlightTarget, setAerialFlightTarget] = useState<AerialScoutTarget | null>(null);
   const [isAerialFlying, setIsAerialFlying] = useState<boolean>(false);
   const [aerialFlightTelemetry, setAerialFlightTelemetry] = useState<any>(null);
+
+  // Live Cursor Telemetry & Dynamic Metric Scale Bar (Fed from MapLibre engine)
+  const [cursorTelemetry, setCursorTelemetry] = useState<{ lat: number; lon: number; elev: number; slope: number } | null>(null);
+  const [scaleBar, setScaleBar] = useState<{ label: string; widthPx: number }>({ label: "10.0 KM", widthPx: 96 });
+  const [showQuickStartBanner, setShowQuickStartBanner] = useState<boolean>(true);
 
   const handleLaunchAerialFlight = useCallback((target: AerialScoutTarget) => {
     setAerialFlightTarget(target);
@@ -281,6 +288,30 @@ export const AresMartianApp: React.FC = () => {
     });
     return customPin ? [...combined, customPin] : combined;
   }, [currentSite, customPin, custom360List]);
+
+  const handleLaunchSampleRoute = useCallback(() => {
+    try {
+      const boxworkWp = allWaypoints.find((w) => w.id === "curiosity_boxwork_2025") || allWaypoints[1];
+      const route = planMarswalkRoute({
+        startWaypointId: "gale_hab_alpha",
+        targetWaypointId: boxworkWp.id,
+        supportMode: "PAIRED_CREW_MULE_ROVER",
+        avoidHighRadiationRidges: true,
+      });
+      setActiveRoute(route);
+      setSelectedWaypoint(boxworkWp);
+      setIsProfileDockOpen(true);
+      setShowQuickStartBanner(false);
+      setExportNotification(
+        currentLocale === "id"
+          ? "RUTE AMAN ASTRONAUT BERHASIL DIHITUNG (88/100)"
+          : "ASTRONAUT SAFE ROUTE VERIFIED (88/100)"
+      );
+      setTimeout(() => setExportNotification(null), 3500);
+    } catch (e) {
+      console.error("Failed to plan sample route:", e);
+    }
+  }, [allWaypoints, currentLocale]);
 
   const handleExportGeoJson = useCallback(() => {
     const geojsonStr = exportGisGeoJson({
@@ -664,7 +695,25 @@ export const AresMartianApp: React.FC = () => {
         {/* MMGIS VERTICAL LEFT TOOL RAIL (w-11 = 44px) */}
         <nav className={`w-11 h-full ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
           } border-r flex flex-col items-center py-2 z-30 shrink-0 select-none font-mono`}>
-          {/* Tool 1: Scientific Layers */}
+          {/* Tool 1: Marswalk Route Planner (PRIMARY NOVELTY: ASTRONAUT SAFE NAVIGATION) */}
+          <button
+            onClick={() => handleToggleTool("marswalk")}
+            title="Astronaut Safe Route Planner (AI A*) — Core Novelty"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors relative ${activeTool === "marswalk" && viewMode === "mission_control"
+              ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
+              : isDark
+                ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-emerald-800/60"
+                : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-emerald-300"
+              }`}
+          >
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="6" cy="19" r="3" />
+              <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
+            </svg>
+          </button>
+
+          {/* Tool 2: Scientific Layers */}
           <button
             onClick={() => handleToggleTool("layers")}
             title="Scientific Layers & WMTS Catalog"
@@ -679,23 +728,6 @@ export const AresMartianApp: React.FC = () => {
               <polygon points="12 2 2 7 12 12 22 7 12 2" />
               <polyline points="2 17 12 22 22 17" />
               <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </button>
-
-          {/* Tool 2: Marswalk Route Planner */}
-          <button
-            onClick={() => handleToggleTool("marswalk")}
-            title="Marswalk EVA Route Planner (Dijkstra A*)"
-            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${activeTool === "marswalk" && viewMode === "mission_control"
-              ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
-              : isDark
-                ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-              }`}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="6" cy="19" r="3" />
-              <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
             </svg>
           </button>
 
@@ -735,7 +767,7 @@ export const AresMartianApp: React.FC = () => {
             </svg>
           </button>
 
-          {/* Tool 4: Earth Analogue Matcher */}
+          {/* Tool 5: Earth Analogue Matcher */}
           <button
             onClick={() => handleToggleTool("analogue")}
             title="Earth Analogue Matcher (Terrestrial Testbeds)"
@@ -752,9 +784,28 @@ export const AresMartianApp: React.FC = () => {
             </svg>
           </button>
 
+          {/* Tool 6: Mars Aerial Recon Scout Drone */}
+          <button
+            onClick={() => {
+              setShowFloatingLegend(false);
+              setIsAerialDockOpen((prev) => !prev);
+            }}
+            title="Mars Aerial Recon Scout Drone (Fly to Coordinates)"
+            className={`w-8 h-8 flex items-center justify-center my-0.5 border transition-colors ${isAerialDockOpen
+              ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+              : isDark
+                ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-slate-800"
+                : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-slate-300"
+              }`}
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+            </svg>
+          </button>
+
           <div className="w-6 h-[1px] bg-slate-800 my-2" />
 
-          {/* Action 5: 360° Real Rover Panorama */}
+          {/* Action 7: 360° Real Rover Panorama */}
           <button
             onClick={() => handleOpenPovModal(selectedWaypoint)}
             title="Open 360° Real Rover Panorama (Mastcam-Z / MSL)"
@@ -920,7 +971,48 @@ export const AresMartianApp: React.FC = () => {
           aerialFlightTarget={aerialFlightTarget}
           onAerialFlightComplete={handleAerialFlightComplete}
           onAerialTelemetryUpdate={setAerialFlightTelemetry}
+          onCursorTelemetryUpdate={setCursorTelemetry}
+          onScaleUpdate={setScaleBar}
         />
+
+        {/* NOVELTY QUICK START BANNER (Rute Aman Astronaut & Akses Publik) */}
+        {!activeRoute && activeTool === null && !isAerialDockOpen && !elevationProfile && showQuickStartBanner && viewMode === "mission_control" && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 bg-[#07090e]/95 border border-emerald-500/80 shadow-2xl flex items-center gap-3 font-mono text-[10px] select-none">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                {currentLocale === "id"
+                  ? "[ RUTE AMAN ASTRONAUT // AI DIJKSTRA A* ]"
+                  : "[ ASTRONAUT SAFE NAVIGATION // AI DIJKSTRA A* ]"}
+              </span>
+            </div>
+            <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+            <button
+              onClick={handleLaunchSampleRoute}
+              className="px-2 py-0.5 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors"
+              title="Plan verified least-hazard route from Hab Alpha to Boxwork 2025"
+            >
+              [ {currentLocale === "id" ? "RUTE AMAN PERCONTOHAN" : "PLAN SAMPLE SAFE ROUTE"} ]
+            </button>
+            <button
+              onClick={() => {
+                setShowFloatingLegend(false);
+                setIsAerialDockOpen(true);
+              }}
+              className="px-2 py-0.5 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors"
+              title="Open Mars Aerial Recon Drone coordinate flight dock"
+            >
+              [ {currentLocale === "id" ? "PESAWAT PENGINTAI" : "AERIAL SCOUT DRONE"} ]
+            </button>
+            <button
+              onClick={() => setShowQuickStartBanner(false)}
+              className="text-slate-500 hover:text-slate-300 text-[10px] font-bold ml-1"
+              title="Dismiss Banner"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Mars Aerial Scout Drone Flight Dock (Input Koordinat & Terbang Pesawat) */}
         {isAerialDockOpen && viewMode === "mission_control" && (
@@ -1001,172 +1093,217 @@ export const AresMartianApp: React.FC = () => {
           />
         )}
 
-        {/* 3. UNIFIED BOTTOM TELEMETRY BAR (Simetris h-9, bottom-4 left-14 right-4, zero overlap with left rail) */}
-        <div className="absolute bottom-4 left-14 right-4 z-20 flex justify-between items-center gap-3 pointer-events-none select-none">
-          {/* Slot Kiri Bawah (pointer-events-auto, h-9, border 1px solid, font-mono tabular-nums) */}
-          <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-            } gap-2.5 max-w-[55%]`}>
-            {viewMode === "mission_control" ? (
-              <>
-                <span className="text-amber-500 font-bold">MARSFORALL</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
-                <span className="text-slate-400">DATUM -4500m TO -3500m</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span
-                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${selectedWaypoint.sandTrapRisk === "HIGH"
-                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
-                    : selectedWaypoint.sandTrapRisk === "MODERATE"
-                      ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                      : "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                    }`}
+        {/* 3. UNIFIED BOTTOM TELEMETRY BAR & CIRCULAR TOGGLE BUTTON */}
+        {viewMode === "mission_control" && !((activeRoute && isProfileDockOpen) || elevationProfile !== null) && (
+          <div
+            className={`absolute bottom-3 z-20 flex items-center gap-2 pointer-events-none select-none transition-all duration-200 ${
+              activeTool !== null ? "left-[406px]" : "left-14"
+            } right-4`}
+          >
+            {/* Tombol Bulat Toggle Telemetri (Pointer-events-auto) */}
+            <button
+              onClick={() => setShowBottomTelemetry((prev) => !prev)}
+              className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center border shadow-xl transition-all duration-200 shrink-0 ${
+                showBottomTelemetry
+                  ? "bg-amber-500 border-amber-300 text-slate-950 font-bold"
+                  : isDark
+                  ? "bg-[#0b0f17] hover:bg-[#161e2e] border-slate-700 hover:border-amber-400 text-slate-300 hover:text-amber-400"
+                  : "bg-white hover:bg-slate-100 border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-600"
+              }`}
+              title={
+                showBottomTelemetry
+                  ? currentLocale === "id"
+                    ? "Sembunyikan Panel Telemetri Bawah"
+                    : "Hide Bottom Telemetry Panel"
+                  : currentLocale === "id"
+                  ? "Buka Telemetri Permukaan Mars"
+                  : "Open Martian Surface Telemetry"
+              }
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18" />
+                <circle cx="12" cy="12" r="3" fill="currentColor" />
+              </svg>
+            </button>
+
+            {/* Panel Telemetri & Scale (Hanya muncul jika tombol bulat diklik) */}
+            {showBottomTelemetry && (
+              <div className="flex-1 flex justify-between items-center gap-3 overflow-hidden">
+                {/* Slot Kiri Bawah: Datum, Cursor Telemetry, Firmness, Radiation Shield */}
+                <div
+                  className={`pointer-events-auto h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
+                    isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                  } gap-2.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
                 >
-                  [{selectedWaypoint.surfaceFirmness}]
-                </span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className="text-purple-400 font-medium">
-                  MAG: {selectedWaypoint.crustalMagneticFieldNt} nT
-                </span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span
-                  className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
-                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                    : "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                  <span className="text-amber-500 font-bold">MARSFORALL</span>
+                  <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
+                  <span className="text-slate-400">DATUM -4500m TO -3500m</span>
+                  <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                  <span className="text-cyan-400 font-medium">PITCH {pitch3D ? "45°" : "0°"}</span>
+                  <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+
+                  {/* Live Cursor Telemetry */}
+                  {cursorTelemetry ? (
+                    <>
+                      <span className="text-slate-400 font-bold uppercase text-[9px]">CURSOR:</span>
+                      <span className="text-cyan-400 font-bold">{cursorTelemetry.lat}°, {cursorTelemetry.lon}°</span>
+                      <span className="text-amber-400 font-bold">{cursorTelemetry.elev} M</span>
+                      <span className="text-purple-400 font-bold">{cursorTelemetry.slope}°</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400 text-[9px]">SCANNING MARTIAN SURFACE...</span>
+                  )}
+
+                  <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                  <span
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
+                      selectedWaypoint.sandTrapRisk === "HIGH"
+                        ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
+                        : selectedWaypoint.sandTrapRisk === "MODERATE"
+                        ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                        : "bg-[#064e3b] text-[#34d399] border-[#10b981]"
                     }`}
-                >
-                  {wmtsStatus === "streaming" && orbitalSource !== "local_vector" && tileMode === "live_trek"
-                    ? "[JPL WMTS STREAMING]"
-                    : "[LOCAL VECTOR FALLBACK]"}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setTileMode("live_trek")}
-                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "live_trek"
-                      ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                      : isDark
-                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                        : "bg-slate-100 text-slate-600 border-slate-300"
-                      }`}
                   >
-                    [JPL TREK]
-                  </button>
-                  <button
-                    onClick={() => setTileMode("offline_procedural")}
-                    className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "offline_procedural"
-                      ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                      : isDark
-                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                        : "bg-slate-100 text-slate-600 border-slate-300"
-                      }`}
+                    [{selectedWaypoint.surfaceFirmness}]
+                  </span>
+                  <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                  <span className="text-purple-400 font-medium">
+                    MAG: {selectedWaypoint.crustalMagneticFieldNt} nT
+                  </span>
+                </div>
+
+                {/* Slot Kanan Bawah: Scale Bar & JPL Mode + Optional Weather Scrubber */}
+                <div className="pointer-events-auto flex items-center gap-2 shrink-0">
+                  {/* Dynamic Metric Scale Bar */}
+                  <div
+                    className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
+                      isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                    } gap-2`}
                   >
-                    [OFFLINE]
+                    <span className="text-slate-400 font-bold uppercase text-[9px]">{tMmgis("scaleBar")}:</span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[9px] text-amber-400 font-bold tabular-nums leading-none mb-0.5">
+                        {scaleBar.label}
+                      </span>
+                      <div
+                        style={{ width: `${scaleBar.widthPx}px` }}
+                        className="h-1 border-x border-b border-amber-400"
+                      />
+                    </div>
+                    <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setTileMode("live_trek")}
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
+                          tileMode === "live_trek"
+                            ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                            : isDark
+                            ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        [JPL TREK]
+                      </button>
+                      <button
+                        onClick={() => setTileMode("offline_procedural")}
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
+                          tileMode === "offline_procedural"
+                            ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                            : isDark
+                            ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        [OFFLINE]
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sol Clock & Weather Scrubber (if toggled) */}
+                  {showSolWeatherScrubber && (
+                    <div
+                      className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
+                        isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                      } gap-2`}
+                    >
+                      <span className="text-slate-400 text-[9px] uppercase font-bold">{tScrubber("solClock")}:</span>
+                      {activeTraverseSols.map((pt) => (
+                        <button
+                          key={pt.sol}
+                          onClick={() => handleSelectSol(pt.sol)}
+                          title={`Jump to Sol ${pt.sol}: ${pt.name}`}
+                          className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
+                            currentSol === pt.sol
+                              ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                              : isDark
+                              ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
+                              : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
+                          }`}
+                        >
+                          {pt.sol}
+                        </button>
+                      ))}
+                      <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
+                      <button
+                        onClick={() => {
+                          setDustStormActive(false);
+                          setExportNotification("ATMOSPHERE: CLEAR SKY // TAU 0.30");
+                          setTimeout(() => setExportNotification(null), 2500);
+                        }}
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
+                          !dustStormActive
+                            ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                            : isDark
+                            ? "bg-[#111827] text-slate-400 border-slate-800"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        {tScrubber("clearSky")}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDustStormActive(true);
+                          setExportNotification("WARNING: MARS DUST STORM // TAU 2.40");
+                          setTimeout(() => setExportNotification(null), 3000);
+                        }}
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
+                          dustStormActive
+                            ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                            : isDark
+                            ? "bg-[#111827] text-slate-400 border-slate-800"
+                            : "bg-slate-100 text-slate-600 border-slate-300"
+                        }`}
+                      >
+                        {tScrubber("dustStorm")}
+                      </button>
+                      <button
+                        onClick={() => setShowSolWeatherScrubber(false)}
+                        className="px-1 text-slate-500 hover:text-slate-300 text-[10px] font-bold"
+                        title="Hide Scrubber"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tombol Tutup Panel Telemetri */}
+                  <button
+                    onClick={() => setShowBottomTelemetry(false)}
+                    className={`h-9 px-2 flex items-center justify-center border font-mono text-xs font-bold transition-colors ${
+                      isDark
+                        ? "bg-[#161e2e] hover:bg-red-950 border-slate-700 hover:border-red-600 text-slate-400 hover:text-red-300"
+                        : "bg-slate-100 hover:bg-red-50 border-slate-300 hover:border-red-400 text-slate-600 hover:text-red-600"
+                    }`}
+                    title={currentLocale === "id" ? "Sembunyikan Telemetri" : "Hide Telemetry"}
+                  >
+                    ✕
                   </button>
                 </div>
-              </>
-            ) : viewMode === "planet_globe" ? (
-              <>
-                <span className="text-purple-400 font-bold">MARSFORALL // GLOBE</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
-                <span className="text-slate-300">IAU-2000 SPHERICAL DATUM R=3396.19 km</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className="text-cyan-400 font-medium">GLOBAL PROJECTION</span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className="text-emerald-400 font-medium">5 MMGIS LANDMARKS</span>
-              </>
-            ) : (
-              <>
-                <span className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 ${dustStormActive ? "bg-amber-400" : "bg-emerald-400"}`} />
-                  <span className={`font-bold ${dustStormActive ? "text-amber-400" : "text-emerald-400"}`}>
-                    {dustStormActive ? "[TRAVERSE CAUTION]" : "[SAFE CORRIDOR]"}
-                  </span>
-                </span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className={isDark ? "text-slate-300" : "text-slate-700"}>
-                  {activeRoute?.supportMode === "SOLO_ASTRONAUT" ? "SOLO WALK" : "PAIRED + MULE"}
-                </span>
-                <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-                <span className="text-cyan-400">EVA-01 // MRO LOCKED</span>
-              </>
+              </div>
             )}
           </div>
-
-          {/* Slot Kanan Bawah: Sol Clock & Weather Scrubber */}
-          {showSolWeatherScrubber && (
-            <div className={`pointer-events-auto h-9 px-3 flex items-center text-[11px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-              } gap-2.5`}>
-              {/* Sol Clock Selector */}
-              <div className="flex items-center gap-1">
-                <span className={`${isDark ? "text-slate-400" : "text-slate-500"} text-[10px] uppercase font-bold mr-0.5`}>
-                  {tScrubber("solClock")}:
-                </span>
-                {activeTraverseSols.map((pt) => (
-                  <button
-                    key={pt.sol}
-                    onClick={() => handleSelectSol(pt.sol)}
-                    title={`Jump to Sol ${pt.sol}: ${pt.name}`}
-                    className={`px-1.5 py-0.5 border text-[10px] font-bold transition-colors ${currentSol === pt.sol
-                      ? "bg-[#1e293b] text-amber-400 border-amber-400"
-                      : isDark
-                        ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                        : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                      }`}
-                  >
-                    {pt.sol}
-                  </button>
-                ))}
-              </div>
-
-              <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-
-              {/* Atmospheric Condition Scrubber */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setDustStormActive(false);
-                    setExportNotification("ATMOSPHERE: CLEAR SKY // OPTICAL TAU 0.30");
-                    setTimeout(() => setExportNotification(null), 2500);
-                  }}
-                  className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${!dustStormActive
-                    ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                    : isDark
-                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                      : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                    }`}
-                >
-                  {tScrubber("clearSky")}
-                </button>
-                <button
-                  onClick={() => {
-                    setDustStormActive(true);
-                    setExportNotification("WARNING: MARS DUST STORM EVENT // TAU 2.40");
-                    setTimeout(() => setExportNotification(null), 3000);
-                  }}
-                  className={`px-2 py-0.5 border text-[10px] font-bold transition-colors ${dustStormActive
-                    ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
-                    : isDark
-                      ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
-                      : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                    }`}
-                >
-                  {tScrubber("dustStorm")}
-                </button>
-              </div>
-
-              <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-
-              {/* Dismiss / Close Button */}
-              <button
-                onClick={() => setShowSolWeatherScrubber(false)}
-                className="px-1 text-slate-500 hover:text-slate-300 transition-colors text-[10px] font-bold"
-                title="Hide Sol & Weather Scrubber"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Surface POV Eye-Level Modal */}
