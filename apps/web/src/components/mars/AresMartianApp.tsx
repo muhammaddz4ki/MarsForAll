@@ -139,7 +139,6 @@ export const AresMartianApp: React.FC = () => {
 
   // MMGIS Spatial Analysis States
   const [activeMmgisTool, setActiveMmgisTool] = useState<"none" | "measure" | "viewshed" | "zoi">("none");
-  const [swipeCurtainActive, setSwipeCurtainActive] = useState<boolean>(false);
   const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
   const [elevationProfile, setElevationProfile] = useState<ElevationProfileResult | null>(null);
   const [zoiList, setZoiList] = useState<ZoiFeature[]>([]);
@@ -753,8 +752,6 @@ export const AresMartianApp: React.FC = () => {
           onWmtsStatusChange={setWmtsStatus}
           activeMmgisTool={activeMmgisTool}
           onSelectMmgisTool={setActiveMmgisTool}
-          swipeCurtainActive={swipeCurtainActive}
-          onToggleSwipeCurtain={() => setSwipeCurtainActive((prev) => !prev)}
           measurePoints={measurePoints}
           onUpdateMeasurePoints={setMeasurePoints}
           onProfileGenerated={setElevationProfile}

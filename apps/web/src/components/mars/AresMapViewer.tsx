@@ -51,8 +51,6 @@ interface AresMapViewerProps {
   // MMGIS Spatial Analysis Props
   activeMmgisTool?: "none" | "measure" | "viewshed" | "zoi";
   onSelectMmgisTool?: (tool: "none" | "measure" | "viewshed" | "zoi") => void;
-  swipeCurtainActive?: boolean;
-  onToggleSwipeCurtain?: () => void;
   measurePoints?: [number, number][];
   onUpdateMeasurePoints?: (points: [number, number][]) => void;
   onProfileGenerated?: (profile: ElevationProfileResult | null) => void;
@@ -229,8 +227,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   // MMGIS
   activeMmgisTool = "none",
   onSelectMmgisTool,
-  swipeCurtainActive = false,
-  onToggleSwipeCurtain,
   measurePoints = [],
   onUpdateMeasurePoints,
   onProfileGenerated,
@@ -248,10 +244,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
 
-  // Compare Map references for Swipe Curtain
-  const compareContainerRef = useRef<HTMLDivElement>(null);
-  const compareMapRef = useRef<MapLibreMap | null>(null);
-
   const markersRef = useRef<Marker[]>([]);
   const curiosityMarkersRef = useRef<Marker[]>([]);
   const customMarkerRef = useRef<Marker | null>(null);
@@ -267,8 +259,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const [showGraticule, setShowGraticule] = useState<boolean>(false);
   const [showFloatingLegend, setShowFloatingLegend] = useState<boolean>(true);
   const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
-  const [swipePosition, setSwipePosition] = useState<number>(50); // percentage 0 - 100
-  const isDraggingDivider = useRef<boolean>(false);
 
   // Live Cursor Telemetry & Scale Bar States
   const [cursorTelemetry, setCursorTelemetry] = useState<{
@@ -897,15 +887,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       rafMoveId = requestAnimationFrame(() => {
         rafMoveId = null;
         updateScaleBar(map);
-        // Sync compare map if swipe curtain active
-        if (compareMapRef.current) {
-          compareMapRef.current.jumpTo({
-            center: map.getCenter(),
-            zoom: map.getZoom(),
-            pitch: map.getPitch(),
-            bearing: map.getBearing(),
-          });
-        }
       });
     });
 
@@ -1830,27 +1811,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     });
   }, [showRoverTraverse, currentSite, isDark]);
 
-  // Dragging divider handler for Swipe Curtain
-  const handlePointerDownDivider = (e: React.PointerEvent) => {
-    isDraggingDivider.current = true;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMoveDivider = (e: React.PointerEvent) => {
-    if (!isDraggingDivider.current || !mapContainerRef.current) return;
-    const rect = mapContainerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const pct = Math.max(5, Math.min(95, Math.round((x / rect.width) * 100)));
-    setSwipePosition(pct);
-  };
-
-  const handlePointerUpDivider = (e: React.PointerEvent) => {
-    isDraggingDivider.current = false;
-    try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch (_e) {}
-  };
-
   return (
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
       {/* MMGIS Spatial Analysis Toolbar (Single Unified Horizontal Row with Dynamic Offset) */}
@@ -1911,21 +1871,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         >
           <span className={`w-1.5 h-1.5 ${activeMmgisTool === "measure" ? "bg-cyan-400" : "bg-slate-500"}`} />
           <span>{activeMmgisTool === "measure" ? tMmgis("measureActive") : tMmgis("measureTool")}</span>
-        </button>
-
-        {/* Swipe Compare Curtain */}
-        <button
-          onClick={() => onToggleSwipeCurtain?.()}
-          className={`h-7 px-2.5 border transition-colors flex items-center gap-1.5 ${
-            swipeCurtainActive
-              ? "bg-[#78350f] text-[#fef3c7] border-[#f59e0b] font-bold"
-              : isDark
-              ? "bg-[#0b0f17] text-slate-300 border-slate-700 hover:border-amber-500 hover:text-amber-400"
-              : "bg-white text-slate-700 border-slate-300 hover:text-amber-800 shadow-sm"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 ${swipeCurtainActive ? "bg-amber-400" : "bg-slate-500"}`} />
-          <span>{swipeCurtainActive ? tMmgis("swipeActive") : tMmgis("swipeTool")}</span>
         </button>
 
         {/* Viewshed 360° */}
@@ -2237,34 +2182,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             ✕
           </button>
         </div>
-      )}
-
-      {/* Swipe Curtain Dividers & Labels */}
-      {swipeCurtainActive && (
-        <>
-          {/* Left Side Label (Natural Optical Basemap) */}
-          <div className="absolute top-20 left-4 z-20 px-2 py-0.5 bg-[#0b0f17]/90 border border-slate-700 text-slate-300 font-mono text-[9px] font-bold pointer-events-none">
-            [ ◄ {tMmgis("swipeLeftLabel")} ]
-          </div>
-          {/* Right Side Label (Analytical Overlays) */}
-          <div className="absolute top-20 right-4 z-20 px-2 py-0.5 bg-[#0b0f17]/90 border border-amber-500/80 text-amber-400 font-mono text-[9px] font-bold pointer-events-none">
-            [ {tMmgis("swipeRightLabel")} ► ]
-          </div>
-
-          {/* Draggable Divider Line */}
-          <div
-            style={{ left: `${swipePosition}%` }}
-            onPointerDown={handlePointerDownDivider}
-            onPointerMove={handlePointerMoveDivider}
-            onPointerUp={handlePointerUpDivider}
-            className="absolute top-0 bottom-0 z-30 w-1 bg-amber-400 cursor-ew-resize flex items-center justify-center select-none"
-          >
-            {/* Center Draggable Handle */}
-            <div className="w-8 h-8 -ml-3.5 bg-[#07090e] border border-amber-400 text-amber-400 text-[10px] font-mono font-bold flex items-center justify-center shadow-none">
-              ◄►
-            </div>
-          </div>
-        </>
       )}
 
       {/* Main Map Container */}
