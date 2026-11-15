@@ -1008,7 +1008,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
           </svg>
         </div>
-        <div class="mt-1 px-1.5 py-0.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-mono text-[8px] font-bold tracking-wider whitespace-nowrap shadow-md">
+        <div class="mt-1 px-1.5 py-0.5 bg-[#07090e] border border-cyan-400 text-cyan-300 font-mono text-[8px] font-bold tracking-wider whitespace-nowrap shadow-md">
           [AERIAL SCOUT-01] // ${aerialFlightTarget.altitudeM}m
         </div>
       </div>
@@ -1896,7 +1896,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.innerHTML = `
         <div class="relative flex flex-col items-center">
           <div class="w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-950 shadow-sm transition-transform group-hover:scale-130"></div>
-          <div class="absolute -bottom-6 whitespace-nowrap px-1.5 py-0.5 bg-[#07090e]/95 border border-slate-700/80 text-[8px] font-mono font-bold tracking-wider text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
+          <div class="absolute -bottom-6 whitespace-nowrap px-1.5 py-0.5 bg-[#07090e] border border-slate-700 text-[8px] font-mono font-bold tracking-wider text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
             <span>${lm.name}</span>
           </div>
         </div>
@@ -2019,7 +2019,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${isLeftDrawerOpen ? "left-[416px]" : "left-[64px]"
             }`}
         >
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-bold shadow-lg">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e] border border-cyan-400 text-cyan-300 font-bold shadow-lg">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
             <span>
               {activeMmgisTool === "measure" && (
@@ -2046,7 +2046,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {showFloatingLegend && (
         <div
           className={`absolute top-12 right-4 z-20 w-64 border font-mono select-none shadow-xl ${isDark
-            ? "bg-[#07090e]/95 border-slate-700 text-slate-200"
+            ? "bg-[#0b0f17] border-slate-700 text-slate-200"
             : "bg-white border-slate-300 text-slate-800"
             }`}
         >
@@ -2150,23 +2150,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* Interactive Waypoint & Feature Hub Inspector Card (Google Maps / NASA Mars Trek Standard) */}
       {identifiedFeature && (
         <div
-          className={`absolute top-14 z-30 w-88 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-2xl transition-all duration-200 ${
+          className={`absolute top-14 z-40 w-96 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)] transition-all duration-200 ${
             isLeftDrawerOpen ? "left-[416px]" : "left-14"
-          } ${
-            isDark
-              ? "bg-[#07090e]/98 border-slate-700 text-slate-200"
-              : "bg-white border-slate-300 text-slate-800 shadow-xl"
-          }`}
+          } bg-[#0b0f17] border-slate-700 text-slate-200`}
         >
           {/* Header */}
-          <div className="h-8 px-3 bg-[#0b0f17] flex items-center justify-between border-b border-slate-800 text-[10px] font-bold uppercase tracking-wider">
+          <div className="h-8 px-3 bg-[#07090e] flex items-center justify-between border-b border-slate-700 text-[10px] font-bold uppercase tracking-wider">
             <span className="flex items-center gap-1.5 text-cyan-400">
-              <span className="w-2 h-2 bg-cyan-400" />
+              <span className="w-2 h-2 bg-cyan-400 shrink-0" />
               <span>POINT INSPECTOR // {identifiedFeature.category}</span>
             </span>
             <button
               onClick={() => setIdentifiedFeature(null)}
-              className="text-slate-400 hover:text-white px-1.5 py-0.5 text-[11px] font-bold"
+              className="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold"
               title="Close Inspector"
             >
               ✕
@@ -2174,26 +2170,26 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           </div>
 
           {/* Feature Attributes Table */}
-          <div className="p-3 space-y-2.5 text-[10px]">
-            <div>
-              <div className="text-[8px] text-slate-400 uppercase font-bold tracking-wider">LOCATION & GEOLOGY</div>
-              <div className="text-amber-400 font-bold text-[11px] truncate">{identifiedFeature.name}</div>
-              <div className="text-[9px] text-slate-400">{identifiedFeature.stratigraphicAge}</div>
+          <div className="p-3.5 space-y-3 text-[10px] bg-[#0b0f17]">
+            <div className="bg-[#111827] p-2.5 border border-slate-700">
+              <div className="text-[9px] text-slate-300 uppercase font-bold tracking-wider">LOCATION &amp; GEOLOGY</div>
+              <div className="text-amber-400 font-bold text-xs truncate mt-0.5">{identifiedFeature.name}</div>
+              <div className="text-[10px] text-slate-300 font-medium mt-0.5">{identifiedFeature.stratigraphicAge}</div>
             </div>
 
             {/* Metrics Matrix */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
-              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">MOLA ELEVATION</span>
-                <span className="text-slate-200 font-bold tabular-nums">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-[#111827] p-2 border border-slate-700">
+                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">MOLA ELEVATION</span>
+                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-0.5">
                   {identifiedFeature.elevationM > 0 ? `+${identifiedFeature.elevationM}` : identifiedFeature.elevationM} m
                 </span>
               </div>
-              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">SLOPE / LERENG</span>
-                <span className="text-slate-200 font-bold tabular-nums">
+              <div className="bg-[#111827] p-2 border border-slate-700">
+                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">SLOPE / LERENG</span>
+                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-0.5">
                   {identifiedFeature.slopeDeg.toFixed(1)}°{" "}
-                  <span className={`text-[8px] ${
+                  <span className={`text-[8px] font-bold ${
                     identifiedFeature.slopeDeg < 15 ? "text-emerald-400" : identifiedFeature.slopeDeg < 25 ? "text-amber-400" : "text-red-400"
                   }`}>
                     [{identifiedFeature.slopeDeg < 15 ? "SAFE <15°" : identifiedFeature.slopeDeg < 25 ? "CAUTION" : "HAZARD"}]
@@ -2203,9 +2199,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">GROUND FIRMNESS</span>
-                <span className={`text-[9px] font-bold ${
+              <div className="bg-[#111827] p-2 border border-slate-700">
+                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">GROUND FIRMNESS</span>
+                <span className={`text-[9px] font-bold block mt-0.5 ${
                   (identifiedFeature.surfaceFirmness ?? "BEDROCK FIRM") === "BEDROCK FIRM"
                     ? "text-emerald-400"
                     : (identifiedFeature.surfaceFirmness ?? "") === "MODERATE COMPACTION"
@@ -2215,31 +2211,31 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                   [{identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK")}]
                 </span>
               </div>
-              <div className="bg-[#111827]/60 p-1.5 border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase tracking-wider block">MAG SHIELDING</span>
-                <span className="text-purple-400 font-bold tabular-nums">
+              <div className="bg-[#111827] p-2 border border-slate-700">
+                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">MAG SHIELDING</span>
+                <span className="text-purple-300 font-mono font-bold text-xs tabular-nums block mt-0.5">
                   {identifiedFeature.crustalMagneticFieldNt ?? 38} nT
                 </span>
               </div>
             </div>
 
-            <div className="pt-1.5 border-t border-slate-800 flex justify-between items-center text-[9px]">
-              <span className="text-slate-400 uppercase">COORDINATES:</span>
-              <span className="text-slate-300 font-bold tabular-nums">
+            <div className="bg-[#111827] p-2 border border-slate-700 flex justify-between items-center text-[10px]">
+              <span className="text-slate-300 uppercase font-bold tracking-wider">COORDINATES:</span>
+              <span className="text-white font-mono font-bold tabular-nums">
                 Lat {identifiedFeature.coordinates[1].toFixed(4)}°, Lon {identifiedFeature.coordinates[0].toFixed(4)}°
               </span>
             </div>
 
-            <div className="pt-1 border-t border-slate-800">
-              <span className="text-[8px] text-slate-400 uppercase block font-bold">HYDRATED MINERALOGY:</span>
-              <span className="text-cyan-300 font-medium text-[9px] truncate block">
+            <div className="bg-[#111827] p-2 border border-slate-700">
+              <span className="text-[8px] text-slate-300 uppercase block font-bold tracking-wider">HYDRATED MINERALOGY:</span>
+              <span className="text-cyan-300 font-bold text-[10px] truncate block mt-0.5">
                 {identifiedFeature.mineralogy}
               </span>
             </div>
 
             {/* ACTION FEATURE MENU: WHAT CAN BE ACCESSED FROM THIS POINT */}
-            <div className="pt-2 border-t border-slate-800 space-y-1.5">
-              <span className="text-[8px] text-slate-400 uppercase font-bold tracking-wider block">
+            <div className="pt-2 border-t border-slate-700 space-y-2">
+              <span className="text-[8px] text-slate-300 uppercase font-bold tracking-wider block">
                 AVAILABLE ACTIONS &amp; ANALYSIS:
               </span>
 
@@ -2262,7 +2258,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
                   onPlanRouteToWaypoint?.(targetWp);
                 }}
-                className="w-full py-2 px-3 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[10px] tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
+                className="w-full py-2 px-3 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[11px] tracking-wider transition-colors flex items-center justify-center gap-2"
               >
                 <span>[ {tMmgis("planRouteHere")} ]</span>
               </button>
@@ -2346,7 +2342,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (
-        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17]/95 border border-cyan-500/80 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
+        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17] border border-cyan-500 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-[406px]" : "left-[56px]"
           }`}>
           <span className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
           <span>

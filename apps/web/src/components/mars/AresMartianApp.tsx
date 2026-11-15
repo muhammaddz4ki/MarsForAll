@@ -1096,28 +1096,26 @@ export const AresMartianApp: React.FC = () => {
         {/* 3. UNIFIED BOTTOM TELEMETRY BAR & CIRCULAR TOGGLE BUTTON */}
         {viewMode === "mission_control" && !((activeRoute && isProfileDockOpen) || elevationProfile !== null) && (
           <div
-            className={`absolute bottom-3 z-20 flex items-center gap-2 pointer-events-none select-none transition-all duration-200 ${
-              activeTool !== null ? "left-[406px]" : "left-14"
-            } right-4`}
+            className={`absolute bottom-3 z-20 flex items-center gap-2 pointer-events-none select-none transition-all duration-200 ${activeTool !== null ? "left-[406px]" : "left-14"
+              } right-4`}
           >
             {/* Tombol Bulat Toggle Telemetri (Pointer-events-auto) */}
             <button
               onClick={() => setShowBottomTelemetry((prev) => !prev)}
-              className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center border shadow-xl transition-all duration-200 shrink-0 ${
-                showBottomTelemetry
-                  ? "bg-amber-500 border-amber-300 text-slate-950 font-bold"
-                  : isDark
+              className={`pointer-events-auto w-9 h-9 rounded-full flex items-center justify-center border shadow-xl transition-all duration-200 shrink-0 ${showBottomTelemetry
+                ? "bg-amber-500 border-amber-300 text-slate-950 font-bold"
+                : isDark
                   ? "bg-[#0b0f17] hover:bg-[#161e2e] border-slate-700 hover:border-amber-400 text-slate-300 hover:text-amber-400"
                   : "bg-white hover:bg-slate-100 border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-600"
-              }`}
+                }`}
               title={
                 showBottomTelemetry
                   ? currentLocale === "id"
                     ? "Sembunyikan Panel Telemetri Bawah"
                     : "Hide Bottom Telemetry Panel"
                   : currentLocale === "id"
-                  ? "Buka Telemetri Permukaan Mars"
-                  : "Open Martian Surface Telemetry"
+                    ? "Buka Telemetri Permukaan Mars"
+                    : "Open Martian Surface Telemetry"
               }
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1132,9 +1130,8 @@ export const AresMartianApp: React.FC = () => {
               <div className="flex-1 flex justify-between items-center gap-3 overflow-hidden">
                 {/* Slot Kiri Bawah: Datum, Cursor Telemetry, Firmness, Radiation Shield */}
                 <div
-                  className={`pointer-events-auto h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
-                    isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-                  } gap-2.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
+                  className={`pointer-events-auto h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                    } gap-2.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
                 >
                   <span className="text-amber-500 font-bold">MARSFORALL</span>
                   <span className={isDark ? "text-slate-700" : "text-slate-300"}>//</span>
@@ -1157,13 +1154,12 @@ export const AresMartianApp: React.FC = () => {
 
                   <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
                   <span
-                    className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${
-                      selectedWaypoint.sandTrapRisk === "HIGH"
-                        ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
-                        : selectedWaypoint.sandTrapRisk === "MODERATE"
+                    className={`px-1.5 py-0.5 border text-[9px] font-bold tabular-nums uppercase ${selectedWaypoint.sandTrapRisk === "HIGH"
+                      ? "bg-[#7f1d1d] text-[#fca5a5] border-[#dc2626]"
+                      : selectedWaypoint.sandTrapRisk === "MODERATE"
                         ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
                         : "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                    }`}
+                      }`}
                   >
                     [{selectedWaypoint.surfaceFirmness}]
                   </span>
@@ -1177,9 +1173,8 @@ export const AresMartianApp: React.FC = () => {
                 <div className="pointer-events-auto flex items-center gap-2 shrink-0">
                   {/* Dynamic Metric Scale Bar */}
                   <div
-                    className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
-                      isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-                    } gap-2`}
+                    className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                      } gap-2`}
                   >
                     <span className="text-slate-400 font-bold uppercase text-[9px]">{tMmgis("scaleBar")}:</span>
                     <div className="flex flex-col items-center">
@@ -1195,25 +1190,23 @@ export const AresMartianApp: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setTileMode("live_trek")}
-                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
-                          tileMode === "live_trek"
-                            ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                            : isDark
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "live_trek"
+                          ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                          : isDark
                             ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                             : "bg-slate-100 text-slate-600 border-slate-300"
-                        }`}
+                          }`}
                       >
                         [JPL TREK]
                       </button>
                       <button
                         onClick={() => setTileMode("offline_procedural")}
-                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${
-                          tileMode === "offline_procedural"
-                            ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
-                            : isDark
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold uppercase transition-colors ${tileMode === "offline_procedural"
+                          ? "bg-[#78350f] text-[#fde68a] border-[#d97706]"
+                          : isDark
                             ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                             : "bg-slate-100 text-slate-600 border-slate-300"
-                        }`}
+                          }`}
                       >
                         [OFFLINE]
                       </button>
@@ -1223,9 +1216,8 @@ export const AresMartianApp: React.FC = () => {
                   {/* Sol Clock & Weather Scrubber (if toggled) */}
                   {showSolWeatherScrubber && (
                     <div
-                      className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${
-                        isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
-                      } gap-2`}
+                      className={`h-9 px-3 flex items-center text-[10px] font-mono tabular-nums whitespace-nowrap border ${isDark ? "bg-[#0b0f17] border-slate-800 text-slate-300" : "bg-white border-slate-300 text-slate-700 shadow-sm"
+                        } gap-2`}
                     >
                       <span className="text-slate-400 text-[9px] uppercase font-bold">{tScrubber("solClock")}:</span>
                       {activeTraverseSols.map((pt) => (
@@ -1233,13 +1225,12 @@ export const AresMartianApp: React.FC = () => {
                           key={pt.sol}
                           onClick={() => handleSelectSol(pt.sol)}
                           title={`Jump to Sol ${pt.sol}: ${pt.name}`}
-                          className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
-                            currentSol === pt.sol
-                              ? "bg-[#1e293b] text-amber-400 border-amber-400"
-                              : isDark
+                          className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${currentSol === pt.sol
+                            ? "bg-[#1e293b] text-amber-400 border-amber-400"
+                            : isDark
                               ? "bg-[#111827] text-slate-400 border-slate-800 hover:text-slate-200"
                               : "bg-slate-100 text-slate-600 border-slate-300 hover:text-slate-900"
-                          }`}
+                            }`}
                         >
                           {pt.sol}
                         </button>
@@ -1251,13 +1242,12 @@ export const AresMartianApp: React.FC = () => {
                           setExportNotification("ATMOSPHERE: CLEAR SKY // TAU 0.30");
                           setTimeout(() => setExportNotification(null), 2500);
                         }}
-                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
-                          !dustStormActive
-                            ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
-                            : isDark
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${!dustStormActive
+                          ? "bg-[#064e3b] text-[#34d399] border-[#10b981]"
+                          : isDark
                             ? "bg-[#111827] text-slate-400 border-slate-800"
                             : "bg-slate-100 text-slate-600 border-slate-300"
-                        }`}
+                          }`}
                       >
                         {tScrubber("clearSky")}
                       </button>
@@ -1267,13 +1257,12 @@ export const AresMartianApp: React.FC = () => {
                           setExportNotification("WARNING: MARS DUST STORM // TAU 2.40");
                           setTimeout(() => setExportNotification(null), 3000);
                         }}
-                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${
-                          dustStormActive
-                            ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
-                            : isDark
+                        className={`px-1.5 py-0.5 border text-[9px] font-bold transition-colors ${dustStormActive
+                          ? "bg-[#7f1d1d] text-[#fca5a5] border-[#ef4444]"
+                          : isDark
                             ? "bg-[#111827] text-slate-400 border-slate-800"
                             : "bg-slate-100 text-slate-600 border-slate-300"
-                        }`}
+                          }`}
                       >
                         {tScrubber("dustStorm")}
                       </button>
@@ -1290,11 +1279,10 @@ export const AresMartianApp: React.FC = () => {
                   {/* Tombol Tutup Panel Telemetri */}
                   <button
                     onClick={() => setShowBottomTelemetry(false)}
-                    className={`h-9 px-2 flex items-center justify-center border font-mono text-xs font-bold transition-colors ${
-                      isDark
-                        ? "bg-[#161e2e] hover:bg-red-950 border-slate-700 hover:border-red-600 text-slate-400 hover:text-red-300"
-                        : "bg-slate-100 hover:bg-red-50 border-slate-300 hover:border-red-400 text-slate-600 hover:text-red-600"
-                    }`}
+                    className={`h-9 px-2 flex items-center justify-center border font-mono text-xs font-bold transition-colors ${isDark
+                      ? "bg-[#161e2e] hover:bg-red-950 border-slate-700 hover:border-red-600 text-slate-400 hover:text-red-300"
+                      : "bg-slate-100 hover:bg-red-50 border-slate-300 hover:border-red-400 text-slate-600 hover:text-red-600"
+                      }`}
                     title={currentLocale === "id" ? "Sembunyikan Telemetri" : "Hide Telemetry"}
                   >
                     ✕
