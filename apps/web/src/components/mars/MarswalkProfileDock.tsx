@@ -9,6 +9,7 @@ interface MarswalkProfileDockProps {
   onHoverPoint: (point: HighDensityPointTelemetry | null) => void;
   onClose?: () => void;
   isLeftDrawerOpen?: boolean;
+  isSidebarExpanded?: boolean;
 }
 
 export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
@@ -16,6 +17,7 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
   onHoverPoint,
   onClose,
   isLeftDrawerOpen = false,
+  isSidebarExpanded = true,
 }) => {
   const t = useTranslations("marswalk");
   const svgRef = useRef<SVGSVGElement>(null);
@@ -96,7 +98,13 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
   return (
     <div
       className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${
-        isLeftDrawerOpen ? "left-0 sm:left-[400px]" : "left-0 sm:left-[50px]"
+        isSidebarExpanded
+          ? isLeftDrawerOpen
+            ? "left-0 sm:left-[670px]"
+            : "left-0 sm:left-[320px]"
+          : isLeftDrawerOpen
+          ? "left-0 sm:left-[400px]"
+          : "left-0 sm:left-[50px]"
       } right-0 bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
     >
       {/* Top Header Row */}

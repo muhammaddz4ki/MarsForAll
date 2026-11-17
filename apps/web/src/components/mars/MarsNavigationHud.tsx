@@ -7,15 +7,16 @@ import { MountSharpWaypoint } from "@/lib/martian/mountSharpWaypoints";
 
 export interface MarsNavigationHudProps {
   route: MarswalkRouteResult;
-  isLeftDrawerOpen: boolean;
+  isLeftDrawerOpen?: boolean;
   onOpenPovModal: (wp: MountSharpWaypoint) => void;
-  onOpenMarswalkPlanner: () => void;
+  onOpenMarswalkPlanner?: () => void;
   onToggleProfileDock: () => void;
   isProfileDockOpen: boolean;
-  onSwitchToVisorHud: () => void;
-  onReCenterCorridor: () => void;
+  onSwitchToVisorHud?: () => void;
+  onReCenterCorridor?: () => void;
   onCloseRoute: () => void;
   onFlyToCoord?: (coord: [number, number]) => void;
+  docked?: boolean;
 }
 
 function renderTurnIcon(turnType: TurnType) {
@@ -84,6 +85,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
   onReCenterCorridor,
   onCloseRoute,
   onFlyToCoord,
+  docked = true,
 }) => {
   const tNav = useTranslations("navigationHud");
   const locale = useLocale();
@@ -92,6 +94,190 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
 
   const isSafe = route.overallSafetyIndex >= 75;
   const isCaution = route.overallSafetyIndex >= 50 && route.overallSafetyIndex < 75;
+
+  // DOCKED SIDEBAR HUD MODE
+  if (docked) {
+    return (
+      <div className="w-full bg-[#0b0f17] border border-emerald-500/70 p-2.5 font-mono select-none shadow-xl mb-3 shrink-0">
+        {/* Top Header */}
+        <div className="flex items-center justify-between gap-1.5 pb-2 border-b border-slate-800">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 truncate">
+              {tNav("activeBadge")}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="text-[8px] font-bold px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 uppercase tracking-wider">
+              {route.supportMode === "PAIRED_CREW_MULE_ROVER" ? "PAIRED + MULE" : "SOLO EVA"}
+            </span>
+            <button
+              onClick={onCloseRoute}
+              className="px-1.5 py-0.5 bg-[#450a0a] hover:bg-red-900 border border-red-700 text-red-300 hover:text-white text-[9px] font-bold transition-colors"
+              title="Clear Route"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Route Corridor Endpoints */}
+        <div className="py-2 space-y-0.5">
+          <div className="flex items-center justify-between text-[10px] text-slate-400">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <span className="text-emerald-400 font-bold truncate">{route.startWaypoint.name}</span>
+            </div>
+            <span className="text-[8px] text-slate-500">START</span>
+          </div>
+          <div className="pl-3 text-[9px] text-slate-500 font-mono">↓ A* Least-Cost Corridor</div>
+          <div className="flex items-center justify-between text-[11px] text-amber-400 font-bold">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+              <span className="truncate">{route.targetWaypoint.name}</span>
+            </div>
+            <span className="text-[8px] px-1 py-0.2 bg-amber-950/60 border border-amber-600/40 text-amber-300">DEST</span>
+          </div>
+          <div className="text-[8px] text-slate-400 pl-3 tabular-nums font-mono">
+            Lat {route.targetWaypoint.coordinates[1].toFixed(4)}°, Lon {route.targetWaypoint.coordinates[0].toFixed(4)}°
+          </div>
+        </div>
+
+        {/* 4 Telemetry Metrics Grid (Flat Matte Tabular) */}
+        <div className="grid grid-cols-2 gap-1.5 py-2 border-y border-slate-800 text-[10px] tabular-nums font-mono">
+          <div className="bg-[#07090e] border border-slate-800 p-1.5">
+            <div className="text-slate-400 text-[8px] font-bold uppercase">JARAK / DIST</div>
+            <div className="text-white font-bold text-xs">{route.totalDistanceKm} km</div>
+          </div>
+          <div className="bg-[#07090e] border border-slate-800 p-1.5">
+            <div className="text-slate-400 text-[8px] font-bold uppercase">DURASI / EST</div>
+            <div className="text-white font-bold text-xs">{route.estimatedDurationHours} h</div>
+          </div>
+          <div className="bg-[#07090e] border border-slate-800 p-1.5">
+            <div className="text-slate-400 text-[8px] font-bold uppercase">{tNav("o2Remaining")}</div>
+            <div className="text-emerald-400 font-bold text-xs">{route.remainingO2Percent}%</div>
+          </div>
+          <div className="bg-[#07090e] border border-slate-800 p-1.5">
+            <div className="text-slate-400 text-[8px] font-bold uppercase">{tNav("battRemaining")}</div>
+            <div className="text-cyan-400 font-bold text-xs">{route.remainingBatteryPercent}%</div>
+          </div>
+        </div>
+
+        {/* MGS Shield & Safety Status Pill */}
+        <div className="pt-2 space-y-1.5 font-mono">
+          <div className="flex items-center justify-between text-[10px] tabular-nums">
+            <span className="text-slate-400 text-[9px] uppercase">{tNav("mgsShield")}</span>
+            <span className="text-purple-300 font-bold">{route.averageCrustalMagNt} nT</span>
+          </div>
+          <div
+            className={`px-2 py-1 border text-[9px] font-bold tracking-wider uppercase text-center leading-tight ${
+              isSafe
+                ? "bg-[#064e3b] border-[#10b981] text-[#34d399]"
+                : isCaution
+                ? "bg-[#78350f] border-[#d97706] text-[#fde68a]"
+                : "bg-[#7f1d1d] border-[#dc2626] text-[#fca5a5]"
+            }`}
+          >
+            {isSafe
+              ? tNav("safeVerdict")
+              : isCaution
+              ? tNav("cautionVerdict")
+              : tNav("hazardVerdict")}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-1.5 pt-2">
+          {/* View 360 POV at Target */}
+          <button
+            onClick={() => onOpenPovModal(route.targetWaypoint)}
+            className="px-2 py-1 bg-[#161e2e] hover:bg-[#1f2937] border border-slate-700 text-amber-300 hover:text-amber-200 text-[9px] font-bold transition-colors flex items-center justify-center gap-1"
+            title="Open 360 Panoramic Surface POV at destination"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
+            </svg>
+            <span>360° POV</span>
+          </button>
+
+          {/* Toggle 5M Transect Profile */}
+          <button
+            onClick={onToggleProfileDock}
+            className={`px-2 py-1 border text-[9px] font-bold transition-colors ${
+              isProfileDockOpen
+                ? "bg-[#161e2e] border-cyan-500 text-cyan-300"
+                : "bg-[#111827] border-slate-700 text-slate-300 hover:text-white"
+            }`}
+            title="Toggle 5-meter transect elevation dock"
+          >
+            <span>[ 5M PROFIL ]</span>
+          </button>
+
+          {/* Maneuver Steps Toggle */}
+          <button
+            onClick={() => setShowManeuvers((prev) => !prev)}
+            className="col-span-2 px-2 py-1 bg-[#111827] hover:bg-[#161e2e] border border-slate-700 text-slate-300 hover:text-white text-[9px] font-bold transition-colors flex items-center justify-between"
+            title="Toggle turn-by-turn maneuver steps"
+          >
+            <span>[ {tNav("turnByTurn")} ]</span>
+            <span>{showManeuvers ? "▲" : "▼"}</span>
+          </button>
+        </div>
+
+        {/* Expandable Step-by-Step Waypoint Maneuvers */}
+        {showManeuvers && route.segments && route.segments.length > 0 && (
+          <div className="mt-2 p-1.5 bg-[#07090e] border border-slate-800 max-h-48 overflow-y-auto space-y-1 text-[9px]">
+            <div className="text-[8px] text-slate-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
+              <span>{tNav("turnByTurn")}</span>
+              <span className="text-slate-500 font-mono">[{route.segments.length} SEGMEN]</span>
+            </div>
+            {route.segments.map((seg, idx) => {
+              const segHazard = seg.sandTrapRisk === "HIGH" || seg.slopeDeg > 22;
+              const segCaution = seg.slopeDeg > 15 || seg.sandTrapRisk === "MODERATE";
+              const instructionText =
+                locale === "id"
+                  ? seg.maneuverInstructionId || seg.maneuverInstruction
+                  : seg.maneuverInstruction;
+
+              return (
+                <div
+                  key={idx}
+                  onClick={() => onFlyToCoord?.(seg.toCoordinate)}
+                  className="px-2 py-1 bg-[#111827] border border-slate-800 hover:border-slate-600 cursor-pointer flex flex-col gap-0.5 transition-colors"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="w-3.5 h-3.5 bg-[#0b0f17] border border-slate-700 text-slate-300 font-mono text-[8px] flex items-center justify-center font-bold shrink-0">
+                      {idx + 1}
+                    </span>
+                    {renderTurnIcon(seg.turnType)}
+                    <span className="text-slate-200 truncate font-bold text-[9px]">
+                      {instructionText}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pl-5 text-[8px] text-slate-400 tabular-nums">
+                    <span>
+                      {seg.distanceKm.toFixed(1)} km | {seg.fromElevationM.toFixed(0)}m &rarr; {seg.toElevationM.toFixed(0)}m
+                    </span>
+                    <span
+                      className={`font-bold ${
+                        segHazard
+                          ? "text-red-400"
+                          : segCaution
+                          ? "text-amber-400"
+                          : "text-emerald-400"
+                      }`}
+                    >
+                      {seg.slopeDeg.toFixed(1)}° [{seg.surfaceFirmness}]
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Compact Minimized HUD Pill
   if (isMinimized) {

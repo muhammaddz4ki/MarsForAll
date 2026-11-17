@@ -963,9 +963,19 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       });
     });
 
+    // Container Resize Observer for dynamic sidebar and drawer layout shifts
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && mapContainerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        map.resize();
+      });
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     mapRef.current = map;
 
     return () => {
+      if (resizeObserver) resizeObserver.disconnect();
       if (rafHoverId) cancelAnimationFrame(rafHoverId);
       if (rafMoveId) cancelAnimationFrame(rafMoveId);
       if (routeStartMarkerRef.current) routeStartMarkerRef.current.remove();
