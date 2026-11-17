@@ -32,3 +32,7 @@ DEPLOY.md
 __pycache__/
 *.pyc
 scratch/
+
+# Office temporary lock files
+~$*.docx
+~$*
