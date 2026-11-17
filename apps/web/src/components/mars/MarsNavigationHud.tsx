@@ -109,7 +109,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[8px] font-bold px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 uppercase tracking-wider">
-              {route.supportMode === "PAIRED_CREW_MULE_ROVER" ? "PAIRED + MULE" : "SOLO EVA"}
+              {route.supportMode === "PAIRED_CREW_MULE_ROVER" ? tNav("pairedMuleMode") : tNav("soloEvaMode")}
             </span>
             <button
               onClick={onCloseRoute}
@@ -126,32 +126,44 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
           <div className="flex items-center justify-between text-[10px] text-slate-400">
             <div className="flex items-center gap-1.5 truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span className="text-emerald-400 font-bold truncate">{route.startWaypoint.name}</span>
+              <span className="text-emerald-400 font-bold truncate">
+                {locale === "id" ? "Awal: " : "Start: "}{route.startWaypoint.name.replace("MarsForAll ", "")}
+              </span>
             </div>
-            <span className="text-[8px] text-slate-500">START</span>
+            <span className="text-[8px] text-slate-500 font-bold">START</span>
           </div>
-          <div className="pl-3 text-[9px] text-slate-500 font-mono">↓ A* Least-Cost Corridor</div>
+          <div className="pl-3 text-[9px] text-slate-500 font-mono">
+            {locale === "id" ? "↓ Jalur Teraman Hasil Hitungan AI" : "↓ Safest Trail Computed by AI"}
+          </div>
           <div className="flex items-center justify-between text-[11px] text-amber-400 font-bold">
             <div className="flex items-center gap-1.5 truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-              <span className="truncate">{route.targetWaypoint.name}</span>
+              <span className="truncate">
+                {locale === "id" ? "Tujuan: " : "Target: "}{route.targetWaypoint.name}
+              </span>
             </div>
-            <span className="text-[8px] px-1 py-0.2 bg-amber-950/60 border border-amber-600/40 text-amber-300">DEST</span>
+            <span className="text-[8px] px-1 py-0.2 bg-amber-950/60 border border-amber-600/40 text-amber-300 font-bold">DEST</span>
           </div>
           <div className="text-[8px] text-slate-400 pl-3 tabular-nums font-mono">
-            Lat {route.targetWaypoint.coordinates[1].toFixed(4)}°, Lon {route.targetWaypoint.coordinates[0].toFixed(4)}°
+            {route.targetWaypoint.coordinates[1].toFixed(4)}°, {route.targetWaypoint.coordinates[0].toFixed(4)}°
           </div>
         </div>
 
         {/* 4 Telemetry Metrics Grid (Flat Matte Tabular) */}
         <div className="grid grid-cols-2 gap-1.5 py-2 border-y border-slate-800 text-[10px] tabular-nums font-mono">
           <div className="bg-[#07090e] border border-slate-800 p-1.5">
-            <div className="text-slate-400 text-[8px] font-bold uppercase">JARAK / DIST</div>
+            <div className="text-slate-400 text-[8px] font-bold uppercase">
+              {locale === "id" ? "JARAK TOTAL" : "TOTAL DISTANCE"}
+            </div>
             <div className="text-white font-bold text-xs">{route.totalDistanceKm} km</div>
           </div>
           <div className="bg-[#07090e] border border-slate-800 p-1.5">
-            <div className="text-slate-400 text-[8px] font-bold uppercase">DURASI / EST</div>
-            <div className="text-white font-bold text-xs">{route.estimatedDurationHours} h</div>
+            <div className="text-slate-400 text-[8px] font-bold uppercase">
+              {locale === "id" ? "ESTIMASI WAKTU" : "EST. DURATION"}
+            </div>
+            <div className="text-white font-bold text-xs">
+              {route.estimatedDurationHours} {locale === "id" ? "jam" : "h"}
+            </div>
           </div>
           <div className="bg-[#07090e] border border-slate-800 p-1.5">
             <div className="text-slate-400 text-[8px] font-bold uppercase">{tNav("o2Remaining")}</div>
@@ -167,7 +179,9 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
         <div className="pt-2 space-y-1.5 font-mono">
           <div className="flex items-center justify-between text-[10px] tabular-nums">
             <span className="text-slate-400 text-[9px] uppercase">{tNav("mgsShield")}</span>
-            <span className="text-purple-300 font-bold">{route.averageCrustalMagNt} nT</span>
+            <span className="text-purple-300 font-bold">
+              {route.averageCrustalMagNt} nT <span className="text-purple-400/80 text-[8px]">{tNav("shieldSafe")}</span>
+            </span>
           </div>
           <div
             className={`px-2 py-1 border text-[9px] font-bold tracking-wider uppercase text-center leading-tight ${
@@ -197,7 +211,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
               <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
             </svg>
-            <span>360° POV</span>
+            <span>{tNav("viewPovTarget")}</span>
           </button>
 
           {/* Toggle 5M Transect Profile */}
@@ -208,18 +222,18 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                 ? "bg-[#161e2e] border-cyan-500 text-cyan-300"
                 : "bg-[#111827] border-slate-700 text-slate-300 hover:text-white"
             }`}
-            title="Toggle 5-meter transect elevation dock"
+            title="Toggle transect elevation profile dock"
           >
-            <span>[ 5M PROFIL ]</span>
+            <span>[ {tNav("toggleTransect")} ]</span>
           </button>
 
           {/* Maneuver Steps Toggle */}
           <button
             onClick={() => setShowManeuvers((prev) => !prev)}
             className="col-span-2 px-2 py-1 bg-[#111827] hover:bg-[#161e2e] border border-slate-700 text-slate-300 hover:text-white text-[9px] font-bold transition-colors flex items-center justify-between"
-            title="Toggle turn-by-turn maneuver steps"
+            title="Toggle turn-by-turn route steps"
           >
-            <span>[ {tNav("turnByTurn")} ]</span>
+            <span>[ {tNav("turnByTurn")} ({route.segments?.length || 0}) ]</span>
             <span>{showManeuvers ? "▲" : "▼"}</span>
           </button>
         </div>
@@ -229,7 +243,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
           <div className="mt-2 p-1.5 bg-[#07090e] border border-slate-800 max-h-48 overflow-y-auto space-y-1 text-[9px]">
             <div className="text-[8px] text-slate-400 uppercase font-bold tracking-wider mb-1 flex items-center justify-between">
               <span>{tNav("turnByTurn")}</span>
-              <span className="text-slate-500 font-mono">[{route.segments.length} SEGMEN]</span>
+              <span className="text-slate-500 font-mono">[{route.segments.length} {locale === "id" ? "SEGMEN" : "STEPS"}]</span>
             </div>
             {route.segments.map((seg, idx) => {
               const segHazard = seg.sandTrapRisk === "HIGH" || seg.slopeDeg > 22;
@@ -238,6 +252,12 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                 locale === "id"
                   ? seg.maneuverInstructionId || seg.maneuverInstruction
                   : seg.maneuverInstruction;
+              const firmnessLabel =
+                seg.surfaceFirmness === "BEDROCK FIRM"
+                  ? (locale === "id" ? "BATU KOKOH" : "BEDROCK FIRM")
+                  : seg.surfaceFirmness === "MODERATE COMPACTION"
+                  ? (locale === "id" ? "TANAH SEDANG" : "MODERATE")
+                  : (locale === "id" ? "PASIR AMBLAS" : "SAND TRAP");
 
               return (
                 <div
@@ -267,7 +287,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                           : "text-emerald-400"
                       }`}
                     >
-                      {seg.slopeDeg.toFixed(1)}° [{seg.surfaceFirmness}]
+                      {seg.slopeDeg.toFixed(1)}° [{firmnessLabel}]
                     </span>
                   </div>
                 </div>
@@ -329,14 +349,16 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
               <span>{tNav("activeBadge")}</span>
             </span>
 
-            <span className="text-slate-200 font-bold tracking-tight truncate max-w-[260px] md:max-w-md">
-              <span className="text-emerald-400">{route.startWaypoint.name.split(" ")[0]}</span>
+            <span className="text-slate-200 font-bold tracking-tight truncate max-w-[240px] md:max-w-xs">
+              <span className="text-emerald-400">
+                {route.startWaypoint.name.replace("MarsForAll ", "").replace(" (Bradbury Plains)", "")}
+              </span>
               <span className="text-slate-500 mx-1.5">&rarr;</span>
               <span className="text-amber-400 font-bold">{route.targetWaypoint.name}</span>
             </span>
 
             <span className="hidden sm:inline-block px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 text-[8px] font-bold uppercase tracking-wider">
-              {route.supportMode === "PAIRED_CREW_MULE_ROVER" ? "PAIRED + MULE" : "SOLO EVA"}
+              {route.supportMode === "PAIRED_CREW_MULE_ROVER" ? tNav("pairedMuleMode") : tNav("soloEvaMode")}
             </span>
           </div>
 
@@ -351,7 +373,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
               </svg>
-              <span>360° POV</span>
+              <span>{tNav("viewPovTarget")}</span>
             </button>
 
             {/* Toggle 5M Transect Profile */}
@@ -362,9 +384,9 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                   ? "bg-[#161e2e] border-cyan-500 text-cyan-300"
                   : "bg-[#111827] border-slate-700 text-slate-300 hover:text-white"
               }`}
-              title="Toggle 5-meter transect elevation dock"
+              title="Toggle transect elevation profile dock"
             >
-              <span>[ 5M PROFILE ]</span>
+              <span>[ {tNav("toggleTransect")} ]</span>
             </button>
 
             {/* Maneuver Steps Toggle */}
@@ -373,7 +395,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
               className="px-2 py-0.5 bg-[#161e2e] hover:bg-[#1f2937] border border-slate-700 text-slate-300 hover:text-white text-[9px] font-bold transition-colors"
               title="Toggle turn-by-turn maneuver steps"
             >
-              <span>[ STEPS {showManeuvers ? "▲" : "▼"} ]</span>
+              <span>[ {tNav("turnByTurn")} {showManeuvers ? "▲" : "▼"} ]</span>
             </button>
 
             {/* Minimize */}
@@ -401,15 +423,21 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
           {/* Key Metrics */}
           <div className="flex items-center gap-3 text-[10px] font-mono shrink-0">
             <div>
-              <span className="text-slate-400 font-bold mr-1">DIST:</span>
+              <span className="text-slate-400 font-bold mr-1">
+                {locale === "id" ? "JARAK:" : "DIST:"}
+              </span>
               <span className="text-white font-bold">{route.totalDistanceKm} km</span>
             </div>
 
             <span className="text-slate-600">|</span>
 
             <div>
-              <span className="text-slate-400 font-bold mr-1">EST:</span>
-              <span className="text-white font-bold">{route.estimatedDurationHours} h</span>
+              <span className="text-slate-400 font-bold mr-1">
+                {locale === "id" ? "WAKTU:" : "EST:"}
+              </span>
+              <span className="text-white font-bold">
+                {route.estimatedDurationHours} {locale === "id" ? "jam" : "h"}
+              </span>
             </div>
 
             <span className="text-slate-600">|</span>
@@ -468,6 +496,12 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                 locale === "id"
                   ? seg.maneuverInstructionId || seg.maneuverInstruction
                   : seg.maneuverInstruction;
+              const firmnessLabel =
+                seg.surfaceFirmness === "BEDROCK FIRM"
+                  ? (locale === "id" ? "BATU KOKOH" : "BEDROCK FIRM")
+                  : seg.surfaceFirmness === "MODERATE COMPACTION"
+                  ? (locale === "id" ? "TANAH SEDANG" : "MODERATE")
+                  : (locale === "id" ? "PASIR AMBLAS" : "SAND TRAP");
 
               return (
                 <div
@@ -511,7 +545,7 @@ export const MarsNavigationHud: React.FC<MarsNavigationHudProps> = ({
                           : "bg-[#064e3b] border-[#10b981] text-[#34d399]"
                       }`}
                     >
-                      [{seg.surfaceFirmness}]
+                      [{firmnessLabel}]
                     </span>
                   </div>
                 </div>

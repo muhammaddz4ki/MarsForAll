@@ -440,9 +440,18 @@ export const AresMartianApp: React.FC = () => {
       return;
     }
 
+    const pinName =
+      currentLocale === "id"
+        ? `Titik Sasaran Pilihan (${coords[1]}°, ${coords[0]}°)`
+        : `Target Waypoint Pin (${coords[1]}°, ${coords[0]}°)`;
+    const pinDesc =
+      currentLocale === "id"
+        ? "Titik sasaran hasil klik langsung pada peta lereng Mount Sharp untuk analisis rute & tanah."
+        : "Target point designated directly on Mount Sharp map flank for route & soil analysis.";
+
     const customWp: MountSharpWaypoint = {
       id: "custom_target_pin",
-      name: `Custom Tactical Pin (Lat ${coords[1]}°, Lon ${coords[0]}°)`,
+      name: pinName,
       category: "mineral_vein",
       coordinates: coords,
       elevationM: elevation,
@@ -472,7 +481,7 @@ export const AresMartianApp: React.FC = () => {
       evaSuitTraversable: true,
       muleRoverTraversable: true,
       scientificPriority: 3,
-      briefDescription: "User-designated tactical excursion target on Mount Sharp flank. Evaluated dynamically via Prospector ML inversion.",
+      briefDescription: pinDesc,
     };
     setCustomPin(customWp);
     setSelectedWaypoint(customWp);
@@ -1623,24 +1632,24 @@ export const AresMartianApp: React.FC = () => {
           onScaleUpdate={setScaleBar}
         />
 
-        {/* NOVELTY QUICK START BANNER (Rute Aman Astronaut & Akses Publik) */}
+        {/* NOVELTY QUICK START BANNER (Panduan Cepat Navigasi Peta) */}
         {!activeRoute && activeTool === null && !isAerialDockOpen && !elevationProfile && showQuickStartBanner && viewMode === "mission_control" && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 bg-[#07090e]/95 border border-emerald-500/80 shadow-2xl flex items-center gap-3 font-mono text-[10px] select-none">
             <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>
                 {currentLocale === "id"
-                  ? "[ RUTE AMAN ASTRONAUT // AI DIJKSTRA A* ]"
-                  : "[ ASTRONAUT SAFE NAVIGATION // AI DIJKSTRA A* ]"}
+                  ? "[ PANDUAN CEPAT ]"
+                  : "[ QUICK START ]"}
               </span>
             </div>
             <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
             <button
               onClick={handleLaunchSampleRoute}
               className="px-2 py-0.5 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors"
-              title="Plan verified least-hazard route from Hab Alpha to Boxwork 2025"
+              title="Hitung contoh rute jalan kaki astronot dari Hab Alpha ke Boxwork 2025"
             >
-              [ {currentLocale === "id" ? "RUTE AMAN PERCONTOHAN" : "PLAN SAMPLE SAFE ROUTE"} ]
+              [ {currentLocale === "id" ? "1-KLIK CONTOH RUTE" : "1-CLICK SAMPLE ROUTE"} ]
             </button>
             <button
               onClick={() => {
@@ -1648,14 +1657,14 @@ export const AresMartianApp: React.FC = () => {
                 setIsAerialDockOpen(true);
               }}
               className="px-2 py-0.5 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors"
-              title="Open Mars Aerial Recon Drone coordinate flight dock"
+              title="Buka panel simulasi drone pengintai udara"
             >
-              [ {currentLocale === "id" ? "PESAWAT PENGINTAI" : "AERIAL SCOUT DRONE"} ]
+              [ {currentLocale === "id" ? "SIMULASI DRONE" : "DRONE SIMULATION"} ]
             </button>
             <button
               onClick={() => setShowQuickStartBanner(false)}
               className="text-slate-500 hover:text-slate-300 text-[10px] font-bold ml-1"
-              title="Dismiss Banner"
+              title="Tutup"
             >
               ✕
             </button>
@@ -1987,7 +1996,7 @@ export const AresMartianApp: React.FC = () => {
               evaSuitTraversable: true,
               muleRoverTraversable: true,
               scientificPriority: 3,
-              briefDescription: "Tactical target focus",
+              briefDescription: currentLocale === "id" ? "Titik sasaran eksplorasi" : "Exploration target waypoint",
             };
             setSelectedWaypoint(customWp);
           }}
