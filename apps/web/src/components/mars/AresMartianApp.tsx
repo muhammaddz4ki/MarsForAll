@@ -220,6 +220,16 @@ export const AresMartianApp: React.FC = () => {
       if (params.get("pov") === "true" || params.get("pov") === "1") {
         setIsPovOpen(true);
       }
+      const toolParam = params.get("tool");
+      if (toolParam && ["layers", "marswalk", "tools", "inspector", "prospector", "analogue"].includes(toolParam)) {
+        setActiveTool(toolParam as any);
+      }
+      if (params.get("view") === "visor") {
+        setViewMode("visor_hud");
+      }
+      if (params.get("drone") === "true") {
+        setIsAerialDockOpen(true);
+      }
     }
     const savedTheme = localStorage.getItem("ares_theme") as "dark" | "light" | null;
     if (savedTheme === "light" || savedTheme === "dark") {
@@ -330,6 +340,36 @@ export const AresMartianApp: React.FC = () => {
       console.error("Failed to plan sample route:", e);
     }
   }, [allWaypoints, currentLocale]);
+
+  // Deep-link helper for route & inspect query params
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("route") === "sample") {
+      handleLaunchSampleRoute();
+    }
+    if (params.get("inspect") === "boxwork") {
+      const boxworkWp = allWaypoints.find((w) => w.id === "curiosity_boxwork_2025" || w.id === "stn_07_boxwork_2025") || allWaypoints[1];
+      if (boxworkWp) {
+        setSelectedWaypoint(boxworkWp);
+        setActiveTool("inspector");
+        setIdentifiedFeature({
+          name: boxworkWp.name,
+          category: "BOXWORK MINERAL VEIN",
+          stratigraphicAge: "Hesperian (~3.3 Ga)",
+          elevationM: boxworkWp.elevationM,
+          slopeDeg: boxworkWp.meanSlopeDeg,
+          mineralogy: "Polyhydrated Sulfates & Amorphous Silica",
+          coordinates: boxworkWp.coordinates,
+          surfaceFirmness: "BEDROCK FIRM",
+          sandTrapRisk: "LOW",
+          crustalMagneticFieldNt: 72,
+          surfaceRadiationMSvSol: 0.68,
+          associatedWaypoint: boxworkWp,
+        });
+      }
+    }
+  }, [allWaypoints, handleLaunchSampleRoute]);
 
   const handleExportGeoJson = useCallback(() => {
     const geojsonStr = exportGisGeoJson({
