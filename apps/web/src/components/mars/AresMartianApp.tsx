@@ -786,17 +786,14 @@ export const AresMartianApp: React.FC = () => {
       <div className="relative flex-1 w-full h-full overflow-hidden flex">
         {/* MMGIS SIDEBAR (EXPANDED w-72 sm:w-80 or COLLAPSED w-12) */}
         <nav
-          className={`${
-            isSidebarExpanded ? "w-72 sm:w-80" : "w-12"
-          } h-full ${
-            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-          } border-r flex flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
+          className={`${isSidebarExpanded ? "w-72 sm:w-80" : "w-12"
+            } h-full ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+            } border-r flex flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
         >
           {/* SIDEBAR HEADER / TOGGLE BAR */}
           <div
-            className={`h-9 px-2.5 border-b ${
-              isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
-            } flex items-center justify-between shrink-0`}
+            className={`h-9 px-2.5 border-b ${isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
+              } flex items-center justify-between shrink-0`}
           >
             {isSidebarExpanded ? (
               <>
@@ -865,19 +862,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("marswalk")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "marswalk" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "marswalk" && viewMode === "mission_control"
                       ? "bg-emerald-950/60 border-emerald-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "marswalk" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "marswalk" && viewMode === "mission_control"
                       ? "bg-emerald-600 text-slate-950 border-emerald-400"
                       : "bg-[#07090e] border-slate-800 text-emerald-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="6" cy="19" r="3" />
                       <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
@@ -888,11 +883,10 @@ export const AresMartianApp: React.FC = () => {
                       <span className="font-bold text-xs truncate text-slate-200">
                         {tSidebar("marswalkTitle")}
                       </span>
-                      <span className={`text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 ${
-                        activeRoute
+                      <span className={`text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 ${activeRoute
                           ? "bg-[#064e3b] border-emerald-500 text-emerald-300"
                           : "bg-[#111827] border-emerald-800 text-emerald-400"
-                      }`}>
+                        }`}>
                         {activeRoute ? tSidebar("badgeActive") : tSidebar("badgeCoreAi")}
                       </span>
                     </div>
@@ -905,13 +899,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("marswalk")}
                   title={`${tSidebar("marswalkTitle")} - ${tSidebar("marswalkDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors relative ${
-                    activeTool === "marswalk" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors relative ${activeTool === "marswalk" && viewMode === "mission_control"
                       ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
                       : isDark
-                      ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-emerald-800/60"
-                      : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-emerald-300"
-                  }`}
+                        ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-emerald-800/60"
+                        : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-emerald-300"
+                    }`}
                 >
                   <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -928,19 +921,17 @@ export const AresMartianApp: React.FC = () => {
                     setShowFloatingLegend(false);
                     setIsAerialDockOpen((prev) => !prev);
                   }}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    isAerialDockOpen
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${isAerialDockOpen
                       ? "bg-cyan-950/60 border-cyan-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    isAerialDockOpen
+                  <div className={`mt-0.5 p-1 border shrink-0 ${isAerialDockOpen
                       ? "bg-cyan-600 text-slate-950 border-cyan-400"
                       : "bg-[#07090e] border-slate-800 text-cyan-400"
-                  }`}>
+                    }`}>
                     <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                       <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
                     </svg>
@@ -966,13 +957,12 @@ export const AresMartianApp: React.FC = () => {
                     setIsAerialDockOpen((prev) => !prev);
                   }}
                   title={`${tSidebar("aerialTitle")} - ${tSidebar("aerialDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    isAerialDockOpen
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${isAerialDockOpen
                       ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
                       : isDark
-                      ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-slate-800"
-                      : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-slate-300"
-                  }`}
+                        ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-slate-800"
+                        : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-slate-300"
+                    }`}
                 >
                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                     <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
@@ -993,19 +983,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("layers")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "layers" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "layers" && viewMode === "mission_control"
                       ? "bg-amber-950/60 border-amber-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "layers" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "layers" && viewMode === "mission_control"
                       ? "bg-amber-600 text-slate-950 border-amber-400"
                       : "bg-[#07090e] border-slate-800 text-amber-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="12 2 2 7 12 12 22 7 12 2" />
                       <polyline points="2 17 12 22 22 17" />
@@ -1030,13 +1018,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("layers")}
                   title={`${tSidebar("layersTitle")} - ${tSidebar("layersDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    activeTool === "layers" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "layers" && viewMode === "mission_control"
                       ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
                       : isDark
-                      ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                  }`}
+                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="12 2 2 7 12 12 22 7 12 2" />
@@ -1050,19 +1037,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("inspector")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "inspector" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "inspector" && viewMode === "mission_control"
                       ? "bg-cyan-950/60 border-cyan-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "inspector" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "inspector" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 border-cyan-400"
                       : "bg-[#07090e] border-slate-800 text-cyan-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="9" />
                       <line x1="12" y1="3" x2="12" y2="7" />
@@ -1090,13 +1075,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("inspector")}
                   title={`${tSidebar("inspectorTitle")} - ${tSidebar("inspectorDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    activeTool === "inspector" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "inspector" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
                       : isDark
-                      ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-transparent"
-                      : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
-                  }`}
+                        ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-transparent"
+                        : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="9" />
@@ -1113,19 +1097,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("tools")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "tools" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "tools" && viewMode === "mission_control"
                       ? "bg-cyan-950/60 border-cyan-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "tools" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "tools" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 border-cyan-400"
                       : "bg-[#07090e] border-slate-800 text-cyan-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
                       <path d="m12.4 8.6 2.8 2.8" />
@@ -1150,13 +1132,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("tools")}
                   title={`${tSidebar("toolsTitle")} - ${tSidebar("toolsDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    activeTool === "tools" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "tools" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
                       : isDark
-                      ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                  }`}
+                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
@@ -1179,19 +1160,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("prospector")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "prospector" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "prospector" && viewMode === "mission_control"
                       ? "bg-amber-950/60 border-amber-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "prospector" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "prospector" && viewMode === "mission_control"
                       ? "bg-amber-600 text-slate-950 border-amber-400"
                       : "bg-[#07090e] border-slate-800 text-amber-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
                       <line x1="12" y1="9" x2="12" y2="13" />
@@ -1216,13 +1195,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("prospector")}
                   title={`${tSidebar("prospectorTitle")} - ${tSidebar("prospectorDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    activeTool === "prospector" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "prospector" && viewMode === "mission_control"
                       ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
                       : isDark
-                      ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                  }`}
+                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
@@ -1236,19 +1214,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleToggleTool("analogue")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    activeTool === "analogue" && viewMode === "mission_control"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "analogue" && viewMode === "mission_control"
                       ? "bg-cyan-950/60 border-cyan-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    activeTool === "analogue" && viewMode === "mission_control"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "analogue" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 border-cyan-400"
                       : "bg-[#07090e] border-slate-800 text-cyan-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
@@ -1272,13 +1248,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleToggleTool("analogue")}
                   title={`${tSidebar("analogueTitle")} - ${tSidebar("analogueDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    activeTool === "analogue" && viewMode === "mission_control"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "analogue" && viewMode === "mission_control"
                       ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
                       : isDark
-                      ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                  }`}
+                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
@@ -1300,11 +1275,10 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => handleOpenPovModal(selectedWaypoint)}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    isDark
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${isDark
                       ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
                       : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                    }`}
                 >
                   <div className="mt-0.5 p-1 border shrink-0 bg-[#07090e] border-slate-800 text-amber-400">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1330,11 +1304,10 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => handleOpenPovModal(selectedWaypoint)}
                   title={`${tSidebar("pov360Title")} - ${tSidebar("pov360Desc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    isDark
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${isDark
                       ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
                       : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
-                  }`}
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
@@ -1347,19 +1320,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => setViewMode("visor_hud")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    viewMode === "visor_hud"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "visor_hud"
                       ? "bg-purple-950/60 border-purple-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    viewMode === "visor_hud"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "visor_hud"
                       ? "bg-purple-600 text-slate-950 border-purple-400"
                       : "bg-[#07090e] border-slate-800 text-purple-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
                       <circle cx="12" cy="12" r="3" />
@@ -1383,13 +1354,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => setViewMode("visor_hud")}
                   title={`${tSidebar("visorHudTitle")} - ${tSidebar("visorHudDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    viewMode === "visor_hud"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "visor_hud"
                       ? "bg-purple-600 text-slate-950 font-bold border-purple-400"
                       : isDark
-                      ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-slate-800"
-                      : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-slate-300"
-                  }`}
+                        ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-slate-800"
+                        : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-slate-300"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
@@ -1402,19 +1372,17 @@ export const AresMartianApp: React.FC = () => {
               {isSidebarExpanded ? (
                 <button
                   onClick={() => setViewMode("planet_globe")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${
-                    viewMode === "planet_globe"
+                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "planet_globe"
                       ? "bg-emerald-950/60 border-emerald-400 text-white"
                       : isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                  }`}
+                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                    }`}
                 >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${
-                    viewMode === "planet_globe"
+                  <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "planet_globe"
                       ? "bg-emerald-600 text-slate-950 border-emerald-400"
                       : "bg-[#07090e] border-slate-800 text-emerald-400"
-                  }`}>
+                    }`}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <ellipse cx="12" cy="12" rx="10" ry="4" />
@@ -1439,13 +1407,12 @@ export const AresMartianApp: React.FC = () => {
                 <button
                   onClick={() => setViewMode("planet_globe")}
                   title={`${tSidebar("planetGlobeTitle")} - ${tSidebar("planetGlobeDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${
-                    viewMode === "planet_globe"
+                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "planet_globe"
                       ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
                       : isDark
-                      ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-slate-800"
-                      : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-slate-300"
-                  }`}
+                        ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-slate-800"
+                        : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-slate-300"
+                    }`}
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
