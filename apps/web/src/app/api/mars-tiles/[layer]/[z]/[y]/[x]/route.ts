@@ -60,14 +60,16 @@ export async function GET(
   let trekZ = numZ;
   let trekX = numX;
   let trekY = numY;
+  let lonDeg = 0;
+  let latDeg = 0;
 
   if (!isDirectTrek) {
     // MapLibre Web Mercator (z, x, y) -> NASA Mars Trek Equirectangular (default028mm) conversion
     // Note: in our route folder segment [layer]/[z]/[y]/[x]:
     // numX represents the horizontal tile column (x), numY represents vertical tile row (y)
-    const lonDeg = ((numX + 0.5) / Math.pow(2, numZ)) * 360 - 180;
+    lonDeg = ((numX + 0.5) / Math.pow(2, numZ)) * 360 - 180;
     const n = Math.PI - (2 * Math.PI * (numY + 0.5)) / Math.pow(2, numZ);
-    const latDeg = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    latDeg = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 
     trekZ = Math.max(0, Math.min(numZ - 1, 13));
     const maxCols = Math.pow(2, trekZ + 1);
@@ -78,6 +80,9 @@ export async function GET(
 
     trekX = Math.max(0, Math.min(trekX, maxCols - 1));
     trekY = Math.max(0, Math.min(trekY, maxRows - 1));
+  } else {
+    lonDeg = (trekX / Math.pow(2, trekZ + 1)) * 360 - 180;
+    latDeg = 90 - (trekY / Math.pow(2, trekZ)) * 180;
   }
 
   const cacheKey = `${layer}/${trekZ}/${trekY}/${trekX}`;
@@ -169,39 +174,47 @@ export async function GET(
     });
   }
 
+  let upstreamRes: Response | null = null;
+
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-    let upstreamRes = await fetch(remoteUrl, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": "MarsForAll/1.0 (NASA Space Apps Challenge 2026; Team MarsForAll)",
-      },
-      next: { revalidate: 86400 },
-    });
-
-    clearTimeout(timeoutId);
-
-    // If CTX is out-of-bounds (404), gracefully fallback to global Viking MDIM 2.1
-    if (!upstreamRes.ok && isCtx) {
-      const fallbackVikingUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${trekZ}/${trekY}/${trekX}.jpg`;
+    // Attempt 1: Primary fetch with 12000ms timeout
+    const fetchWithTimeout = async (url: string, timeoutMs: number) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const fbRes = await fetch(fallbackVikingUrl, {
+        const res = await fetch(url, {
+          signal: controller.signal,
           headers: {
             "User-Agent": "MarsForAll/1.0 (NASA Space Apps Challenge 2026; Team MarsForAll)",
           },
           next: { revalidate: 86400 },
         });
-        if (fbRes.ok) {
-          upstreamRes = fbRes;
-        }
-      } catch (_fbErr) {
-        // Fallback fetch failed, proceed to transparent tile
+        return res;
+      } catch (_err) {
+        return null;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    // Primary fetch with quick 3500ms timeout (no multi-layer retry to allow instant fallback)
+    upstreamRes = await fetchWithTimeout(remoteUrl, 3500);
+
+    // If upstream layer is non-200 or errored (e.g. edge of crater mosaic), gracefully fallback to global Viking MDIM 2.1
+    if ((!upstreamRes || !upstreamRes.ok) && layer !== "viking-mdim21" && layer !== "viking") {
+      const vZ = Math.max(0, Math.min(trekZ, 7));
+      const vCols = Math.pow(2, vZ + 1);
+      const vRows = Math.pow(2, vZ);
+      const vX = Math.max(0, Math.min(Math.floor(((lonDeg + 180) / 360) * vCols), vCols - 1));
+      const vY = Math.max(0, Math.min(Math.floor(((90 - latDeg) / 180) * vRows), vRows - 1));
+      const fallbackVikingUrl = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${vZ}/${vY}/${vX}.jpg`;
+      const fbRes = await fetchWithTimeout(fallbackVikingUrl, 3000);
+      if (fbRes && fbRes.ok) {
+        upstreamRes = fbRes;
       }
     }
 
-    if (!upstreamRes.ok) {
+    if (!upstreamRes || !upstreamRes.ok) {
       // Return transparent 1x1 png gracefully
       return new NextResponse(TRANSPARENT_1X1_PNG as unknown as BodyInit, {
         status: 200,

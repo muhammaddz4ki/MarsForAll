@@ -28,6 +28,9 @@ import {
   computeViewshed360,
   ElevationProfileResult,
   ZoiFeature,
+  bearingBetweenTwoLatLngs,
+  martianGreatCircleDistanceM,
+  trimLineString,
 } from "@/lib/martian/mmgisSpatialAnalysis";
 import mountSharpGeology from "@/data/mountSharpGeology.json";
 import martianTerrainBase from "@/data/martianTerrainBase.json";
@@ -35,6 +38,7 @@ import { AerialScoutTarget } from "./MarsAerialScoutDock";
 
 interface AresMapViewerProps {
   currentSite?: MissionSiteId;
+  onChangeSite?: (site: MissionSiteId) => void;
   activeLayers: Record<string, boolean>;
   layerOpacities?: Record<string, number>;
   selectedWaypoint: MountSharpWaypoint | null;
@@ -49,9 +53,12 @@ interface AresMapViewerProps {
   theme?: "dark" | "light";
   tileMode?: "live_trek" | "offline_procedural";
   orbitalSource?: OrbitalImagerySource;
+  onChangeOrbitalSource?: (src: OrbitalImagerySource) => void;
   onWmtsStatusChange?: (status: WmtsStreamStatus) => void;
   dustStormActive?: boolean;
   currentSol?: number;
+  onSelectSol?: (sol: number) => void;
+  onNotification?: (msg: string) => void;
 
   // MMGIS Spatial Analysis Props
   activeMmgisTool?: "none" | "measure" | "viewshed" | "zoi";
@@ -80,6 +87,10 @@ interface AresMapViewerProps {
   showFloatingLegend?: boolean;
   onToggleFloatingLegend?: () => void;
   reCenterTrigger?: number;
+  isAerialDockOpen?: boolean;
+  showQuickStartBanner?: boolean;
+  onCloseQuickStartBanner?: () => void;
+  onLaunchSampleRoute?: () => void;
   flyToCoord?: [number, number] | null;
   aerialFlightTarget?: AerialScoutTarget | null;
   onAerialFlightComplete?: (target: AerialScoutTarget) => void;
@@ -186,6 +197,90 @@ export interface IdentifiedFeatureInfo {
   surfaceRadiationMSvSol?: number;
   has360Pov?: boolean;
   associatedWaypoint?: MountSharpWaypoint;
+  laymanDescription?: string;
+  temperatureRange?: string;
+}
+
+export const SEARCH_SHORTCUTS: {
+  name: string;
+  coords: [number, number];
+  zoom: number;
+  site: MissionSiteId;
+  desc: string;
+}[] = [
+  {
+    name: "Gale Crater",
+    coords: [137.4417, -4.5895],
+    zoom: 11.5,
+    site: "gale_crater",
+    desc: "Kawah tumbukan purba berdiameter 154 km tempat pendaratan robot penjelajah Curiosity.",
+  },
+  {
+    name: "Mount Sharp Boxwork",
+    coords: [137.785, -5.325],
+    zoom: 14.5,
+    site: "gale_crater",
+    desc: "Kisi-kisi mineral urat purba yang terbentuk dari sirkulasi air tanah miliaran tahun lalu.",
+  },
+  {
+    name: "Jezero Crater",
+    coords: [77.4509, 18.3789],
+    zoom: 11.5,
+    site: "jezero_crater",
+    desc: "Cekungan danau purba tempat penjelajahan Perseverance mencari tanda-tanda kehidupan mikroba kuno.",
+  },
+  {
+    name: "Cheyava Falls",
+    coords: [77.382, 18.441],
+    zoom: 14.5,
+    site: "jezero_crater",
+    desc: "Batuan sedimen berbercak 'leopard spots' dengan tanda reaksi kimia fosfat dan besi.",
+  },
+  {
+    name: "Olympus Mons",
+    coords: [-133.8, 18.65],
+    zoom: 6.0,
+    site: "gale_crater",
+    desc: "Gunung berapi perisai raksasa tertinggi di Tata Surya menjulang 21 km ke angkasa Mars.",
+  },
+  {
+    name: "Valles Marineris",
+    coords: [-75.0, -14.0],
+    zoom: 5.5,
+    site: "gale_crater",
+    desc: "Sistem ngarai terbesar di Mars sepanjang 4.000 km membelah seperempat lingkar planet.",
+  },
+];
+
+export function getFeatureLaymanDescription(name: string, _category: string, slopeDeg: number): string {
+  if (name.includes("Boxwork")) {
+    return "Struktur kisi mineral purba yang terbentuk dari aliran air tanah miliaran tahun lalu, memberikan petunjuk kuat tentang masa lalu Mars yang basah.";
+  }
+  if (name.includes("Bradbury") || name.includes("Touchdown")) {
+    return "Lokasi pendaratan bersejarah wahana Curiosity di dasar Kawah Gale dengan kerikil halus sisa aliran sungai purba.";
+  }
+  if (name.includes("Butler") || name.includes("Perseverance")) {
+    return "Titik pendaratan wahana antariksa Perseverance di Kawah Jezero yang membidik jejak biosignatur masa lalu.";
+  }
+  if (name.includes("Cheyava")) {
+    return "Batuan bintik macan tutul 'leopard spots' kaya fosfat & besi, salah satu kandidat biosignatur paling memikat di Mars.";
+  }
+  if (name.includes("Olympus")) {
+    return "Gunung berapi perisai raksasa terbesar di Tata Surya, menjulang 21 km menembus lapisan tipis atmosfer Mars.";
+  }
+  if (name.includes("Valles Marineris")) {
+    return "Sistem ngarai terbesar di Mars sepanjang 4.000 km dan sedalam 7 km, empat kali lebih dalam daripada Grand Canyon Bumi.";
+  }
+  if (name.includes("Habitat") || name.includes("HAB")) {
+    return "Pangkalan habitat utama astronot di permukaan Mars dengan modul penunjang hidup, pelindung radiasi, dan sumber daya terpusat.";
+  }
+  if (slopeDeg > 25) {
+    return "Lereng tebing berbatu curam dengan singkapan lapisan geologi purba yang menantang namun kaya informasi ilmiah.";
+  }
+  if (slopeDeg > 15) {
+    return "Zona undakan batuan dengan kemiringan sedang, cocok untuk observasi panorama kawah dan formasi mineral berlapis.";
+  }
+  return "Wilayah permukaan Mars dengan hamparan batuan beku basaltik dan sedimen kaya mineral yang aman untuk lintasan penjelajahan.";
 }
 
 function generateMartianGraticule(centerLon: number, centerLat: number): any {
@@ -237,6 +332,7 @@ function generateMartianGraticule(centerLon: number, centerLat: number): any {
 
 export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   currentSite = "gale_crater",
+  onChangeSite,
   activeLayers,
   layerOpacities = {
     layer_optical_geologic: 0.8,
@@ -251,14 +347,18 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   activeRoute,
   viewMode,
   pitch3D,
+  onTogglePitch,
   resetNorthTrigger,
   customPinCoords,
   theme = "dark",
   tileMode = "live_trek",
   orbitalSource = "jpl_hirise",
+  onChangeOrbitalSource,
   onWmtsStatusChange,
   dustStormActive = false,
   currentSol = 4180,
+  onSelectSol,
+  onNotification,
   // MMGIS
   activeMmgisTool = "none",
   onSelectMmgisTool,
@@ -286,6 +386,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   showFloatingLegend = true,
   onToggleFloatingLegend,
   reCenterTrigger = 0,
+  isAerialDockOpen = false,
+  showQuickStartBanner = false,
+  onCloseQuickStartBanner,
+  onLaunchSampleRoute,
   flyToCoord = null,
   aerialFlightTarget = null,
   onAerialFlightComplete,
@@ -296,6 +400,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
+  const effectiveSol = currentSite === "jezero_crater" ? Math.min(currentSol, 1220) : currentSol;
 
   const planeMarkerRef = useRef<Marker | null>(null);
 
@@ -308,9 +413,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const scrubMarkerRef = useRef<Marker | null>(null);
   const routeStartMarkerRef = useRef<Marker | null>(null);
   const routeTargetMarkerRef = useRef<Marker | null>(null);
+  const routeMilestoneMarkersRef = useRef<Marker[]>([]);
+  const routeBadgeMarkersRef = useRef<Marker[]>([]);
   const landmarkMarkersRef = useRef<Marker[]>([]);
+  const roverActiveMarkerRef = useRef<Marker | null>(null);
 
   const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState<boolean>(false);
+  const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
 
   // Live Cursor Telemetry & Scale Bar States
   const [cursorTelemetry, setCursorTelemetry] = useState<{
@@ -328,6 +440,41 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const t = useTranslations("mapViewer");
   const tMmgis = useTranslations("mmgis");
   const isDark = theme === "dark";
+
+  // Auto-close Place Card when inspector or aerial scout dock is opened
+  useEffect(() => {
+    if (isInspectorActive || isAerialDockOpen) {
+      setIdentifiedFeature(null);
+    }
+  }, [isInspectorActive, isAerialDockOpen]);
+
+  const isFirstMountRef = useRef<boolean>(true);
+  // Auto-sync Place Card with selectedWaypoint on user selection
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+    if (selectedWaypoint) {
+      const approxSlope = (selectedWaypoint as any).slopeDeg ?? getMartianSlope(selectedWaypoint.coordinates[0], selectedWaypoint.coordinates[1], currentSite);
+      setIdentifiedFeature({
+        name: selectedWaypoint.name,
+        category: selectedWaypoint.category.toUpperCase().replace("_", " "),
+        stratigraphicAge: selectedWaypoint.stratigraphicAge || (currentSite === "jezero_crater" ? "Noachian / Early Hesperian" : "Hesperian / Amazonian"),
+        elevationM: selectedWaypoint.elevationM,
+        slopeDeg: approxSlope,
+        mineralogy: selectedWaypoint.dominantHydratedMineral || (selectedWaypoint as any).dominantMineral || "Phyllosilicates / Clay-Sulfate",
+        coordinates: selectedWaypoint.coordinates,
+        associatedWaypoint: selectedWaypoint,
+        surfaceFirmness: selectedWaypoint.surfaceFirmness,
+        sandTrapRisk: selectedWaypoint.sandTrapRisk,
+        crustalMagneticFieldNt: selectedWaypoint.crustalMagneticFieldNt,
+        surfaceRadiationMSvSol: selectedWaypoint.surfaceRadiationMSvSol,
+        laymanDescription: getFeatureLaymanDescription(selectedWaypoint.name, selectedWaypoint.category, approxSlope),
+        temperatureRange: "-75°C s.d. -15°C",
+      });
+    }
+  }, [selectedWaypoint, currentSite]);
 
   // Fly to target mission site when switched
   useEffect(() => {
@@ -382,70 +529,69 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       style: {
         version: 8,
         sources: {
-          mars_openplanetary: {
-            type: "raster",
-            tiles: [
-              "https://cartocdn-gusc.global.ssl.fastly.net/opmbuilder/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "OpenPlanetary / CARTO / USGS Shaded Relief Basemap",
-            maxzoom: 18,
-          },
           mars_viking_basemap: {
             type: "raster",
             tiles: ["/api/mars-tiles/viking-mdim21/{z}/{y}/{x}"],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 7,
             attribution: "NASA / JPL / USGS Viking MDIM 2.1 Mosaic",
           },
           mars_ctx_gale: {
             type: "raster",
             tiles: ["/api/mars-tiles/gale-ctx/{z}/{y}/{x}"],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 12,
+            bounds: [136.2, -6.2, 138.8, -3.7],
             attribution: "NASA / JPL / MSSS (Gale CTX 6m Mosaic)",
           },
           mars_ctx_jezero: {
             type: "raster",
             tiles: ["/api/mars-tiles/jezero-ctx/{z}/{y}/{x}"],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 12,
+            bounds: [76.8, 17.6, 78.3, 19.1],
             attribution: "NASA / JPL / Caltech (Jezero CTX 6m Mosaic)",
           },
           mars_mola_shaded: {
             type: "raster",
             tiles: ["/api/mars-tiles/mola-clrshade/{z}/{y}/{x}"],
             tileSize: 256,
+            minzoom: 0,
+            maxzoom: 8,
             attribution: "NASA / GSFC / MOLA Team",
+          },
+          mars_themis_night: {
+            type: "raster",
+            tiles: ["/api/mars-tiles/themis-night-ir/{z}/{y}/{x}"],
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: 8,
+            attribution: "NASA / ASU / THEMIS IR Night Mosaic",
           },
         },
         layers: [
           {
             id: "background-mars-space",
             type: "background",
-            paint: { "background-color": isDark ? "#06080d" : "#e2e8f0" },
+            paint: { "background-color": "#07090e" },
           },
-          {
-            id: "mars-raster-openplanetary",
-            type: "raster",
-            source: "mars_openplanetary",
-            layout: {
-              visibility: "visible",
-            },
-            paint: {
-              "raster-opacity": 1.0,
-              "raster-contrast": 0.28,
-              "raster-saturation": 0.12,
-            },
-          },
+
           {
             id: "mars-raster-viking",
             type: "raster",
             source: "mars_viking_basemap",
             layout: {
-              visibility: tileMode === "live_trek" && orbitalSource !== "opm_basemap" ? "visible" : "none",
+              visibility: "visible",
             },
             paint: {
-              "raster-opacity": 0.9,
+              "raster-opacity": 1.0,
               "raster-contrast": 0.25,
               "raster-saturation": 0.15,
+              "raster-resampling": "linear",
+              "raster-fade-duration": 0,
             },
           },
           {
@@ -453,11 +599,27 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "raster",
             source: "mars_mola_shaded",
             layout: {
-              visibility: orbitalSource === "mola_hrsc" && tileMode === "live_trek" ? "visible" : "none",
+              visibility: orbitalSource === "mola_hrsc" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.85,
+              "raster-opacity": 0.95,
               "raster-contrast": 0.35,
+              "raster-resampling": "linear",
+              "raster-fade-duration": 0,
+            },
+          },
+          {
+            id: "mars-raster-themis-night",
+            type: "raster",
+            source: "mars_themis_night",
+            layout: {
+              visibility: orbitalSource === "themis_night" ? "visible" : "none",
+            },
+            paint: {
+              "raster-opacity": 0.95,
+              "raster-contrast": 0.30,
+              "raster-resampling": "linear",
+              "raster-fade-duration": 0,
             },
           },
           {
@@ -466,15 +628,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             source: "mars_ctx_gale",
             layout: {
               visibility:
-                orbitalSource === "jpl_hirise" &&
-                  currentSite === "gale_crater" &&
-                  tileMode === "live_trek"
+                (orbitalSource === "jpl_hirise" || !orbitalSource) &&
+                currentSite === "gale_crater"
                   ? "visible"
                   : "none",
             },
             paint: {
               "raster-opacity": 1.0,
               "raster-contrast": 0.25,
+              "raster-resampling": "linear",
+              "raster-fade-duration": 0,
             },
           },
           {
@@ -483,15 +646,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             source: "mars_ctx_jezero",
             layout: {
               visibility:
-                orbitalSource === "jpl_hirise" &&
-                  currentSite === "jezero_crater" &&
-                  tileMode === "live_trek"
+                (orbitalSource === "jpl_hirise" || !orbitalSource) &&
+                currentSite === "jezero_crater"
                   ? "visible"
                   : "none",
             },
             paint: {
               "raster-opacity": 1.0,
               "raster-contrast": 0.25,
+              "raster-resampling": "linear",
+              "raster-fade-duration": 0,
             },
           },
         ],
@@ -552,7 +716,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": ["get", "color"],
-          "fill-opacity": 0.10,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.10, 13, 0.02],
         },
       });
 
@@ -591,7 +755,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             "#dc2626",
             "#475569",
           ],
-          "line-width": 2,
+          "line-width":  1.5,
           "line-dasharray": [3, 2],
         },
       });
@@ -616,7 +780,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             "#ea580c",
             "#4f46e5",
           ],
-          "fill-opacity": 0.35,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.10, 13, 0.02],
         },
       });
 
@@ -630,7 +794,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": "#06b6d4",
-          "fill-opacity": 0.12,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.10, 13, 0.02],
         },
       });
 
@@ -644,7 +808,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
         paint: {
           "fill-color": "#8b5cf6",
-          "fill-opacity": 0.10,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.10, 13, 0.02],
         },
       });
 
@@ -667,7 +831,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "curiosity_landing_ellipse_source",
         paint: {
           "fill-color": "#38bdf8",
-          "fill-opacity": 0.08,
+          "fill-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0.08, 13, 0.02],
         },
       });
 
@@ -677,7 +841,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "curiosity_landing_ellipse_source",
         paint: {
           "line-color": "#38bdf8",
-          "line-width": 1.5,
+          "line-width":  1.5,
           "line-dasharray": [4, 4],
         },
       });
@@ -703,7 +867,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "curiosity_traverse_source",
         paint: {
           "line-color": "#07090e",
-          "line-width": 2.8,
+          "line-width": 3.5,
           "line-opacity": 0.35,
         },
       });
@@ -713,14 +877,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "line",
         source: "curiosity_traverse_source",
         paint: {
-          "line-color": "#94a3b8",
-          "line-width": 1.6,
+          "line-color": "#facc15",
+          "line-width": 2.2,
           "line-dasharray": [4, 4],
           "line-opacity": 0.55,
         },
       });
 
-      // Marswalk Route 3D Elevated Highway Source
+      // Marswalk Route 1 (Primary Safest Corridor) Source
       map.addSource("marswalk_route_source", {
         type: "geojson",
         data: {
@@ -729,68 +893,95 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         },
       });
 
-      // Layer 1: Ground Ambient Occlusion Shadow (Creates Elevated 3D Floating Effect)
-      map.addLayer({
-        id: "marswalk_route_shadow",
-        type: "line",
-        source: "marswalk_route_source",
-        paint: {
-          "line-color": "#000000",
-          "line-width": 14,
-          "line-offset": 4,
-          "line-blur": 6,
-          "line-opacity": 0.75,
+      // Marswalk Route 2 (Alternative Pass Corridor) Source
+      map.addSource("marswalk_route_alt_source", {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: [],
         },
       });
 
-      // Layer 2: 3D Outer Structural Tube Casing
+      // Alternative Route Dark Casing
+      map.addLayer({
+        id: "marswalk_route_alt_casing",
+        type: "line",
+        source: "marswalk_route_alt_source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#020617",
+          "line-width": 6.5,
+          "line-opacity": 0.95,
+        },
+      });
+
+      // Alternative Route Amber Dashed Spine
+      map.addLayer({
+        id: "marswalk_route_alt_line",
+        type: "line",
+        source: "marswalk_route_alt_source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#f59e0b",
+          "line-width": 4.0,
+          "line-dasharray": [3, 2],
+          "line-opacity": 0.9,
+        },
+      });
+
+      // Primary Route Dark Protective Casing (No offset / shadow to prevent black triangles)
       map.addLayer({
         id: "marswalk_route_casing",
         type: "line",
         source: "marswalk_route_source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
           "line-color": "#020617",
-          "line-width": 9.6,
+          "line-width": 8.0,
           "line-opacity": 1.0,
         },
       });
 
-      // Layer 3: 3D Luminous Core Corridor (Emerald Safe / Amber Caution / Red Hazard)
+      // Primary Route Emerald Luminous Core Corridor (#10b981)
       map.addLayer({
         id: "marswalk_route_core",
         type: "line",
         source: "marswalk_route_source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
           "line-color": [
             "coalesce",
             ["get", "color"],
             "#10b981"
           ],
-          "line-width": 5.8,
+          "line-width": 5.0,
         },
       });
 
-      // Layer 4: 3D Specular Highlight Spine (Cylindrical Glass / Chrome Gleam)
-      map.addLayer({
-        id: "marswalk_route_highlight",
-        type: "line",
-        source: "marswalk_route_source",
-        paint: {
-          "line-color": "#ffffff",
-          "line-width": 2.0,
-          "line-offset": -1.2,
-          "line-opacity": 0.9,
-        },
-      });
-
-      // Layer 5: Directional Dashed Lane Navigation Markers (Google Maps Highway aesthetic)
+      // Primary Route Directional Dashed Centerline
       map.addLayer({
         id: "marswalk_route_lane_dashed",
         type: "line",
         source: "marswalk_route_source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
           "line-color": "#ffffff",
-          "line-width": 1.4,
+          "line-width": 1.5,
           "line-dasharray": [2, 3],
           "line-opacity": 0.85,
         },
@@ -912,11 +1103,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         errText.includes("cors")
       ) {
         if (onWmtsStatusChange) onWmtsStatusChange("fallback");
-        ["mars-raster-ctx-gale", "mars-raster-ctx-jezero", "mars-raster-mola"].forEach((id) => {
-          if (map.getLayer(id)) {
-            map.setLayoutProperty(id, "visibility", "none");
-          }
-        });
+        // Do NOT hide raster layers - proxy route provides Viking MDIM 2.1 fallback
       }
     });
 
@@ -955,6 +1142,22 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     // Throttled Move & Scale Update
     let rafMoveId: number | null = null;
+    map.on("moveend", () => {
+      if (typeof window !== "undefined") {
+        const center = map.getCenter();
+        const zoom = Number(map.getZoom().toFixed(2));
+        const lat = Number(center.lat.toFixed(4));
+        const lng = Number(center.lng.toFixed(4));
+        const url = new URL(window.location.href);
+        url.searchParams.set("site", currentSite === "jezero_crater" ? "jezero" : "gale");
+        url.searchParams.set("lat", lat.toString());
+        url.searchParams.set("lng", lng.toString());
+        url.searchParams.set("z", zoom.toString());
+        url.searchParams.set("sol", currentSol.toString());
+        window.history.replaceState(null, "", url.toString());
+      }
+    });
+
     map.on("move", () => {
       if (rafMoveId) return;
       rafMoveId = requestAnimationFrame(() => {
@@ -980,10 +1183,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       if (rafMoveId) cancelAnimationFrame(rafMoveId);
       if (routeStartMarkerRef.current) routeStartMarkerRef.current.remove();
       if (routeTargetMarkerRef.current) routeTargetMarkerRef.current.remove();
+      if (roverActiveMarkerRef.current) roverActiveMarkerRef.current.remove();
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Timeline Autoplay Playback Loop (ATM MMGIS Sol scrubber)
+  useEffect(() => {
+    if (!isTimelinePlaying) return;
+    const maxSol = currentSite === "jezero_crater" ? 1220 : 4180;
+    const step = currentSite === "jezero_crater" ? 15 : 40;
+    const interval = setInterval(() => {
+      const nextSol = currentSol >= maxSol ? 0 : Math.min(maxSol, currentSol + step);
+      onSelectSol?.(nextSol);
+    }, 280);
+    return () => clearInterval(interval);
+  }, [isTimelinePlaying, currentSol, currentSite, onSelectSol]);
 
   // Fly to coordinate when triggered (e.g. from Navigation Turn-by-Turn Maneuvers)
   useEffect(() => {
@@ -1500,16 +1716,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    const isLive = tileMode === "live_trek";
-
-    // 0. OpenPlanetary Global Shaded Relief Basemap
-    if (map.getLayer("mars-raster-openplanetary")) {
-      map.setLayoutProperty("mars-raster-openplanetary", "visibility", "visible");
-    }
-
-    // 1. Viking MDIM 2.1 Basemap (always visible when live_trek is on)
+    // 1. Viking MDIM 2.1 Basemap (always visible as global underlay)
     if (map.getLayer("mars-raster-viking")) {
-      map.setLayoutProperty("mars-raster-viking", "visibility", isLive ? "visible" : "none");
+      map.setLayoutProperty("mars-raster-viking", "visibility", "visible");
     }
 
     // 2. MOLA Shaded Relief
@@ -1517,38 +1726,45 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setLayoutProperty(
         "mars-raster-mola",
         "visibility",
-        isLive && orbitalSource === "mola_hrsc" ? "visible" : "none"
+        orbitalSource === "mola_hrsc" ? "visible" : "none"
       );
     }
 
-    // 3. Gale CTX Mosaic (6m/px)
+    // 3. THEMIS Night IR
+    if (map.getLayer("mars-raster-themis-night")) {
+      map.setLayoutProperty(
+        "mars-raster-themis-night",
+        "visibility",
+        orbitalSource === "themis_night" ? "visible" : "none"
+      );
+    }
+
+    // 4. Gale CTX Mosaic (6m/px)
     if (map.getLayer("mars-raster-ctx-gale")) {
       map.setLayoutProperty(
         "mars-raster-ctx-gale",
         "visibility",
-        isLive &&
-          currentSite === "gale_crater" &&
-          orbitalSource === "jpl_hirise"
+        (orbitalSource === "jpl_hirise" || !orbitalSource) &&
+          currentSite === "gale_crater"
           ? "visible"
           : "none"
       );
     }
 
-    // 4. Jezero CTX Mosaic (6m/px)
+    // 5. Jezero CTX Mosaic (6m/px)
     if (map.getLayer("mars-raster-ctx-jezero")) {
       map.setLayoutProperty(
         "mars-raster-ctx-jezero",
         "visibility",
-        isLive &&
-          currentSite === "jezero_crater" &&
-          orbitalSource === "jpl_hirise"
+        (orbitalSource === "jpl_hirise" || !orbitalSource) &&
+          currentSite === "jezero_crater"
           ? "visible"
           : "none"
       );
     }
   }, [orbitalSource, tileMode, currentSite, mapLoaded]);
 
-  // Sync Rover Historical Traverse (Curiosity vs Perseverance) Visibility & Coordinates
+  // Sync Rover Historical Traverse (Curiosity vs Perseverance) Visibility, Coordinates & Sol Scrubber
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
@@ -1556,18 +1772,53 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     const vis = showRoverTraverse ? "visible" : "none";
     const isGale = currentSite === "gale_crater";
 
-    // Update rover traverse GeoJSON data based on active mission site
+    // 1. Update rover traverse LineString filtered by currentSol (ATM MMGIS trimLineString)
     const source = map.getSource("curiosity_traverse_source") as maplibregl.GeoJSONSource | undefined;
+    const activeTraverse = getRoverTraverseForSite(currentSite);
+    const filteredPoints = activeTraverse.filter((p) => p.sol <= effectiveSol);
+    const coordinates = filteredPoints.length > 0
+      ? filteredPoints.map((p) => p.coordinates)
+      : (activeTraverse.length > 0 ? [activeTraverse[0].coordinates] : []);
+
     if (source) {
-      const activeTraverse = getRoverTraverseForSite(currentSite);
       source.setData({
         type: "Feature",
         properties: { name: `${currentSite} Rover Historical Traverse` },
         geometry: {
           type: "LineString",
-          coordinates: activeTraverse.map((p) => p.coordinates),
+          coordinates,
         },
       });
+    }
+
+    // 2. Active Rover Vehicle Marker Pin at currentSol position
+    const currentPoint = [...activeTraverse].reverse().find((p) => p.sol <= effectiveSol) || activeTraverse[0];
+    if (currentPoint) {
+      if (!roverActiveMarkerRef.current) {
+        const roverEl = document.createElement("div");
+        roverEl.className = "select-none pointer-events-none";
+        roverEl.innerHTML = `
+          <div class="relative flex flex-col items-center -translate-y-2">
+            <div class="w-6 h-6 rounded-full bg-[#facc15] border-2 border-[#07090e] flex items-center justify-center shadow-[0_0_12px_rgba(250,204,21,0.9)] animate-pulse">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#07090e">
+                <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+              </svg>
+            </div>
+            <div class="mt-1 px-1.5 py-0.5 bg-[#07090e] border border-yellow-400 text-yellow-300 font-mono text-[8px] font-bold tracking-wider whitespace-nowrap shadow-md">
+              ${currentSite === "jezero_crater" ? "PERSEVERANCE" : "CURIOSITY"} // SOL ${effectiveSol}
+            </div>
+          </div>
+        `;
+        roverActiveMarkerRef.current = new maplibregl.Marker({ element: roverEl })
+          .setLngLat(currentPoint.coordinates)
+          .addTo(map);
+      } else {
+        roverActiveMarkerRef.current.setLngLat(currentPoint.coordinates);
+        const labelEl = roverActiveMarkerRef.current.getElement().querySelector("div.mt-1");
+        if (labelEl) {
+          labelEl.textContent = `${currentSite === "jezero_crater" ? "PERSEVERANCE" : "CURIOSITY"} // SOL ${effectiveSol}`;
+        }
+      }
     }
 
     // Landing ellipse only displayed for Gale Crater (Bradbury Landing)
@@ -1588,7 +1839,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       const el = m.getElement();
       if (el) el.style.display = showRoverTraverse ? "block" : "none";
     });
-  }, [showRoverTraverse, currentSite, mapLoaded]);
+  }, [showRoverTraverse, currentSite, currentSol, mapLoaded]);
 
   // Sync MMGIS Graticule Grid Layer
   useEffect(() => {
@@ -1615,54 +1866,63 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     if (!map || !map.isStyleLoaded()) return;
 
     const source = map.getSource("marswalk_route_source") as maplibregl.GeoJSONSource | undefined;
+    const altSource = map.getSource("marswalk_route_alt_source") as maplibregl.GeoJSONSource | undefined;
     const dotsSource = map.getSource("marswalk_route_dots_source") as maplibregl.GeoJSONSource | undefined;
     if (!source) return;
 
+    // Remove previous dynamic markers
+    routeMilestoneMarkersRef.current.forEach((m) => m.remove());
+    routeMilestoneMarkersRef.current = [];
+    routeBadgeMarkersRef.current.forEach((m) => m.remove());
+    routeBadgeMarkersRef.current = [];
+
     if (activeRoute && activeRoute.pathCoordinates.length > 1) {
-      const features: any[] = [];
-
-      if (activeRoute.segments && activeRoute.segments.length > 0) {
-        // Individual multi-hazard colored segments
-        activeRoute.segments.forEach((seg) => {
-          const isHazard = seg.sandTrapRisk === "HIGH" || seg.slopeDeg > 22 || seg.isHazardWarning;
-          const isCaution = seg.slopeDeg > 15 || seg.sandTrapRisk === "MODERATE";
-          const color = isHazard ? "#ef4444" : isCaution ? "#f59e0b" : "#10b981";
-
-          features.push({
+      // 1. Populate Primary Route with high-resolution continuous Catmull-Rom spline (85+ coordinates)
+      source.setData({
+        type: "FeatureCollection",
+        features: [
+          {
             type: "Feature",
             properties: {
-              segmentIndex: seg.segmentIndex,
-              slopeDeg: seg.slopeDeg,
-              hazard: isHazard ? "HAZARD" : isCaution ? "CAUTION" : "SAFE",
-              color,
+              color: "#10b981",
+              name: "RUTE TERAMAN (UTAMA)",
             },
             geometry: {
               type: "LineString",
-              coordinates: [seg.fromCoordinate, seg.toCoordinate],
+              coordinates: activeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
             },
-          });
-        });
-      } else {
-        // Fallback continuous line
-        features.push({
-          type: "Feature",
-          properties: {
-            color: "#10b981",
-            hazard: "SAFE",
           },
-          geometry: {
-            type: "LineString",
-            coordinates: activeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
-          },
-        });
-      }
-
-      source.setData({
-        type: "FeatureCollection",
-        features,
+        ],
       } as any);
 
-      // Populate 5m high-density sampling nodes (Image 2 MMGIS standard)
+      // 2. Populate Alternative Route (Route 2 - Dashed Amber)
+      if (altSource) {
+        if (activeRoute.alternativeRoute && activeRoute.alternativeRoute.pathCoordinates.length > 1) {
+          altSource.setData({
+            type: "FeatureCollection",
+            features: [
+              {
+                type: "Feature",
+                properties: {
+                  color: "#f59e0b",
+                  name: activeRoute.alternativeRoute.label,
+                },
+                geometry: {
+                  type: "LineString",
+                  coordinates: activeRoute.alternativeRoute.pathCoordinates.map((c) => [c[0], c[1]]),
+                },
+              },
+            ],
+          } as any);
+        } else {
+          altSource.setData({
+            type: "FeatureCollection",
+            features: [],
+          } as any);
+        }
+      }
+
+      // 3. Populate 5m high-density sampling nodes (Image 2 MMGIS standard)
       if (dotsSource) {
         if (activeRoute.highDensityRoutePoints && activeRoute.highDensityRoutePoints.length > 0) {
           dotsSource.setData({
@@ -1696,7 +1956,69 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         }
       }
 
-      // Render 3D Holographic Start & Target Beacon Markers
+      // 4. Render Floating Midpoint Badges (Google Maps Directions aesthetic)
+      // Primary Route Badge (Safe Route)
+      const midIdx = Math.floor(activeRoute.pathCoordinates.length / 2);
+      const primaryMid = activeRoute.pathCoordinates[midIdx];
+      const maxSlope = activeRoute.safetyRationale?.slopeAnalysis?.maxSlopeDeg?.toFixed(1) || "7.2";
+      const primaryBadgeEl = document.createElement("div");
+      primaryBadgeEl.className = "select-none pointer-events-auto cursor-pointer";
+      primaryBadgeEl.innerHTML = `
+        <div class="px-2.5 py-1 bg-[#064e3b]/95 border-2 border-[#10b981] text-[#34d399] font-mono font-bold text-[9px] shadow-[0_4px_16px_rgba(16,185,129,0.7)] flex items-center gap-1.5 whitespace-nowrap -translate-y-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+          <span>RUTE AMAN • ${activeRoute.totalDistanceKm} KM • LERENG MAKS ${maxSlope}°</span>
+        </div>
+      `;
+      const primaryMarker = new maplibregl.Marker({ element: primaryBadgeEl })
+        .setLngLat([primaryMid[0], primaryMid[1]])
+        .addTo(map);
+      routeBadgeMarkersRef.current.push(primaryMarker);
+
+      // Alternative Route Badge
+      if (activeRoute.alternativeRoute && activeRoute.alternativeRoute.pathCoordinates.length > 1) {
+        const altMidIdx = Math.floor(activeRoute.alternativeRoute.pathCoordinates.length / 2);
+        const altMid = activeRoute.alternativeRoute.pathCoordinates[altMidIdx];
+        const altBadgeEl = document.createElement("div");
+        altBadgeEl.className = "select-none pointer-events-auto cursor-pointer";
+        altBadgeEl.innerHTML = `
+          <div class="px-2.5 py-1 bg-[#78350f]/95 border-2 border-[#f59e0b] text-[#fde68a] font-mono font-bold text-[9px] shadow-[0_4px_16px_rgba(245,158,11,0.7)] flex items-center gap-1.5 whitespace-nowrap -translate-y-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+            <span>${activeRoute.alternativeRoute.label} • ${activeRoute.alternativeRoute.sublabel}</span>
+          </div>
+        `;
+        const altMarker = new maplibregl.Marker({ element: altBadgeEl })
+          .setLngLat([altMid[0], altMid[1]])
+          .addTo(map);
+        routeBadgeMarkersRef.current.push(altMarker);
+      }
+
+      // 5. Render Maneuver Milestones (Turn and Terrain Guidance Badges)
+      if (activeRoute.maneuverMilestones && activeRoute.maneuverMilestones.length > 0) {
+        activeRoute.maneuverMilestones.forEach((m) => {
+          const el = document.createElement("div");
+          el.className = "select-none pointer-events-auto cursor-pointer";
+          const bgClass =
+            m.type === "TURN"
+              ? "bg-[#0b1329] text-[#60a5fa] border-[#3b82f6]"
+              : m.type === "CAUTION"
+              ? "bg-[#2d1b06] text-[#fbbf24] border-[#f59e0b]"
+              : "bg-[#062e1e] text-[#34d399] border-[#10b981]";
+          el.innerHTML = `
+            <div class="flex flex-col items-center -translate-y-4">
+              <div class="px-2 py-0.5 ${bgClass} border text-[9px] font-mono font-bold whitespace-nowrap shadow-md tracking-wider">
+                ${m.label}
+              </div>
+              <div class="w-1.5 h-1.5 rotate-45 border-r border-b ${m.type === 'TURN' ? 'border-[#3b82f6] bg-[#0b1329]' : m.type === 'CAUTION' ? 'border-[#f59e0b] bg-[#2d1b06]' : 'border-[#10b981] bg-[#062e1e]'} -mt-1"></div>
+            </div>
+          `;
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(m.coordinates)
+            .addTo(map);
+          routeMilestoneMarkersRef.current.push(marker);
+        });
+      }
+
+      // 6. Render 3D Holographic Start & Target Beacon Markers
       if (routeStartMarkerRef.current) {
         routeStartMarkerRef.current.remove();
         routeStartMarkerRef.current = null;
@@ -1755,10 +2077,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             [maxLon, maxLat],
           ],
           {
-            padding: { top: 90, bottom: 200, left: isLeftDrawerOpen ? 430 : 90, right: 90 },
+            padding: { top: 90, bottom: 200, left: 100, right: 100 },
             maxZoom: 15.0,
             duration: 900,
-            pitch: 48, // 3D elevated highway perspective
+            pitch: 48,
           }
         );
       }
@@ -1776,6 +2098,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         type: "FeatureCollection",
         features: [],
       });
+      if (altSource) {
+        altSource.setData({
+          type: "FeatureCollection",
+          features: [],
+        });
+      }
       if (dotsSource) {
         dotsSource.setData({
           type: "FeatureCollection",
@@ -1783,9 +2111,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         });
       }
     }
-  }, [activeRoute, isLeftDrawerOpen, mapLoaded]);
-
-  // Synchronized Scrubbing Cursor Marker along Route (NASA MMGIS Ref 4)
+  }, [activeRoute, mapLoaded]);  // Synchronized Scrubbing Cursor Marker along Route (NASA MMGIS Ref 4)
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -1887,6 +2213,23 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectWaypoint(wp);
+        const approxSlope = (wp as any).slopeDeg ?? getMartianSlope(wp.coordinates[0], wp.coordinates[1], currentSite);
+        setIdentifiedFeature({
+          name: wp.name,
+          category: wp.category.toUpperCase().replace("_", " "),
+          stratigraphicAge: wp.stratigraphicAge || (currentSite === "jezero_crater" ? "Noachian / Early Hesperian" : "Hesperian / Amazonian"),
+          elevationM: wp.elevationM,
+          slopeDeg: approxSlope,
+          mineralogy: wp.dominantHydratedMineral || (wp as any).dominantMineral || "Phyllosilicates / Clay-Sulfate",
+          coordinates: wp.coordinates,
+          associatedWaypoint: wp,
+          surfaceFirmness: wp.surfaceFirmness,
+          sandTrapRisk: wp.sandTrapRisk,
+          crustalMagneticFieldNt: wp.crustalMagneticFieldNt,
+          surfaceRadiationMSvSol: wp.surfaceRadiationMSvSol,
+          laymanDescription: getFeatureLaymanDescription(wp.name, wp.category, approxSlope),
+          temperatureRange: "-75°C s.d. -15°C",
+        });
         map.flyTo({ center: wp.coordinates, zoom: 12.8, duration: 600 });
       });
 
@@ -2180,126 +2523,394 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </div>
       )}
 
-      {/* In-Map MMGIS Feature Identifier Popover */}
-      {/* Interactive Waypoint & Feature Hub Inspector Card (Google Maps / NASA Mars Trek Standard) */}
-      {identifiedFeature && isInspectorActive && !isLeftDrawerOpen && (
-        <div
-          className={`absolute top-14 z-40 w-96 max-w-[calc(100vw-3rem)] border font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)] transition-all duration-200 ${
-            isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
-          } bg-[#0b0f17] border-slate-700 text-slate-200`}
+      {/* 1. Google Maps Style Clean Search Bar & 1-Click Shortcuts (Top-Left) */}
+      <div className="absolute top-3 left-4 z-30 flex flex-col gap-1.5 select-none">
+        <div className="relative flex items-center w-72 sm:w-96 bg-[#07090e] border border-slate-700 shadow-xl">
+          <div className="pl-3 pr-2 text-slate-400">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            placeholder={t("searchPlaceholder")}
+            className="w-full py-1.5 bg-transparent text-slate-200 font-mono text-[11px] placeholder:text-slate-500 focus:outline-none"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => {
+                setSearchQuery("");
+                setIsSearchFocused(false);
+              }}
+              className="px-2 text-slate-400 hover:text-white text-xs font-mono"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* 1-Click Location Shortcut Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-xl pb-1 scrollbar-none">
+          {SEARCH_SHORTCUTS.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => {
+                if (item.site !== currentSite && onChangeSite) {
+                  onChangeSite(item.site);
+                }
+                const map = mapRef.current;
+                if (map) {
+                  map.flyTo({ center: item.coords, zoom: item.zoom, duration: 1200 });
+                }
+                const elev = getMartianElevation(item.coords[0], item.coords[1], item.site);
+                const slope = getMartianSlope(item.coords[0], item.coords[1], item.site);
+                setIdentifiedFeature({
+                  name: item.name,
+                  category: "MARTIAN LANDMARK",
+                  stratigraphicAge: "Martian Geologic Landmark",
+                  elevationM: elev,
+                  slopeDeg: slope,
+                  mineralogy: "Regional Mars Bedrock Formation",
+                  coordinates: item.coords,
+                  surfaceFirmness: elev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+                  sandTrapRisk: elev > -4100 ? "LOW" : "HIGH",
+                  crustalMagneticFieldNt: 38,
+                  surfaceRadiationMSvSol: 0.65,
+                  laymanDescription: item.desc,
+                  temperatureRange: "-80°C s.d. -10°C",
+                });
+                setIsSearchFocused(false);
+              }}
+              className="shrink-0 px-2.5 py-1 bg-[#0b0f17]/95 hover:bg-[#111827] border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 font-mono text-[9px] font-bold tracking-wider transition-colors shadow-md"
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Novelty Quick Start Navigation Guide stacked neatly below search bar */}
+        {!activeRoute && showQuickStartBanner && (
+          <div className="mt-1 px-3 py-1.5 bg-[#07090e]/95 border border-emerald-500/80 shadow-2xl flex items-center gap-3 font-mono text-[10px] select-none max-w-fit">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-bold shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{t("quickStartTitle")}</span>
+            </div>
+            <span className="text-slate-700">|</span>
+            <button
+              onClick={() => onLaunchSampleRoute?.()}
+              className="px-2 py-0.5 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors whitespace-nowrap"
+            >
+              {t("quickStartSimGale")}
+            </button>
+            <button
+              onClick={() => {
+                onChangeSite?.("jezero_crater");
+                onCloseQuickStartBanner?.();
+              }}
+              className="px-2 py-0.5 bg-[#161e2e] hover:bg-[#1f2937] text-cyan-300 border border-slate-700 font-bold text-[9px] transition-colors whitespace-nowrap"
+            >
+              {t("quickStartToJezero")}
+            </button>
+            <button
+              onClick={() => onCloseQuickStartBanner?.()}
+              className="text-slate-500 hover:text-white text-xs px-1"
+              title={t("quickStartClose")}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Autocomplete Dropdown */}
+        {isSearchFocused && searchQuery.trim().length > 0 && (
+          <div className="w-72 sm:w-96 max-h-56 overflow-y-auto bg-[#07090e] border border-slate-700 shadow-2xl divide-y divide-slate-800 font-mono text-[10px]">
+            {SEARCH_SHORTCUTS.filter((sc) =>
+              sc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              sc.desc.toLowerCase().includes(searchQuery.toLowerCase())
+            ).map((res) => (
+              <div
+                key={res.name}
+                onMouseDown={() => {
+                  if (res.site !== currentSite && onChangeSite) {
+                    onChangeSite(res.site);
+                  }
+                  const map = mapRef.current;
+                  if (map) {
+                    map.flyTo({ center: res.coords, zoom: res.zoom, duration: 1200 });
+                  }
+                  const elev = getMartianElevation(res.coords[0], res.coords[1], res.site);
+                  const slope = getMartianSlope(res.coords[0], res.coords[1], res.site);
+                  setIdentifiedFeature({
+                    name: res.name,
+                    category: "MARTIAN LANDMARK",
+                    stratigraphicAge: "Martian Geologic Landmark",
+                    elevationM: elev,
+                    slopeDeg: slope,
+                    mineralogy: "Regional Mars Bedrock Formation",
+                    coordinates: res.coords,
+                    surfaceFirmness: elev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+                    sandTrapRisk: elev > -4100 ? "LOW" : "HIGH",
+                    crustalMagneticFieldNt: 38,
+                    surfaceRadiationMSvSol: 0.65,
+                    laymanDescription: res.desc,
+                    temperatureRange: "-80°C s.d. -10°C",
+                  });
+                  setSearchQuery("");
+                  setIsSearchFocused(false);
+                }}
+                className="p-2.5 hover:bg-[#111827] cursor-pointer"
+              >
+                <div className="text-cyan-300 font-bold">{res.name}</div>
+                <div className="text-slate-400 text-[8px] line-clamp-1">{res.desc}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 2. 1-Click Map Style Switcher (Bottom-Left ala Google Maps) */}
+      <div
+        className={`absolute bottom-16 z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${
+          isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
+        }`}
+      >
+        <button
+          onClick={() => onChangeOrbitalSource?.("jpl_hirise")}
+          className={`px-3 py-1.5 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
+            orbitalSource === "jpl_hirise" || !orbitalSource
+              ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
+              : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
+          }`}
+          title="Citra Satelit Resolusi Tinggi NASA Mars Trek"
         >
-          {/* Header */}
-          <div className="h-8 px-3 bg-[#07090e] flex items-center justify-between border-b border-slate-700 text-[10px] font-bold uppercase tracking-wider">
-            <span className="flex items-center gap-1.5 text-cyan-400">
+          {t("styleSatellite")}
+        </button>
+        <button
+          onClick={() => onChangeOrbitalSource?.("mola_hrsc")}
+          className={`px-3 py-1.5 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
+            orbitalSource === "mola_hrsc"
+              ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
+              : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
+          }`}
+          title="Topografi Elevasi MOLA Global Mars"
+        >
+          {t("styleElevation")}
+        </button>
+        <button
+          onClick={() => onChangeOrbitalSource?.("themis_night")}
+          className={`px-3 py-1.5 font-mono text-[9px] font-bold transition-colors ${
+            orbitalSource === "themis_night"
+              ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
+              : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
+          }`}
+          title="Inframerah Termal Malam Mars Odyssey THEMIS"
+        >
+          {t("styleThermal")}
+        </button>
+      </div>
+
+      {/* 3. Google Maps Vertical Navigation Controls (Bottom-Right) */}
+      <div className="absolute bottom-16 right-4 z-20 flex flex-col bg-[#07090e] border border-slate-700 shadow-2xl select-none font-mono">
+        <button
+          onClick={() => mapRef.current?.zoomIn()}
+          className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-[#111827] border-b border-slate-800 text-sm font-bold transition-colors"
+          title={t("zoomIn")}
+        >
+          +
+        </button>
+        <button
+          onClick={() => mapRef.current?.zoomOut()}
+          className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-[#111827] border-b border-slate-800 text-sm font-bold transition-colors"
+          title={t("zoomOut")}
+        >
+          −
+        </button>
+        <button
+          onClick={() => mapRef.current?.easeTo({ bearing: 0, duration: 400 })}
+          className="w-8 h-8 flex items-center justify-center text-cyan-400 hover:text-cyan-200 hover:bg-[#111827] border-b border-slate-800 text-[10px] font-bold transition-colors"
+          title={t("resetNorth")}
+        >
+          N
+        </button>
+        <button
+          onClick={() => onTogglePitch?.()}
+          className={`w-8 h-8 flex items-center justify-center border-b border-slate-800 text-[10px] font-bold transition-colors ${
+            pitch3D ? "bg-amber-950/80 text-amber-300" : "text-slate-300 hover:text-white hover:bg-[#111827]"
+          }`}
+          title={t("toggle3d")}
+        >
+          3D
+        </button>
+        <button
+          onClick={() => {
+            const activeTraverse = getRoverTraverseForSite(currentSite);
+            const currentPoint = [...activeTraverse].reverse().find((p) => p.sol <= effectiveSol) || activeTraverse[0];
+            if (currentPoint && mapRef.current) {
+              mapRef.current.flyTo({ center: currentPoint.coordinates, zoom: 14.5, duration: 900 });
+            }
+          }}
+          className="w-8 h-8 flex items-center justify-center text-yellow-400 hover:text-yellow-200 hover:bg-[#111827] text-[8px] font-bold transition-colors"
+          title={t("focusRover")}
+        >
+          ROVER
+        </button>
+      </div>
+
+      {/* 4. Sol Timeline Scrubber (ATM MMGIS Sol Slider) */}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 shadow-2xl select-none font-mono text-[10px]">
+        <button
+          onClick={() => setIsTimelinePlaying(!isTimelinePlaying)}
+          className={`px-2 py-1 font-bold text-[9px] border transition-colors ${
+            isTimelinePlaying
+              ? "bg-amber-950 text-amber-300 border-amber-500"
+              : "bg-[#111827] text-slate-200 border-slate-600 hover:text-white"
+          }`}
+          title={isTimelinePlaying ? t("pauseTimeline") : t("playTimeline")}
+        >
+          {isTimelinePlaying ? "❚❚" : "▶"}
+        </button>
+
+        <div className="flex items-center gap-1 font-bold">
+          <span className="text-slate-400">{t("solTimeline")}:</span>
+          <span className="text-yellow-400 tabular-nums font-bold">
+            SOL {effectiveSol}
+          </span>
+          <span className="text-slate-500 text-[8px]">
+            / {currentSite === "jezero_crater" ? "1220" : "4180"}
+          </span>
+        </div>
+
+        <input
+          type="range"
+          min={0}
+          max={currentSite === "jezero_crater" ? 1220 : 4180}
+          value={effectiveSol}
+          onChange={(e) => onSelectSol?.(Number(e.target.value))}
+          className="w-32 sm:w-48 h-1.5 bg-slate-800 rounded-none appearance-none cursor-pointer accent-yellow-400"
+        />
+
+        <button
+          onClick={() => onSelectSol?.(Math.max(0, currentSol - (currentSite === "jezero_crater" ? 20 : 50)))}
+          className="px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 hover:text-white text-[8px]"
+          title="Mundur Sol"
+        >
+          -
+        </button>
+        <button
+          onClick={() => onSelectSol?.(Math.min(currentSite === "jezero_crater" ? 1220 : 4180, currentSol + (currentSite === "jezero_crater" ? 20 : 50)))}
+          className="px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 hover:text-white text-[8px]"
+          title="Maju Sol"
+        >
+          +
+        </button>
+      </div>
+
+      {/* 5. Google Maps Style Friendly Place Card */}
+      {identifiedFeature && (
+        <div className="absolute top-36 sm:top-40 left-4 z-40 w-80 sm:w-96 max-w-[calc(100vw-3rem)] border border-slate-700 bg-[#07090e] text-slate-200 font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)]">
+          {/* Card Header */}
+          <div className="h-9 px-3 bg-[#0b0f17] flex items-center justify-between border-b border-slate-700 text-[10px] font-bold">
+            <span className="flex items-center gap-1.5 text-cyan-400 truncate">
               <span className="w-2 h-2 bg-cyan-400 shrink-0" />
-              <span>POINT INSPECTOR // {identifiedFeature.category}</span>
+              <span className="truncate">{identifiedFeature.category}</span>
             </span>
             <button
               onClick={() => setIdentifiedFeature(null)}
               className="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold"
-              title="Close Inspector"
+              title="Tutup Kartu"
             >
               ✕
             </button>
           </div>
 
-          {/* Feature Attributes Table */}
-          <div className="p-3.5 space-y-3 text-[10px] bg-[#0b0f17]">
-            <div className="bg-[#111827] p-2.5 border border-slate-700">
-              <div className="text-[9px] text-slate-300 uppercase font-bold tracking-wider">LOCATION &amp; GEOLOGY</div>
-              <div className="text-amber-400 font-bold text-xs truncate mt-0.5">{identifiedFeature.name}</div>
-              <div className="text-[10px] text-slate-300 font-medium mt-0.5">{identifiedFeature.stratigraphicAge}</div>
+          {/* Card Body */}
+          <div className="p-3.5 space-y-3 bg-[#07090e]">
+            <div>
+              <div className="text-amber-400 font-bold text-sm leading-tight">
+                {identifiedFeature.name}
+              </div>
+              <p className="mt-1.5 text-slate-300 text-[11px] leading-relaxed font-sans">
+                {identifiedFeature.laymanDescription ||
+                  getFeatureLaymanDescription(
+                    identifiedFeature.name,
+                    identifiedFeature.category,
+                    identifiedFeature.slopeDeg
+                  )}
+              </p>
             </div>
 
-            {/* Metrics Matrix */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#111827] p-2 border border-slate-700">
-                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">MOLA ELEVATION</span>
-                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-0.5">
-                  {identifiedFeature.elevationM > 0 ? `+${identifiedFeature.elevationM}` : identifiedFeature.elevationM} m
+            {/* Safety & Physical Attributes */}
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+                  KESELAMATAN JALAN
+                </span>
+                <span
+                  className={`inline-block mt-1 px-1.5 py-0.5 font-bold text-[9px] border ${
+                    identifiedFeature.slopeDeg < 15
+                      ? "bg-emerald-950 text-emerald-300 border-emerald-500"
+                      : identifiedFeature.slopeDeg < 25
+                      ? "bg-amber-950 text-amber-300 border-amber-500"
+                      : "bg-red-950 text-red-300 border-red-500"
+                  }`}
+                >
+                  {identifiedFeature.slopeDeg < 15
+                    ? t("statusSafe")
+                    : identifiedFeature.slopeDeg < 25
+                    ? t("statusCaution")
+                    : t("statusHazard")}{" "}
+                  ({identifiedFeature.slopeDeg.toFixed(1)}°)
                 </span>
               </div>
-              <div className="bg-[#111827] p-2 border border-slate-700">
-                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">SLOPE / LERENG</span>
-                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-0.5">
-                  {identifiedFeature.slopeDeg.toFixed(1)}°{" "}
-                  <span className={`text-[8px] font-bold ${
-                    identifiedFeature.slopeDeg < 15 ? "text-emerald-400" : identifiedFeature.slopeDeg < 25 ? "text-amber-400" : "text-red-400"
-                  }`}>
-                    [{identifiedFeature.slopeDeg < 15 ? "SAFE <15°" : identifiedFeature.slopeDeg < 25 ? "CAUTION" : "HAZARD"}]
-                  </span>
+
+              <div className="p-2 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+                  ELEVASI MOLA
+                </span>
+                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-1">
+                  {identifiedFeature.elevationM > 0
+                    ? `+${identifiedFeature.elevationM}`
+                    : identifiedFeature.elevationM}{" "}
+                  m
+                </span>
+              </div>
+
+              <div className="p-2 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+                  SUHU PERMUKAAN
+                </span>
+                <span className="text-cyan-300 font-mono font-bold text-[10px] tabular-nums block mt-1">
+                  {identifiedFeature.temperatureRange || "-75°C s.d. -15°C"}
+                </span>
+              </div>
+
+              <div className="p-2 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+                  KONDISI BATUAN
+                </span>
+                <span className="text-slate-200 font-mono font-bold text-[9px] truncate block mt-1">
+                  {identifiedFeature.surfaceFirmness ||
+                    (identifiedFeature.elevationM > -4100
+                      ? "BEDROCK FIRM"
+                      : "SOFT SAND TRAP")}
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#111827] p-2 border border-slate-700">
-                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">GROUND FIRMNESS</span>
-                <span className={`text-[9px] font-bold block mt-0.5 ${
-                  (identifiedFeature.surfaceFirmness ?? "BEDROCK FIRM") === "BEDROCK FIRM"
-                    ? "text-emerald-400"
-                    : (identifiedFeature.surfaceFirmness ?? "") === "MODERATE COMPACTION"
-                    ? "text-amber-400"
-                    : "text-red-400"
-                }`}>
-                  [{identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK")}]
-                </span>
+            {copyFeedback && (
+              <div className="px-2 py-1 bg-emerald-950 border border-emerald-500 text-emerald-300 font-mono text-[9px] font-bold text-center">
+                {t("linkCopied")}
               </div>
-              <div className="bg-[#111827] p-2 border border-slate-700">
-                <span className="text-[8px] text-slate-300 uppercase tracking-wider block font-bold">MAG SHIELDING</span>
-                <span className="text-purple-300 font-mono font-bold text-xs tabular-nums block mt-0.5">
-                  {identifiedFeature.crustalMagneticFieldNt ?? 38} nT
-                </span>
-              </div>
-            </div>
+            )}
 
-            <div className="bg-[#111827] p-2 border border-slate-700 flex justify-between items-center text-[10px]">
-              <span className="text-slate-300 uppercase font-bold tracking-wider">COORDINATES:</span>
-              <span className="text-white font-mono font-bold tabular-nums">
-                Lat {identifiedFeature.coordinates[1].toFixed(4)}°, Lon {identifiedFeature.coordinates[0].toFixed(4)}°
-              </span>
-            </div>
-
-            <div className="bg-[#111827] p-2 border border-slate-700">
-              <span className="text-[8px] text-slate-300 uppercase block font-bold tracking-wider">HYDRATED MINERALOGY:</span>
-              <span className="text-cyan-300 font-bold text-[10px] truncate block mt-0.5">
-                {identifiedFeature.mineralogy}
-              </span>
-            </div>
-
-            {/* ACTION FEATURE MENU: WHAT CAN BE ACCESSED FROM THIS POINT */}
-            <div className="pt-2 border-t border-slate-700 space-y-2">
-              <span className="text-[8px] text-slate-300 uppercase font-bold tracking-wider block">
-                AVAILABLE ACTIONS &amp; ANALYSIS:
-              </span>
-
-              {/* PRIMARY ACTION: PLAN SAFE ROUTE HERE */}
-              <button
-                onClick={() => {
-                  const targetWp = identifiedFeature.associatedWaypoint || ({
-                    id: `custom_pt_${Date.now()}`,
-                    name: identifiedFeature.name,
-                    coordinates: identifiedFeature.coordinates,
-                    elevationM: identifiedFeature.elevationM,
-                    category: "custom_user_pov",
-                    slopeDeg: identifiedFeature.slopeDeg,
-                    surfaceFirmness: identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK"),
-                    sandTrapRisk: identifiedFeature.sandTrapRisk || (identifiedFeature.elevationM > -4100 ? "LOW" : "HIGH"),
-                    crustalMagneticFieldNt: identifiedFeature.crustalMagneticFieldNt || 38,
-                    surfaceRadiationMSvSol: identifiedFeature.surfaceRadiationMSvSol || 0.65,
-                    dominantMineral: identifiedFeature.mineralogy,
-                  } as unknown as MountSharpWaypoint);
-
-                  onPlanRouteToWaypoint?.(targetWp);
-                }}
-                className="w-full py-2 px-3 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[11px] tracking-wider transition-colors flex items-center justify-center gap-2"
-              >
-                <span>[ {tMmgis("planRouteHere")} ]</span>
-              </button>
-
-              {/* SECONDARY ACTION BUTTONS */}
-              <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                {/* 360 POV (Only enabled if the coordinate actually has a 360 panorama) */}
+            {/* 4 Action Buttons */}
+            <div className="space-y-1.5 pt-1 border-t border-slate-800">
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* 1. LIHAT FOTO 360° */}
                 {identifiedFeature.associatedWaypoint &&
                 (identifiedFeature.associatedWaypoint.has360Pov ||
                   (identifiedFeature.associatedWaypoint as any).customPanoramaUrl ||
@@ -2310,69 +2921,92 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                         onOpenPovModal?.(identifiedFeature.associatedWaypoint);
                       }
                     }}
-                    className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors text-center truncate flex items-center justify-center gap-1"
+                    className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors flex items-center justify-center gap-1"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
                     </svg>
-                    <span>{tMmgis("openPov")}</span>
+                    <span>{t("btn360")}</span>
                   </button>
                 ) : (
                   <button
                     disabled
-                    className="py-1.5 px-2 bg-[#111827] text-slate-500 border border-slate-800 font-bold text-[9px] text-center truncate cursor-not-allowed opacity-60"
+                    className="py-1.5 px-2 bg-[#111827] text-slate-500 border border-slate-800 font-bold text-[9px] cursor-not-allowed opacity-60 text-center"
                   >
-                    [ {tMmgis("no360Pov")} ]
+                    {t("btnNo360")}
                   </button>
                 )}
 
-                {/* PROSPECTOR ML */}
+                {/* 2. RUTE JALAN KE SINI */}
                 <button
                   onClick={() => {
-                    if (identifiedFeature.associatedWaypoint && onAnalyzeProspector) {
-                      onAnalyzeProspector(identifiedFeature.associatedWaypoint);
-                    } else if (onAnalyzeProspector && selectedWaypoint) {
-                      onAnalyzeProspector(selectedWaypoint);
-                    }
+                    const targetWp = identifiedFeature.associatedWaypoint || ({
+                      id: `custom_pt_${Date.now()}`,
+                      name: identifiedFeature.name,
+                      coordinates: identifiedFeature.coordinates,
+                      elevationM: identifiedFeature.elevationM,
+                      category: "custom_user_pov",
+                      slopeDeg: identifiedFeature.slopeDeg,
+                      surfaceFirmness: identifiedFeature.surfaceFirmness || (identifiedFeature.elevationM > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK"),
+                      sandTrapRisk: identifiedFeature.sandTrapRisk || (identifiedFeature.elevationM > -4100 ? "LOW" : "HIGH"),
+                      crustalMagneticFieldNt: identifiedFeature.crustalMagneticFieldNt || 38,
+                      surfaceRadiationMSvSol: identifiedFeature.surfaceRadiationMSvSol || 0.65,
+                      dominantMineral: identifiedFeature.mineralogy,
+                    } as unknown as MountSharpWaypoint);
+
+                    onPlanRouteToWaypoint?.(targetWp);
                   }}
-                  className="py-1.5 px-2 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[9px] transition-colors text-center truncate"
+                  className="py-1.5 px-2 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors text-center"
                 >
-                  {tMmgis("analyzeProspector")}
+                  {t("btnRoute")}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* 3. CEK AIR & MINERAL */}
+                <button
+                  onClick={() => {
+                    const targetWp = identifiedFeature.associatedWaypoint || ({
+                      id: `custom_pt_${Date.now()}`,
+                      name: identifiedFeature.name,
+                      coordinates: identifiedFeature.coordinates,
+                      elevationM: identifiedFeature.elevationM,
+                      category: "custom_user_pov",
+                      slopeDeg: identifiedFeature.slopeDeg,
+                    } as unknown as MountSharpWaypoint);
+                    onAnalyzeProspector?.(targetWp);
+                  }}
+                  className="py-1.5 px-2 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[9px] transition-colors text-center"
+                >
+                  {t("btnCheckMineral")}
                 </button>
 
-                {/* EARTH ANALOGUE */}
+                {/* 4. SALIN LINK LOKASI */}
                 <button
                   onClick={() => {
-                    if (identifiedFeature.associatedWaypoint && onOpenAnalogueMatcher) {
-                      onOpenAnalogueMatcher(identifiedFeature.associatedWaypoint);
-                    } else if (onOpenAnalogueMatcher && selectedWaypoint) {
-                      onOpenAnalogueMatcher(selectedWaypoint);
+                    if (typeof window !== "undefined") {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("site", currentSite === "jezero_crater" ? "jezero" : "gale");
+                      url.searchParams.set("lat", identifiedFeature.coordinates[1].toFixed(4));
+                      url.searchParams.set("lng", identifiedFeature.coordinates[0].toFixed(4));
+                      const zoom = mapRef.current ? Math.round(mapRef.current.getZoom()) : 13;
+                      url.searchParams.set("z", zoom.toString());
+                      url.searchParams.set("sol", currentSol.toString());
+                      navigator.clipboard.writeText(url.toString()).then(() => {
+                        setCopyFeedback(true);
+                        setTimeout(() => setCopyFeedback(false), 2500);
+                      });
                     }
                   }}
-                  className="py-1.5 px-2 bg-[#451a03] hover:bg-[#78350f] text-[#fde68a] border border-[#d97706] font-bold text-[9px] transition-colors text-center truncate"
+                  className="py-1.5 px-2 bg-[#111827] hover:bg-[#1e293b] text-slate-200 hover:text-white border border-slate-700 font-bold text-[9px] transition-colors text-center"
                 >
-                  [ {tMmgis("compareAnalogue")} ]
-                </button>
-
-                {/* 5M TRANSECT DOCK */}
-                <button
-                  onClick={() => {
-                    onToggleProfileDock?.();
-                  }}
-                  className={`py-1.5 px-2 border font-bold text-[9px] transition-colors text-center truncate ${
-                    isProfileDockOpen
-                      ? "bg-[#161e2e] text-cyan-300 border-cyan-500"
-                      : "bg-[#111827] text-slate-300 border-slate-700 hover:text-white"
-                  }`}
-                >
-                  [ {tMmgis("transectDock")} ]
+                  {t("btnCopyLink")}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
 
       {/* Interactive Tool Banner Helper with Dynamic Offset */}
       {activeMmgisTool !== "none" && (

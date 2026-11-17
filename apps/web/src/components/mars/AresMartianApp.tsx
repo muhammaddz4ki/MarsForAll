@@ -415,12 +415,17 @@ export const AresMartianApp: React.FC = () => {
   }, []);
 
   const handleToggleTool = useCallback((tool: Exclude<ActiveDrawerTool, null>) => {
-    setActiveTool((prev) => (prev === tool ? null : tool));
+    setActiveTool((prev) => {
+      const next = prev === tool ? null : tool;
+      setIdentifiedFeature(null);
+      return next;
+    });
   }, []);
 
   const handlePlanRouteToWaypoint = useCallback((wp: MountSharpWaypoint) => {
     setSelectedWaypoint(wp);
     setActiveTool("marswalk");
+    setIdentifiedFeature(null);
   }, []);
 
   // Click-anywhere custom coordinate pin
@@ -577,8 +582,8 @@ export const AresMartianApp: React.FC = () => {
     <div className={`relative w-screen h-screen overflow-hidden ${isDark ? "bg-[#07090e] text-slate-100" : "bg-[#f8fafc] text-slate-900"
       } flex flex-col font-sans select-none`}>
       {/* 1. TOP NAVIGATION BAR (h-11, px-3, MMGIS Compact Single-Row Layout) */}
-      <header className={`h-11 ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
-        } border-b px-3 flex items-center justify-between z-20 shrink-0 overflow-x-auto gap-2`}>
+      <header className={`h-11 ${viewMode === "visor_hud" ? "hidden" : "flex"} ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300 shadow-sm"
+        } border-b px-3 items-center justify-between z-20 shrink-0 overflow-x-auto gap-2`}>
         {/* SLOT KIRI: Badge + Segmented Mission Site Selector */}
         <div className="flex items-center gap-2 shrink-0">
           <MarsForAllBadge size={26} showSubtext={false} />
@@ -661,49 +666,11 @@ export const AresMartianApp: React.FC = () => {
               </svg>
               <span>{tNav("helmetVisor")}</span>
             </button>
-
-            {/* MARS AERIAL SCOUT DRONE / PESAWAT ORBITER */}
-            <button
-              onClick={() => setIsAerialDockOpen((prev) => !prev)}
-              className={`flex items-center gap-1.5 px-2 py-0.5 transition-colors border ${isAerialDockOpen
-                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                : isDark
-                  ? "bg-[#111827] text-cyan-400 hover:text-cyan-200 border-slate-700"
-                  : "bg-slate-100 text-cyan-700 hover:text-cyan-900 border-slate-300"
-                }`}
-              title="Mars Aerial Scout Drone: Fly to Coordinates"
-            >
-              <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-              </svg>
-              <span>AERIAL SCOUT</span>
-            </button>
-
-            {/* POINT INSPECTOR TOOLBAR BUTTON */}
-            <button
-              onClick={() => handleToggleTool("inspector")}
-              className={`flex items-center gap-1.5 px-2 py-0.5 transition-colors border ${activeTool === "inspector"
-                ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                : isDark
-                  ? "bg-[#111827] text-cyan-400 hover:text-cyan-200 border-slate-700"
-                  : "bg-slate-100 text-cyan-700 hover:text-cyan-900 border-slate-300"
-                }`}
-              title={tNav("pointInspector")}
-            >
-              <svg className="w-3 h-3 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="8" />
-                <line x1="12" y1="2" x2="12" y2="6" />
-                <line x1="12" y1="18" x2="12" y2="22" />
-                <line x1="2" y1="12" x2="6" y2="12" />
-                <line x1="18" y1="12" x2="22" y2="12" />
-              </svg>
-              <span>{tNav("pointInspectorShort")}</span>
-            </button>
           </div>
         </div>
 
-        {/* SLOT KANAN: Compact Non-Truncated Utility Controls + i18n & Theme */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* SLOT KANAN: Multi-Language Selector [ EN | ID ] & EKSPOR EVA */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Multi-Language Selector [ EN | ID ] */}
           <div className={`flex items-center ${isDark ? "bg-[#111827] border-slate-700" : "bg-slate-100 border-slate-300"
             } border p-0.5 font-mono text-[9px]`}>
@@ -711,7 +678,7 @@ export const AresMartianApp: React.FC = () => {
               <button
                 key={loc}
                 onClick={() => handleChangeLanguage(loc)}
-                className={`px-1 py-0.5 uppercase font-bold transition-colors ${currentLocale === loc
+                className={`px-1.5 py-0.5 uppercase font-bold transition-colors ${currentLocale === loc
                   ? "bg-amber-600 text-slate-950"
                   : isDark
                     ? "text-slate-400 hover:text-white"
@@ -723,38 +690,10 @@ export const AresMartianApp: React.FC = () => {
             ))}
           </div>
 
-          {/* Dark / Light Theme Toggle */}
-          <button
-            onClick={handleToggleTheme}
-            title="Toggle Dark / Light Theme"
-            className={`px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-800"
-              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
-          >
-            {theme === "dark" ? `[${tNav("themeDark")}]` : `[${tNav("themeLight")}]`}
-          </button>
-
-          <button
-            onClick={() => setPitch3D(!pitch3D)}
-            title="Toggle 2.5D / 3D Terrain Pitch"
-            className={`flex items-center gap-1 px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-amber-400" : "bg-white hover:bg-slate-100 border-slate-300 text-amber-600"
-              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
-          >
-            <span>{pitch3D ? tNav("pitch3D") : tNav("pitch2D")}</span>
-          </button>
-
-          <button
-            onClick={() => setResetNorthTrigger((n) => n + 1)}
-            title="Reset North Heading"
-            className={`flex items-center gap-1 px-1.5 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-200" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
-              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
-          >
-            <span>{tNav("resetNorth")}</span>
-          </button>
-
           <button
             onClick={handleExportEvaManifest}
             title="Export EVA Mission Manifest (JSON)"
-            className="flex items-center gap-1 px-2 py-0.5 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 px-2.5 py-0.5 bg-[#064e3b] hover:bg-[#065f46] border border-[#10b981] text-[#34d399] font-mono text-[10px] font-bold transition-colors whitespace-nowrap"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -762,15 +701,6 @@ export const AresMartianApp: React.FC = () => {
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             <span>{tNav("exportEva")}</span>
-          </button>
-
-          <button
-            onClick={() => setIsInfoOpen(true)}
-            title="Scientific Attribution & Mission Brief"
-            className={`flex items-center justify-center px-2 py-0.5 ${isDark ? "bg-[#161e2e] hover:bg-[#1f2937] border-slate-700 text-slate-300" : "bg-white hover:bg-slate-100 border-slate-300 text-slate-700"
-              } border font-mono text-[10px] font-bold transition-colors whitespace-nowrap`}
-          >
-            {tNav("info")}
           </button>
         </div>
       </header>
@@ -784,13 +714,151 @@ export const AresMartianApp: React.FC = () => {
 
       {/* 2. MAIN WORKSPACE AREA WITH MMGIS EXPANDABLE SIDEBAR */}
       <div className="relative flex-1 w-full h-full overflow-hidden flex">
-        {/* MMGIS SIDEBAR (EXPANDED w-72 sm:w-80 or COLLAPSED w-12) */}
+        {/* MMGIS SINGLE ACTIVE LEFT DRAWER (Strictly 1 drawer, max w-80 sm:w-96) */}
         <nav
-          className={`${isSidebarExpanded ? "w-72 sm:w-80" : "w-12"
-            } h-full ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-            } border-r flex flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
+          className={`${viewMode === "visor_hud" ? "hidden" : "flex"} ${
+            activeTool !== null
+              ? "w-80 sm:w-96"
+              : isSidebarExpanded
+              ? "w-72 sm:w-80"
+              : "w-12"
+          } h-full ${
+            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+          } border-r flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
         >
-          {/* SIDEBAR HEADER / TOGGLE BAR */}
+          {activeTool !== null && viewMode === "mission_control" ? (
+            <>
+              {/* Single Active Drawer Header with Return to Menu Button */}
+              <div
+                className={`h-9 px-2.5 border-b ${
+                  isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
+                } flex items-center justify-between shrink-0 font-mono text-xs`}
+              >
+                <button
+                  onClick={() => setActiveTool(null)}
+                  className={`flex items-center gap-1.5 px-2 py-0.5 border text-slate-200 text-[10px] font-mono font-bold transition-colors ${
+                    isDark
+                      ? "border-slate-700 bg-[#161e2e] hover:bg-[#1f2937]"
+                      : "border-slate-400 bg-white hover:bg-slate-100 text-slate-700"
+                  }`}
+                  title="Kembali ke Menu Kontrol Misi"
+                >
+                  ← {currentLocale === "id" ? "KEMBALI KE MENU" : "BACK TO MENU"}
+                </button>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 bg-amber-400 shrink-0" />
+                  <span className="font-bold text-[10px] uppercase tracking-wider text-slate-200 truncate">
+                    {activeTool === "layers" && tDocks("layers")}
+                    {activeTool === "marswalk" && tDocks("marswalk")}
+                    {activeTool === "tools" && tDocks("spatialTools")}
+                    {activeTool === "inspector" && tDocks("inspector")}
+                    {activeTool === "prospector" && tDocks("prospector")}
+                    {activeTool === "analogue" && tDocks("earthAnalogues")}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setActiveTool(null)}
+                  title={tNav("collapse")}
+                  className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${
+                    isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
+                  } font-mono text-[10px] font-bold`}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Active Sub-Tool Content */}
+              <div className="flex-1 overflow-y-auto">
+                {activeTool === "layers" && (
+                  <ScientificLayersPanel
+                    activeLayers={activeLayers}
+                    onToggleLayer={handleToggleLayer}
+                    theme={theme}
+                    orbitalSource={orbitalSource}
+                    onSelectOrbitalSource={setOrbitalSource}
+                    wmtsStatus={wmtsStatus}
+                    layerOpacities={layerOpacities}
+                    onChangeLayerOpacity={handleChangeLayerOpacity}
+                  />
+                )}
+                {activeTool === "marswalk" && (
+                  <MarswalkPlannerPanel
+                    selectedWaypoint={selectedWaypoint}
+                    onRouteCalculated={setActiveRoute}
+                    availableWaypoints={allWaypoints}
+                    theme={theme}
+                  />
+                )}
+                {activeTool === "tools" && (
+                  <MmgisToolsPanel
+                    currentSite={currentSite}
+                    activeMmgisTool={activeMmgisTool}
+                    onSelectMmgisTool={setActiveMmgisTool}
+                    measurePoints={measurePoints}
+                    onClearMeasurePoints={() => {
+                      setMeasurePoints([]);
+                      setElevationProfile(null);
+                    }}
+                    zoiList={zoiList}
+                    onRemoveZoi={(id) => setZoiList((prev) => prev.filter((z) => z.id !== id))}
+                    showRoverTraverse={showRoverTraverse}
+                    onToggleRoverTraverse={() => setShowRoverTraverse((prev) => !prev)}
+                    showGraticule={showGraticule}
+                    onToggleGraticule={() => setShowGraticule((prev) => !prev)}
+                    showFloatingLegend={showFloatingLegend}
+                    onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
+                    pitch3D={pitch3D}
+                    onTogglePitch={() => setPitch3D((prev) => !prev)}
+                    onReCenter={() => setReCenterTrigger((prev) => prev + 1)}
+                    onOpen360Manager={() => setIs360ManagerOpen(true)}
+                    onOpenPovModal={() => setIsPovOpen(true)}
+                    onExportGeoJson={handleExportGeoJson}
+                    theme={theme}
+                    currentSol={currentSol}
+                    onSelectSol={handleSelectSol}
+                    dustStormActive={dustStormActive}
+                    onToggleDustStorm={(active) => setDustStormActive(active)}
+                    showSolWeatherScrubber={showSolWeatherScrubber}
+                    onToggleSolWeatherScrubber={() => setShowSolWeatherScrubber((prev) => !prev)}
+                  />
+                )}
+                {activeTool === "prospector" && (
+                  <ProspectorPanel
+                    waypoint={selectedWaypoint}
+                    onOpenPovModal={handleOpenPovModal}
+                    onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+                    dustStormActive={dustStormActive}
+                    theme={theme}
+                  />
+                )}
+                {activeTool === "analogue" && (
+                  <AnalogueMatcherPanel
+                    waypoint={selectedWaypoint}
+                    theme={theme}
+                  />
+                )}
+                {activeTool === "inspector" && (
+                  <PointInspectorPanel
+                    feature={identifiedFeature}
+                    waypoint={selectedWaypoint}
+                    onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
+                    onOpenPovModal={handleOpenPovModal}
+                    onAnalyzeProspector={handleAnalyzeProspector}
+                    onOpenAnalogueMatcher={(wp) => {
+                      setSelectedWaypoint(wp);
+                      setActiveTool("analogue");
+                    }}
+                    onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
+                    isProfileDockOpen={isProfileDockOpen}
+                    custom360Waypoints={custom360List}
+                    theme={theme}
+                  />
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* SIDEBAR HEADER / TOGGLE BAR */}
           <div
             className={`h-9 px-2.5 border-b ${isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
               } flex items-center justify-between shrink-0`}
@@ -824,8 +892,8 @@ export const AresMartianApp: React.FC = () => {
 
           {/* SCROLLABLE SIDEBAR MENU ITEMS */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {/* 1. DOCKED MARSWALK NAVIGATION HUD (WHEN ROUTE IS ACTIVE) */}
-            {activeRoute && viewMode === "mission_control" && (
+            {/* 1. DOCKED MARSWALK NAVIGATION HUD (WHEN ROUTE IS ACTIVE AND NOT IN MARSWALK TOOL) */}
+            {activeRoute && activeTool !== "marswalk" && viewMode === "mission_control" && (
               isSidebarExpanded ? (
                 <MarsNavigationHud
                   route={activeRoute}
@@ -1423,126 +1491,10 @@ export const AresMartianApp: React.FC = () => {
               )}
             </div>
           </div>
+            </>
+          )}
         </nav>
 
-        {/* MMGIS SINGLE CLEAN DRAWER PANEL (w-[350px], left-72 / left-12) */}
-        {viewMode === "mission_control" && activeTool !== null && (
-          <aside className={`absolute ${isSidebarExpanded ? "left-72 sm:left-80" : "left-12"} top-0 bottom-0 w-[calc(100vw-48px)] sm:w-[350px] max-w-[calc(100vw-48px)] z-20 pointer-events-auto ${isDark ? "bg-[#0b0f17] border-slate-800" : "bg-white border-slate-300"
-            } border-r flex flex-col shadow-2xl transition-all duration-200`}>
-            {/* Drawer Header with Title and Close Button */}
-            <div className={`flex items-center justify-between px-3 py-2 border-b ${isDark ? "border-slate-800 bg-[#07090e]" : "border-slate-200 bg-slate-50"
-              } shrink-0 font-mono text-xs`}>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-amber-400" />
-                <span className="font-bold uppercase tracking-wider text-slate-200">
-                  {activeTool === "layers" && tDocks("layers")}
-                  {activeTool === "marswalk" && tDocks("marswalk")}
-                  {activeTool === "tools" && tDocks("spatialTools")}
-                  {activeTool === "inspector" && tDocks("inspector")}
-                  {activeTool === "prospector" && tDocks("prospector")}
-                  {activeTool === "analogue" && tDocks("earthAnalogues")}
-                </span>
-              </div>
-              <button
-                onClick={() => setActiveTool(null)}
-                title={tNav("collapse")}
-                className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
-                  } font-mono text-[10px] font-bold`}
-              >
-                [ X ]
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto">
-              {activeTool === "layers" && (
-                <ScientificLayersPanel
-                  activeLayers={activeLayers}
-                  onToggleLayer={handleToggleLayer}
-                  theme={theme}
-                  orbitalSource={orbitalSource}
-                  onSelectOrbitalSource={setOrbitalSource}
-                  wmtsStatus={wmtsStatus}
-                  layerOpacities={layerOpacities}
-                  onChangeLayerOpacity={handleChangeLayerOpacity}
-                />
-              )}
-              {activeTool === "marswalk" && (
-                <MarswalkPlannerPanel
-                  selectedWaypoint={selectedWaypoint}
-                  onRouteCalculated={setActiveRoute}
-                  availableWaypoints={allWaypoints}
-                  theme={theme}
-                />
-              )}
-              {activeTool === "tools" && (
-                <MmgisToolsPanel
-                  currentSite={currentSite}
-                  activeMmgisTool={activeMmgisTool}
-                  onSelectMmgisTool={setActiveMmgisTool}
-                  measurePoints={measurePoints}
-                  onClearMeasurePoints={() => {
-                    setMeasurePoints([]);
-                    setElevationProfile(null);
-                  }}
-                  zoiList={zoiList}
-                  onRemoveZoi={(id) => setZoiList((prev) => prev.filter((z) => z.id !== id))}
-                  showRoverTraverse={showRoverTraverse}
-                  onToggleRoverTraverse={() => setShowRoverTraverse((prev) => !prev)}
-                  showGraticule={showGraticule}
-                  onToggleGraticule={() => setShowGraticule((prev) => !prev)}
-                  showFloatingLegend={showFloatingLegend}
-                  onToggleFloatingLegend={() => setShowFloatingLegend((prev) => !prev)}
-                  pitch3D={pitch3D}
-                  onTogglePitch={() => setPitch3D((prev) => !prev)}
-                  onReCenter={() => setReCenterTrigger((prev) => prev + 1)}
-                  onOpen360Manager={() => setIs360ManagerOpen(true)}
-                  onOpenPovModal={() => setIsPovOpen(true)}
-                  onExportGeoJson={handleExportGeoJson}
-                  theme={theme}
-                  currentSol={currentSol}
-                  onSelectSol={handleSelectSol}
-                  dustStormActive={dustStormActive}
-                  onToggleDustStorm={(active) => setDustStormActive(active)}
-                  showSolWeatherScrubber={showSolWeatherScrubber}
-                  onToggleSolWeatherScrubber={() => setShowSolWeatherScrubber((prev) => !prev)}
-                />
-              )}
-              {activeTool === "prospector" && (
-                <ProspectorPanel
-                  waypoint={selectedWaypoint}
-                  onOpenPovModal={handleOpenPovModal}
-                  onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
-                  dustStormActive={dustStormActive}
-                  theme={theme}
-                />
-              )}
-              {activeTool === "analogue" && (
-                <AnalogueMatcherPanel
-                  waypoint={selectedWaypoint}
-                  theme={theme}
-                />
-              )}
-              {activeTool === "inspector" && (
-                <PointInspectorPanel
-                  feature={identifiedFeature}
-                  waypoint={selectedWaypoint}
-                  onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
-                  onOpenPovModal={handleOpenPovModal}
-                  onAnalyzeProspector={handleAnalyzeProspector}
-                  onOpenAnalogueMatcher={(wp) => {
-                    setSelectedWaypoint(wp);
-                    setActiveTool("analogue");
-                  }}
-                  onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
-                  isProfileDockOpen={isProfileDockOpen}
-                  custom360Waypoints={custom360List}
-                  theme={theme}
-                />
-              )}
-            </div>
-          </aside>
-        )}
         {/* Full-width Map Viewport */}
         <AresMapViewer
           currentSite={currentSite}
@@ -1572,6 +1524,10 @@ export const AresMartianApp: React.FC = () => {
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
           onFeatureIdentified={setIdentifiedFeature}
           isInspectorActive={activeTool === "inspector"}
+          isAerialDockOpen={isAerialDockOpen}
+          showQuickStartBanner={showQuickStartBanner && !activeRoute && activeTool === null && !isAerialDockOpen && !elevationProfile && viewMode === "mission_control"}
+          onCloseQuickStartBanner={() => setShowQuickStartBanner(false)}
+          onLaunchSampleRoute={handleLaunchSampleRoute}
           onOpenPovModal={handleOpenPovModal}
           onAnalyzeProspector={handleAnalyzeProspector}
           onPlanRouteToWaypoint={handlePlanRouteToWaypoint}
@@ -1599,44 +1555,7 @@ export const AresMartianApp: React.FC = () => {
           onScaleUpdate={setScaleBar}
         />
 
-        {/* NOVELTY QUICK START BANNER (Panduan Cepat Navigasi Peta) */}
-        {!activeRoute && activeTool === null && !isAerialDockOpen && !elevationProfile && showQuickStartBanner && viewMode === "mission_control" && (
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 bg-[#07090e]/95 border border-emerald-500/80 shadow-2xl flex items-center gap-3 font-mono text-[10px] select-none">
-            <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>
-                {currentLocale === "id"
-                  ? "[ PANDUAN CEPAT ]"
-                  : "[ QUICK START ]"}
-              </span>
-            </div>
-            <span className={isDark ? "text-slate-700" : "text-slate-300"}>|</span>
-            <button
-              onClick={handleLaunchSampleRoute}
-              className="px-2 py-0.5 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors"
-              title="Hitung contoh rute jalan kaki astronot dari Hab Alpha ke Boxwork 2025"
-            >
-              [ {currentLocale === "id" ? "1-KLIK CONTOH RUTE" : "1-CLICK SAMPLE ROUTE"} ]
-            </button>
-            <button
-              onClick={() => {
-                setShowFloatingLegend(false);
-                setIsAerialDockOpen(true);
-              }}
-              className="px-2 py-0.5 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors"
-              title="Buka panel simulasi drone pengintai udara"
-            >
-              [ {currentLocale === "id" ? "SIMULASI DRONE" : "DRONE SIMULATION"} ]
-            </button>
-            <button
-              onClick={() => setShowQuickStartBanner(false)}
-              className="text-slate-500 hover:text-slate-300 text-[10px] font-bold ml-1"
-              title="Tutup"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+
 
         {/* Mars Aerial Scout Drone Flight Dock (Input Koordinat & Terbang Pesawat) */}
         {isAerialDockOpen && viewMode === "mission_control" && (
@@ -1699,6 +1618,7 @@ export const AresMartianApp: React.FC = () => {
             dustStormActive={dustStormActive}
             currentSol={currentSol}
             theme={theme}
+            onExitVisorHud={() => setViewMode("mission_control")}
           />
         )}
 

@@ -48,10 +48,19 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
   const [show5mNodesTable, setShow5mNodesTable] = useState<boolean>(false);
 
   React.useEffect(() => {
-    if (selectedWaypoint && selectedWaypoint.id !== startId) {
-      setTargetId(selectedWaypoint.id);
+    if (selectedWaypoint) {
+      const isJezero = selectedWaypoint.id.startsWith("jzr_") || selectedWaypoint.coordinates[0] < 100;
+      const expectedBaseId = isJezero ? "jzr_hab_alpha" : "gale_hab_alpha";
+      if (selectedWaypoint.id === expectedBaseId) {
+        setStartId(expectedBaseId);
+        const defaultTarget = isJezero ? "jzr_three_forks_delta" : "curiosity_boxwork_2025";
+        setTargetId(defaultTarget);
+      } else {
+        setStartId(expectedBaseId);
+        setTargetId(selectedWaypoint.id);
+      }
     }
-  }, [selectedWaypoint, startId]);
+  }, [selectedWaypoint]);
 
   const routeResult: MarswalkRouteResult = useMemo(() => {
     const res = planMarswalkRoute({

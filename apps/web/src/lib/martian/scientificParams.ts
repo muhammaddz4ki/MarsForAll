@@ -283,7 +283,7 @@ export interface GaleAtmosphericTelemetry {
   sepRadiationWarning: boolean;
 }
 
-export type OrbitalImagerySource = "jpl_hirise" | "mola_hrsc" | "opm_basemap" | "local_vector";
+export type OrbitalImagerySource = "jpl_hirise" | "mola_hrsc" | "themis_night" | "opm_basemap" | "local_vector";
 export type WmtsStreamStatus = "streaming" | "fallback";
 
 export interface OrbitalWmtsPreset {
@@ -315,6 +315,16 @@ export const ORBITAL_WMTS_PRESETS: Record<OrbitalImagerySource, OrbitalWmtsPrese
       "/api/mars-tiles/mola-clrshade/{z}/{y}/{x}",
     ],
     attribution: "NASA/JPL/DLR / USGS Astrogeology (Server Proxy)",
+  },
+  themis_night: {
+    id: "themis_night",
+    label: "THEMIS NIGHT IR WMTS",
+    sublabel: "Thermal Inertia Bedrock & Sand Mapping (100m/px)",
+    resolution: "100 m/px",
+    tiles: [
+      "/api/mars-tiles/themis-night-ir/{z}/{y}/{x}",
+    ],
+    attribution: "NASA/ASU / Mars Odyssey THEMIS Team (Server Proxy)",
   },
   opm_basemap: {
     id: "opm_basemap",

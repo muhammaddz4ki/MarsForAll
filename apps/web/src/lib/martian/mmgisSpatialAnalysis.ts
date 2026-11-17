@@ -40,6 +40,263 @@ export interface ZoiFeature {
   elevationM: number;
   createdAtSol: number;
   notes?: string;
+  polygonCoordinates?: [number, number][];
+  spatialProperties?: ZoiSpatialProperties;
+}
+
+export const MARS_EQUATORIAL_RADIUS_METERS = 3396190;
+
+export interface SpatialStatistics {
+  min: number;
+  max: number;
+  avg: number;
+  stddev: number;
+}
+
+export interface ZoiSpatialProperties {
+  length2D_m?: number;
+  length2D_km?: number;
+  perimeter2D_m?: number;
+  perimeter2D_km?: number;
+  area2D_m2?: number;
+  area2D_km2?: number;
+  statistics?: {
+    elevation: SpatialStatistics;
+    slope: SpatialStatistics;
+    waterIcePotential: SpatialStatistics;
+  };
+}
+
+/**
+ * Calculates forward azimuth bearing between two Martian coordinates in degrees [0, 360).
+ * Adapted from NASA-AMMOS MMGIS geodesy engine.
+ */
+export function bearingBetweenTwoLatLngs(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const y = Math.sin(deltaLambda) * Math.cos(phi2);
+  const x =
+    Math.cos(phi1) * Math.sin(phi2) -
+    Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+  const theta = Math.atan2(y, x);
+  return ((theta * 180) / Math.PI + 360) % 360;
+}
+
+/**
+ * Calculates spherical great-circle surface distance in meters across Mars (R = 3,396,190 m).
+ */
+export function martianGreatCircleDistanceM(
+  coord1: [number, number],
+  coord2: [number, number]
+): number {
+  const [lon1, lat1] = coord1;
+  const [lon2, lat2] = coord2;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) ** 2 +
+    Math.cos(phi1) * Math.cos(phi2) * (Math.sin(deltaLambda / 2) ** 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return MARS_EQUATORIAL_RADIUS_METERS * c;
+}
+
+/**
+ * Calculates spherical polygon perimeter in meters on Mars.
+ */
+export function polygonPerimeterMartianM(ring: [number, number][]): number {
+  if (!ring || ring.length < 2) return 0;
+  let perimeter = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    perimeter += martianGreatCircleDistanceM(ring[i], ring[i + 1]);
+  }
+  return Math.round(perimeter * 100) / 100;
+}
+
+/**
+ * Calculates spherical polygon surface area in square meters on Mars (R = 3,396,190 m).
+ */
+export function polygonAreaMartianM2(ring: [number, number][]): number {
+  if (!ring || ring.length < 3) return 0;
+  let total = 0;
+  const n = ring.length;
+  for (let i = 0; i < n; i++) {
+    const [, lat1] = ring[i];
+    const [lon2] = ring[(i + 1) % n];
+    const [lon0] = ring[(i - 1 + n) % n];
+    const phi = (lat1 * Math.PI) / 180;
+    const dLambda = ((lon2 - lon0) * Math.PI) / 180;
+    total += dLambda * Math.sin(phi);
+  }
+  const area = (Math.abs(total) / 2) * (MARS_EQUATORIAL_RADIUS_METERS ** 2);
+  return Math.round(area * 100) / 100;
+}
+
+/**
+ * Computes standard descriptive statistics (min, max, avg, stddev) for an array of values.
+ */
+export function computeSpatialStatistics(values: number[]): SpatialStatistics {
+  if (!values || values.length === 0) {
+    return { min: 0, max: 0, avg: 0, stddev: 0 };
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const sum = values.reduce((acc, v) => acc + v, 0);
+  const avg = sum / values.length;
+  const variance =
+    values.reduce((acc, v) => acc + Math.pow(v - avg, 2), 0) / values.length;
+  const stddev = Math.sqrt(variance);
+  return {
+    min: Math.round(min * 10) / 10,
+    max: Math.round(max * 10) / 10,
+    avg: Math.round(avg * 10) / 10,
+    stddev: Math.round(stddev * 10) / 10,
+  };
+}
+
+/**
+ * Evaluates water ice potential score (0 - 100%) at a Martian coordinate based on
+ * elevation, latitude, and local mineral/thermal characteristics (Morgan et al. 2020).
+ */
+export function getMartianWaterIcePotential(
+  lon: number,
+  lat: number,
+  site: MissionSiteId = "gale_crater"
+): number {
+  const elev = getMartianElevation(lon, lat, site);
+  if (site === "jezero_crater") {
+    // Jezero crater delta fan has higher clay/phyllosilicate bound water potential
+    const deltaBonus = lon < 77.45 ? 25 : 10;
+    const base = Math.max(10, Math.min(85, 40 + deltaBonus + Math.sin(lat * 30) * 15));
+    return Math.round(base);
+  }
+  // Gale Crater / Mount Sharp: Sulfate/hydrated vein network higher up Mt Sharp
+  const moundFactor = Math.max(0, Math.min(30, (elev + 4500) * 0.015));
+  const boxworkBonus = (lat < -5.2 && lon > 137.7) ? 20 : 0;
+  const base = Math.max(8, Math.min(80, 22 + moundFactor + boxworkBonus + Math.cos(lon * 40) * 8));
+  return Math.round(base);
+}
+
+/**
+ * Computes summary statistics (min, max, avg, stddev) for Elevation, Slope, and Water-Ice Potential
+ * across a sampled polygon or transept point cluster.
+ */
+export function computeZoiStatistics(
+  points: [number, number][],
+  site: MissionSiteId = "gale_crater"
+): {
+  elevation: SpatialStatistics;
+  slope: SpatialStatistics;
+  waterIcePotential: SpatialStatistics;
+} {
+  const samplePoints: [number, number][] = [...points];
+
+  // If points form a polygon ring, sample interior centroid and midpoints for robust stats
+  if (points.length >= 3) {
+    let sumLon = 0;
+    let sumLat = 0;
+    for (const p of points) {
+      sumLon += p[0];
+      sumLat += p[1];
+    }
+    const centroidLon = sumLon / points.length;
+    const centroidLat = sumLat / points.length;
+    samplePoints.push([centroidLon, centroidLat]);
+
+    for (let i = 0; i < points.length - 1; i++) {
+      samplePoints.push([
+        (points[i][0] + centroidLon) / 2,
+        (points[i][1] + centroidLat) / 2,
+      ]);
+    }
+  }
+
+  const elevations = samplePoints.map((p) => getMartianElevation(p[0], p[1], site));
+  const slopes = samplePoints.map((p) => getMartianSlope(p[0], p[1], site));
+  const icePotentials = samplePoints.map((p) => getMartianWaterIcePotential(p[0], p[1], site));
+
+  return {
+    elevation: computeSpatialStatistics(elevations),
+    slope: computeSpatialStatistics(slopes),
+    waterIcePotential: computeSpatialStatistics(icePotentials),
+  };
+}
+
+/**
+ * Automatically annotates any GeoJSON Feature or FeatureCollection with 2D length/perimeter,
+ * 2D area (with Martian radius 3,396,190 m), and descriptive terrain statistics.
+ * Adapted from MMGIS geojsonAddSpatialProperties.
+ */
+export function geojsonAddSpatialProperties(geojson: any, site: MissionSiteId = "gale_crater"): any {
+  if (!geojson) return geojson;
+
+  const processFeature = (feature: any) => {
+    if (!feature || !feature.geometry) return feature;
+    feature.properties = feature.properties || {};
+    const geomType = feature.geometry.type;
+    const coords = feature.geometry.coordinates;
+
+    if (geomType === "LineString" && Array.isArray(coords)) {
+      let lengthM = 0;
+      for (let i = 0; i < coords.length - 1; i++) {
+        lengthM += martianGreatCircleDistanceM(coords[i], coords[i + 1]);
+      }
+      feature.properties.length2D_m = Math.round(lengthM * 100) / 100;
+      feature.properties.length2D_km = Math.round((lengthM / 1000) * 1000) / 1000;
+      feature.properties.statistics = computeZoiStatistics(coords, site);
+    } else if (geomType === "Polygon" && Array.isArray(coords) && coords[0]) {
+      const ring = coords[0];
+      const perimM = polygonPerimeterMartianM(ring);
+      const areaM2 = polygonAreaMartianM2(ring);
+      feature.properties.perimeter2D_m = perimM;
+      feature.properties.perimeter2D_km = Math.round((perimM / 1000) * 1000) / 1000;
+      feature.properties.area2D_m2 = areaM2;
+      feature.properties.area2D_km2 = Math.round((areaM2 / 1000000) * 10000) / 10000;
+      feature.properties.statistics = computeZoiStatistics(ring, site);
+    } else if (geomType === "Point" && Array.isArray(coords)) {
+      const [lon, lat] = coords;
+      feature.properties.elevationM = getMartianElevation(lon, lat, site);
+      feature.properties.slopeDeg = getMartianSlope(lon, lat, site);
+      feature.properties.waterIcePotentialPct = getMartianWaterIcePotential(lon, lat, site);
+    }
+
+    return feature;
+  };
+
+  if (geojson.type === "FeatureCollection" && Array.isArray(geojson.features)) {
+    geojson.features = geojson.features.map(processFeature);
+    return geojson;
+  }
+  if (geojson.type === "Feature") {
+    return processFeature(geojson);
+  }
+  return geojson;
+}
+
+/**
+ * Trims a LineString array by a specified number of vertices from the beginning or end.
+ * Mimics MMGIS L_.trimLineString.
+ */
+export function trimLineString(
+  coordinates: [number, number][],
+  trimCount: number,
+  startOrEnd: "start" | "end" = "end"
+): [number, number][] {
+  if (!coordinates || coordinates.length <= 2 || trimCount <= 0) return coordinates;
+  const count = Math.min(trimCount, coordinates.length - 2);
+  if (startOrEnd === "start") {
+    return coordinates.slice(count);
+  }
+  return coordinates.slice(0, coordinates.length - count);
 }
 
 /**
@@ -374,6 +631,7 @@ export function exportGisGeoJson(options: {
   // 3. User-marked Zones of Interest (ZOIs)
   if (options.zoiFeatures && options.zoiFeatures.length > 0) {
     options.zoiFeatures.forEach((zoi, idx) => {
+      const isPolygon = zoi.polygonCoordinates && zoi.polygonCoordinates.length >= 3;
       features.push({
         type: "Feature",
         id: `zoi_${zoi.id || idx}`,
@@ -383,11 +641,17 @@ export function exportGisGeoJson(options: {
           elevationM: zoi.elevationM,
           createdAtSol: zoi.createdAtSol,
           notes: zoi.notes || "",
+          spatialProperties: zoi.spatialProperties,
         },
-        geometry: {
-          type: "Point",
-          coordinates: zoi.coordinates,
-        },
+        geometry: isPolygon
+          ? {
+              type: "Polygon",
+              coordinates: [zoi.polygonCoordinates!],
+            }
+          : {
+              type: "Point",
+              coordinates: zoi.coordinates,
+            },
       });
     });
   }
@@ -413,17 +677,19 @@ export function exportGisGeoJson(options: {
     features.push(options.viewshedFeature);
   }
 
-  const collection = {
+  const rawCollection = {
     type: "FeatureCollection",
     metadata: {
       generatedBy: "MarsForAll // JPL AMMOS MMGIS Spatial Engine",
       targetSite: options.site,
       projection: "IAU_2000:49900 (Mars 2000 Sphere)",
+      marsEquatorialRadiusMeters: MARS_EQUATORIAL_RADIUS_METERS,
       exportTimestampUtc: new Date().toISOString(),
       featureCount: features.length,
     },
     features,
   };
 
-  return JSON.stringify(collection, null, 2);
+  const enrichedCollection = geojsonAddSpatialProperties(rawCollection, options.site);
+  return JSON.stringify(enrichedCollection, null, 2);
 }

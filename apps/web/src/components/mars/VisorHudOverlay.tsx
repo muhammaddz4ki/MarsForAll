@@ -12,6 +12,7 @@ interface VisorHudOverlayProps {
   selectedWaypoint: MountSharpWaypoint | null;
   activeRoute: MarswalkRouteResult | null;
   onOpenPovModal: (wp: MountSharpWaypoint) => void;
+  onExitVisorHud?: () => void;
   dustStormActive?: boolean;
   currentSol?: number;
   theme?: "dark" | "light";
@@ -21,6 +22,7 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   selectedWaypoint,
   activeRoute,
   onOpenPovModal,
+  onExitVisorHud,
   dustStormActive = false,
   currentSol = 4180,
   theme = "dark",
@@ -28,6 +30,17 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
   const t = useTranslations("hud");
   const isDark = theme === "dark";
   const target = selectedWaypoint ?? activeRoute?.targetWaypoint;
+
+  // ESC key listener to exit visor mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onExitVisorHud?.();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onExitVisorHud]);
 
   // Real NASA DONKI + MSL RAD Telemetry State
   const [spaceWeather, setSpaceWeather] = useState<SpaceWeatherTelemetry | null>(null);
@@ -113,6 +126,26 @@ export const VisorHudOverlay: React.FC<VisorHudOverlayProps> = ({
       <div className="absolute top-4 right-4 w-5 h-5 border-t-2 border-r-2 border-cyan-500/80 pointer-events-none" />
       <div className="absolute bottom-4 left-4 w-5 h-5 border-b-2 border-l-2 border-cyan-500/80 pointer-events-none" />
       <div className="absolute bottom-4 right-4 w-5 h-5 border-b-2 border-r-2 border-cyan-500/80 pointer-events-none" />
+
+      {/* Precision Center Reticle */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border border-cyan-400/50 flex items-center justify-center">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+        </div>
+        <div className="absolute w-12 h-[1px] bg-cyan-400/40" />
+        <div className="absolute h-12 w-[1px] bg-cyan-400/40" />
+      </div>
+
+      {/* TOP-RIGHT: Clear Exit Visor Button */}
+      <div className="absolute top-4 right-4 pointer-events-auto z-40">
+        <button
+          onClick={onExitVisorHud}
+          className="px-3 py-1.5 bg-[#07090e]/95 hover:bg-[#161e2e] text-amber-400 hover:text-amber-300 border border-amber-500 font-mono font-bold text-[10px] tracking-wider transition-colors shadow-lg"
+          title="Keluar dari mode Visor Helm Astronot (ESC)"
+        >
+          [ KELUAR MODE VISOR (ESC) ]
+        </button>
+      </div>
 
       {/* TOP-CENTER: Precision Dynamic Compass Bearing Tape */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-auto">

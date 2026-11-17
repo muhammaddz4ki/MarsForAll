@@ -45,20 +45,28 @@ export const MarsAerialScoutDock: React.FC<MarsAerialScoutDockProps> = memo(({
   const [altitudeM, setAltitudeM] = useState<number>(350);
   const [flightLabel, setFlightLabel] = useState<string>(defaultCoords.label);
 
+  // Automatically synchronize drone inputs when active mission site changes
+  React.useEffect(() => {
+    const coords = currentSite === "gale_crater"
+      ? { lat: -5.4453, lon: 137.8414, label: "Mount Sharp Boxwork" }
+      : { lat: 18.4120, lon: 77.4220, label: "Three Forks Delta Front" };
+    setTargetLat(coords.lat.toString());
+    setTargetLon(coords.lon.toString());
+    setFlightLabel(coords.label);
+  }, [currentSite]);
+
   const presets = currentSite === "gale_crater"
     ? [
-        { label: "Boxwork Veins 2025", lat: -5.4453, lon: 137.8414 },
+        { label: "Mount Sharp Boxwork", lat: -5.4453, lon: 137.8414 },
+        { label: "Gediz Vallis Ridge", lat: -5.2150, lon: 137.7120 },
         { label: "Vera Rubin Ridge", lat: -4.9281, lon: 137.5684 },
-        { label: "Glen Torridon Smectite", lat: -4.7561, lon: 137.4042 },
-        { label: "Bradbury Landing (Sol 0)", lat: -4.5895, lon: 137.4417 },
-        { label: "Gediz Vallis Channel", lat: -5.2150, lon: 137.7120 },
+        { label: "Bradbury Landing", lat: -4.5895, lon: 137.4417 },
       ]
     : [
         { label: "Three Forks Delta Front", lat: 18.4120, lon: 77.4220 },
-        { label: "Neretva Vallis Canyon", lat: 18.4480, lon: 77.4300 },
-        { label: "Belva Impact Crater", lat: 18.4600, lon: 77.4050 },
-        { label: "Cheyava Falls Outcrop", lat: 18.4800, lon: 77.3750 },
-        { label: "Octavia Butler Landing", lat: 18.3789, lon: 77.4509 },
+        { label: "Cheyava Falls", lat: 18.4800, lon: 77.3750 },
+        { label: "Neretva Vallis", lat: 18.4480, lon: 77.4300 },
+        { label: "Belva Crater", lat: 18.4600, lon: 77.4050 },
       ];
 
   const handleApplyPreset = (p: { label: string; lat: number; lon: number }) => {
