@@ -31,8 +31,11 @@ export default function MarsTakeMeSection() {
         {/* Subtle Right-Side Gradient ONLY to guarantee high text contrast without darkening the astronaut on the left */}
         <div className="absolute inset-0 bg-gradient-to-l from-[#05070b]/90 via-[#05070b]/45 via-50% to-transparent pointer-events-none" />
         
+        {/* Seamless Top Gradient Connecting to MarsVideoHero */}
+        <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-[2]" />
+
         {/* Seamless Bottom Gradient Connecting to Next Section */}
-        <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/95 via-30% via-[#05070b]/50 via-65% to-transparent pointer-events-none z-[1]" />
+        <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-[2]" />
       </div>
 
       {/* 1. MAIN HERO CONTENT GRID */}

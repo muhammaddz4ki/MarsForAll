@@ -33,8 +33,8 @@ export default function MarsMissionSection() {
         />
 
         {/* Deep, Soft Top & Bottom Black Gradients for Seamless Blending */}
-        <div className="absolute top-0 left-0 right-0 h-48 sm:h-64 lg:h-80 bg-gradient-to-b from-[#05070b] via-[#05070b]/95 via-30% via-[#05070b]/50 via-65% to-transparent pointer-events-none z-[2]" />
-        <div className="absolute bottom-0 left-0 right-0 h-48 sm:h-64 lg:h-80 bg-gradient-to-t from-[#05070b] via-[#05070b]/95 via-30% via-[#05070b]/50 via-65% to-transparent pointer-events-none z-[2]" />
+        <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-[2]" />
+        <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-[2]" />
         
         {/* Subtle horizontal vignette */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#05070b]/80 via-transparent to-[#05070b]/80 pointer-events-none z-[1]" />

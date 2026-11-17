@@ -76,7 +76,7 @@ export default function MarsVideoHero() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full h-screen min-h-[600px] overflow-hidden bg-black select-none"
+      className="relative w-full h-screen min-h-[600px] overflow-hidden bg-[#05070b] select-none"
     >
       {/* 1. FULLSCREEN BACKGROUND VIDEO (Loops continuously) */}
       <video
@@ -94,10 +94,10 @@ export default function MarsVideoHero() {
       </video>
 
       {/* 2. TOP SHADOW VIGNETTE (For navbar contrast) */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/80 via-black/30 to-transparent z-10 pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#05070b]/80 via-[#05070b]/30 to-transparent z-10 pointer-events-none" />
 
-      {/* 3. DEEP BOTTOM SHADOW VIGNETTE (Ultra-smooth seamless black transition into next page) */}
-      <div className="absolute bottom-0 left-0 right-0 h-64 sm:h-80 lg:h-[420px] bg-gradient-to-t from-[#05070b] via-[#05070b]/90 via-40% via-[#05070b]/40 to-transparent z-10 pointer-events-none" />
+      {/* 3. DEEP BOTTOM SHADOW VIGNETTE (Ultra-smooth seamless #05070b transition into next page) */}
+      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent z-10 pointer-events-none" />
 
       {/* 4. CLEAN SCROLL DOWN PILL INDICATOR */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-auto">

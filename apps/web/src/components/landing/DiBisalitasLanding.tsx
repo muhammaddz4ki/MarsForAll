@@ -207,8 +207,8 @@ function MartianScienceMatrixSection() {
   return (
     <section id="layer-sains" className="py-24 md:py-32 px-4 sm:px-6 bg-[#05070b] text-white relative overflow-hidden select-none">
       {/* Top and Bottom Seamless Blending Gradients (Connecting Sections) */}
-      <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/90 via-40% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-0" />
-      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/90 via-40% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-0" />
+      <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
       
       {/* Background Watermark */}
       <div className="absolute top-[28%] left-1/2 -translate-x-1/2 text-[14rem] md:text-[24rem] font-serif text-white/[0.02] tracking-tighter pointer-events-none select-none z-0 whitespace-nowrap">
@@ -428,8 +428,9 @@ function CTAAndStatsSection() {
 
   return (
     <section className="relative w-full bg-[#05070b] text-white overflow-x-clip overflow-y-visible flex flex-col items-center justify-center pt-24 pb-16 z-40 select-none">
-      {/* Seamless Top Black Gradient */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#05070b] to-transparent pointer-events-none z-[1]" />
+      {/* Seamless Top & Bottom Gradients */}
+      <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
       
       {/* Background Gradients */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#f97316]/10 blur-[150px] rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
@@ -680,8 +681,8 @@ function ImpactSection() {
       </div>
 
       {/* 1. SEAMLESS TOP & BOTTOM GRADIENTS TO BLEND WITH ADJACENT PAGES */}
-      <div className="absolute top-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-b from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
-      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-64 md:h-80 bg-gradient-to-t from-[#05070b] via-[#05070b]/90 via-35% via-[#05070b]/40 via-70% to-transparent pointer-events-none z-10" />
+      <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
 
       {/* 2. UNIFIED SLEEK BOTTOM CONTROL DOCK (CLEAN, TIDY, ZERO TEXT CLASH) */}
       <div className="absolute bottom-8 sm:bottom-12 md:bottom-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 sm:gap-4 bg-[#07090e]/85 backdrop-blur-xl px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.85)]">
@@ -744,7 +745,7 @@ function ShowcaseSection() {
   return (
     <section ref={sectionRef} className="relative w-full bg-[#05070b] overflow-x-clip overflow-y-visible flex flex-col items-center justify-center pt-10 pb-0 select-none">
       {/* Seamless Top Gradient (Tepat di atas background, di bawah aset laptop) */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-[#05070b] to-transparent pointer-events-none z-0" />
+      <div className="absolute top-0 left-0 right-0 h-44 sm:h-60 lg:h-72 bg-gradient-to-b from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
 
       <div className="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1200px] h-[400px] sm:h-[600px] md:h-[800px] bg-[#f97316]/15 blur-[150px] rounded-[100%] pointer-events-none z-0" />
 
@@ -767,7 +768,7 @@ function ShowcaseSection() {
       </div>
 
       {/* Seamless Bottom Gradient (Tepat di atas background, di bawah footer) */}
-      <div className="absolute bottom-0 left-0 w-full h-24 md:h-32 lg:h-48 bg-gradient-to-t from-[#05070b] via-[#05070b]/80 to-transparent pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-full h-44 sm:h-60 lg:h-72 bg-gradient-to-t from-[#05070b] via-[#05070b]/70 via-50% to-transparent pointer-events-none z-10" />
     </section>
   );
 }
@@ -779,7 +780,7 @@ function Footer() {
   const tFooter = useTranslations("landing.footer");
 
   return (
-    <footer className="bg-[#05070b] text-slate-400 py-16 border-t border-white/10 px-6 relative z-50 select-none">
+    <footer className="bg-[#05070b] text-slate-400 py-16 border-t border-white/5 px-6 relative z-50 select-none">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         <div className="space-y-3 md:col-span-2">
           <div className="flex items-center gap-3">
