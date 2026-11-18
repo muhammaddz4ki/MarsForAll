@@ -1,153 +1,51 @@
-# MARSFORALL // GALE-01
-### Interplanetary Survival Guide: Hyperlocalized Martian Excursion Map & ML Prospector
+<div align="center">
 
-> **NASA Space Apps Challenge 2026 Submission**  
-> **Challenge:** Interplanetary Survival Guide: Martian Map  
-> **Primary Target:** Mount Sharp (*Aeolis Mons*), Gale Crater, Mars (`Lat: -5.4453°, Lon: 137.8414°`)  
-> **Scientific Focus:** Curiosity Rover 2025 Boxwork Mineral Vein Discovery, 5 NASA Operational Layers, & Curiosity Historical Traverse  
-> **Official Repository:** [https://github.com/muhammaddz4ki/MarsForAll](https://github.com/muhammaddz4ki/MarsForAll)
+# MARSFORALL — ARES MARTIAN MAP
+### Planetary GIS Workstation, Autonomous EVA Route Planner & Multi-Modal Martian Surface Explorer
+
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MapLibre GL](https://img.shields.io/badge/MapLibre_GL-2.5D_Terrain-396CB2?style=flat-square)](https://maplibre.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-WebGL_3D_%26_360%C2%B0-000000?style=flat-square&logo=three.js)](https://threejs.org/)
+[![NASA Data](https://img.shields.io/badge/Data-NASA_Mars_Trek_%26_PDS-c85a32?style=flat-square)](https://trek.nasa.gov/mars/)
+[![License](https://img.shields.io/badge/License-MIT-10b981?style=flat-square)](./LICENSE)
+
+**Bridging the gap between mission-critical planetary GIS (NASA-AMMOS MMGIS) and intuitive consumer navigation (Google Maps).**
+
+[Live Web Application (ID)](https://marsforall.vercel.app/id/peta) • [Live Web Application (EN)](https://marsforall.vercel.app/en/peta) • [Mission Config API](https://marsforall.vercel.app/api/mission-config)
+
+</div>
 
 ---
 
 ## 1. Executive Summary
 
-Global planetary exploration portals (such as JPL Mars Trek and USGS Astrogeology Planetary Geologic Mapping) are engineered for regional orbital surveys. However, human astronauts conducting localized surface extravehicular activities ("Marswalks") face extreme terrain and environmental challenges requiring hyperlocalized, multi-layered telemetry.
+Planetary datasets collected by NASA orbiters and rovers are extraordinarily rich, yet they remain locked behind complex scientific interfaces that are difficult for the public to navigate—while consumer mapping tools lack the geodesic rigor required for planetary exploration.
 
-**MARSFORALL // GALE-01** provides an autonomous, offline-first tactical decision interface for crewed Martian surface operations. Focused on Mount Sharp in Gale Crater—specifically the intricate boxwork mineral ridges identified by the MSL Curiosity rover in 2025—the platform synthesizes multimodal orbital GIS data, thermal subsurface consistency models, real-time rover environmental telemetry, machine-learning resource prospecting, and physiological consumable tracking into a unified mission cockpit.
-
----
-
-## 2. Core Capabilities & Scientific Innovations
-
-### A. High-Performance Hybrid Map Viewport (MapLibre GL 2.5D/3D)
-- **Local-First Resilience**: Pre-packaged high-resolution vector GeoJSON contours, geological polygon units, and hazard zones for zero-latency offline operation during communication blackouts.
-- **Live Planetary Tile Fallback**: Capable of streaming live USGS Mars Astrogeology and NASA Mars Trek WMTS orthomosaics and DEM hillshades when orbital uplinks are available.
-- **Unified Dual-Mode Telemetry**:
-  - `[Habitat Mission Control]`: Multi-panel strategic operations view for Science Officers and Flight Directors.
-  - `[Astronaut Helmet Visor HUD]`: Minimalist heads-up display overlay with compass tape, pitch ladder, slope safety alerts, and real-time oxygen/battery telemetry for surface EVAs.
-
-### B. 5 Operational Scientific Overlay Layers (NASA Mars Trek Catalog)
-1. **Layer 1: Optical & Geologic Units**: HiRISE 25 cm/px & CTX 6 m/px orbital imagery blended with USGS Planetary Geologic Mapping units (Noachian/Hesperian/Amazonian, boxwork veins, smectite clay, hematite ridge, capping sandstone).
-2. **Layer 2: Topographic DEM & Mobility Hazard**: MOLA & HiRISE 1m DTM contours with slope classification:
-   - `[SAFE <15°]`: Green corridor, nominal rover/EVA foot traction.
-   - `[CAUTION 15°-25°]`: Yellow sector, elevated metabolic exertion.
-   - `[HAZARD >25°]`: Red boundary, catastrophic rollover and cliff hazard.
-3. **Layer 3: Thermal & Subsurface Sand Trap Detector**: THEMIS Night IR & TES Apparent Thermal Inertia with Morgan et al. 2020 consistency index (`+1` consistent with buried water ice/hydrated minerals, `0` inconclusive, `-1` inconsistent), identifying firm bedrock (`[BEDROCK FIRM]`) vs loose dust/sand sinkage hazards (`[SOFT SAND TRAP RISK]`).
-4. **Layer 4: Science & Hydrated Mineralogy**: CRISM 18 m/px hyperspectral mapping (smectite clays, polyhydrated sulfates, hematite, silica) and GRS/MONS/DAN Water-Equivalent Hydrogen (`WEH %`).
-5. **Layer 5: Safety & Space Environment**: MGS MAG Crustal Magnetic Field intensity (`nT`) natural radiation shielding combined with MSL RAD surface dosimetry (`mSv/sol`) and REMS atmospheric conditions.
-
-### C. Curiosity Rover Historical Traverse & Landing Ellipse
-- Complete Gale Crater mission timeline path: Bradbury Landing Ellipse -> Yellowknife Bay -> Pahrump Hills -> Vera Rubin Ridge -> Glen Torridon -> Gediz Vallis -> Boxwork 2025.
-- Dashed tactical cyan trail with historical Sol checkpoints and interactive toggle.
-
-### D. ML Prospector Engine & Uncertainty Quantification
-- **Multi-Factor Fusion Model**: Evaluates hydrated mineral signatures, apparent thermal inertia, MGS MAG deflection, and regolith sinkage risk.
-- **Confidence Scoring**: Delivers a Scientific Resource Promise Score ($0\text{--}100\%$) paired with an Uncertainty Index ($\pm\%$) and an automated decision matrix (`[PRIORITY_SAMPLING_SITE]`, `[SECONDARY_EXPLORATION]`, `[HAZARD_BYPASS_REQUIRED]`).
-
-### E. Weighted Earth Analogue Matcher
-Calibrates Martian surface samples against terrestrial analogues using Euclidean feature weighting:
-- **Haughton Impact Crater (Devon Island, Canada)**: Polygon permafrost breccias.
-- **Mars Hill & Badwater (Death Valley, USA)**: Alluvial gravel fans and scree slopes.
-- **Río Tinto (Spain)**: Acidic gossan iron-sulfate deposits.
-- **Atacama Desert (Yungay Basin, Chile)**: Hyper-arid nitrate/perchlorate salts.
-
-### F. Terrain-Aware Marswalk Route Planner
-- **Slope-Penalized Pathfinding**: Dynamic distance calculation with exponential slope penalties for ascents $>15^\circ$.
-- **Astronaut Life Support Modeling**: Calculates MET expenditure, metabolic oxygen consumption rates ($0.95\text{--}2.20\text{ L/min}$), battery draw, and enforces a mandatory $25\%$ emergency reserve threshold.
+**MarsForAll (Ares Martian Map)** solves this by combining **Google Maps-grade intuitiveness** with **NASA-AMMOS MMGIS scientific precision**:
+- **For the General Public & Students:** 1-click map layer switching (*True Satellite*, *Elevation Map*, *Night Thermal*), instant crater searchchips, plain-language Place Cards with terrain safety badges (`SAFE`, `STEEP`, `HAZARD`), and immersive 360° Rover Panoramas.
+- **For Mission Planners & Researchers:** A 64×64 dynamic corridor A* EVA route planner with Catmull-Rom spline smoothing, real-time Portable Life Support System (PLSS) consumables modeling, a 35-parameter ISRU & Biosignature ML Prospector, Viewshed/Elevation transect profiling, and terrestrial analogue matching.
 
 ---
 
-## 3. Strict UI Design System & NASA Space Apps Compliance
+## 2. Core Features & Scientific Modules
 
-- **ZERO Gradients (Pure Flat Matte Surfaces)**: No CSS gradients, linear transitions, or glows. Built strictly with solid matte hues (`#07090e`, `#0b0f17`, `#111827`, `#161e2e`) and crisp `1px solid` slate borders for maximum legibility under high-contrast cockpit conditions.
-- **ZERO Emojis / Unicode Emoticons**: 100% of indicators are monochrome SVG vectors (stroke `1.5px`) and structured status badges (`[SAFE <15 DEG]`, `[CAUTION 15-25 DEG]`, `[HAZARD >25 DEG]`, `[CT: +1]`).
-- **Tabular Monospace Telemetry**: All numbers, spatial coordinates, elevations, and metric units (`m`, `km`, `deg`, `tiu`, `mSv/sol`, `L/min`, `kg`) are strictly formatted in `font-mono tabular-nums`.
-- **STRICT BRANDING COMPLIANCE**:
-  - **Zero Official NASA Logos**: The official NASA insignia ("meatball") and NASA "worm" logo are strictly prohibited and not included anywhere in the repository or user interface.
-  - Dedicated custom vector mission badge: `apps/web/public/images/ares-path-badge.svg`.
+### 2.1 Multi-Resolution Planetary GIS Engine (`2D / 2.5D`)
+- **Real-Time Projection Proxy (`/api/mars-tiles`):** Dynamically transforms Web Mercator (`EPSG:3857`) tile requests into NASA Mars Trek Equirectangular (`Plate Carrée`) WMTS coordinates with smart global fallback to Viking MDIM 2.1.
+- **1-Click Orbital Layer Fusion:**
+  - **True Satellite (`CTX / HiRISE + Viking MDIM 2.1`):** High-resolution 6 m/px crater orthomosaics bounded to **Gale Crater (MSL Curiosity)** and **Jezero Crater (Mars 2020 Perseverance)** over a seamless global basemap.
+  - **Elevation Map (`MOLA Colorized Hillshade`):** Laser altimetry topography revealing craters, ridges, and ancient river deltas.
+  - **Night Thermal (`THEMIS Night IR`):** Thermal inertia mapping to distinguish exposed bedrock from hazardous loose sand traps.
+- **Chronological Sol Traverse Scrubber:** Interactive timeline slider (`SOL 0` to `SOL 4180` in Gale; `SOL 0` to `SOL 1220` in Jezero) that replays rover traverse paths and active vehicle telemetry over time.
 
----
+### 2.2 Autonomous Marswalk EVA Route Planner
+- **Meandering Terrain-Aware A* Pathfinding:** Evaluates a high-resolution $64 \times 64$ cost grid factoring in MOLA slope angles, crater rims, sand trap hazards, and radiation exposure—smoothed via Catmull-Rom splines into natural valley-following paths.
+- **Dual-Route Comparison (Google Maps Style):** Generates both a **Primary Safe Route** (`#10b981`) and a **Dashed Alternative Route** (`#f59e0b`) with floating distance/slope badges and one-click route switching.
+- **PLSS Life-Support & Hazard Telemetry:** Computes real-time astronaut expenditure for Oxygen ($\text{O}_2$), Battery power, Cooling water ($\text{H}_2\text{O}$), and ionizing radiation dose ($\mu\text{Sv}$).
+- **MMGIS Elevation Transect & Line-of-Sight (Viewshed):** Interactive bottom profile dock displaying elevation curves, slope gradients, and radio/visual line-of-sight from the habitat.
 
-## 4. Scientific Attributions & Data Sources
+### 2.3 35-Parameter AI Resource Prospector (ISRU & Astrobiology)
+- Evaluates candidate landing and excavation sites across **35 weighted planetary parameters**, including hydrated sulfate/phyllosilicate signatures, neutron spectrometer subsurface $\text{H}_2\text{O}$ ice stability, solar irradiance, slope stability, and regolith bearing capacity.
 
-This application synthesizes open planetary data in accordance with NASA Open Science guidelines:
-- **JPL Mars Trek**: Gale Crater DEM and base imagery layers ([trek.nasa.gov/mars](https://trek.nasa.gov/mars/)).
-- **USGS Planetary Geologic Mapping Program**: Mount Sharp (Aeolis Mons) structural mapping and stratigraphy.
-- **NASA AMMOS MMGIS**: Open-source planetary mapping interface paradigms.
-- **NASA PDS Geosciences Node**: Mars Science Laboratory (MSL) Curiosity ChemCam, Mastcam, RAD, and REMS instrument telemetry.
-- **NASA Worldview / GIBS**: Earth analogue comparative multispectral datasets.
-
----
-
-## 5. Repository Structure
-
-```
-ares-martian-map/
-├── AGENTS.md                  # Universal AI Coding Agent Project Guidelines
-├── rules.md                   # Strict Architecture & Compliance Reference
-├── .cursorrules               # Cursor / Antigravity Persistent Rules
-├── .github/
-│   └── copilot-instructions.md # GitHub Copilot Agent Configuration
-├── apps/
-│   ├── web/                   # Next.js 14 App Router, MapLibre GL, Tailwind CSS
-│   │   ├── messages/          # EN & ID Localization Dictionaries
-│   │   ├── public/images/     # Flat Vector Mission Badge (No NASA Logos)
-│   │   └── src/
-│   │       ├── app/           # Locale-aware App Router ([locale]/page.tsx, /peta)
-│   │       ├── components/    # Mission Badge & Mars UI Component Suite
-│   │       │   └── mars/      # AresMapViewer, VisorHud, ProspectorPanel, etc.
-│   │       └── lib/
-│   │           ├── martian/   # Mathematical Engines & Planetary Models
-│   │           └── services/  # Cesium & Worldview Integration Adapters
-│   └── api/                   # Headless API Workspace
-├── packages/
-│   └── shared/                # Shared TypeScript Martian Domain Models
-└── scripts/
-    └── verify-mars-engines.mjs # Standalone Automated Verification Script
-```
-
----
-
-## 6. Local Quickstart Guide
-
-### Prerequisites
-- **Node.js** `>= 20.0.0`
-- **pnpm** `>= 9.0.0` (`npm install -g pnpm`)
-
-### 1. Installation
-```bash
-git clone https://github.com/muhammaddz4ki/MarsForAll.git
-cd MarsForAll
-pnpm install
-```
-
-### 2. Verify Scientific Calculation Engines
-```bash
-pnpm --filter @marsforall/shared build
-node scripts/verify-mars-engines.mjs
-```
-*Expected: All 7 verification test suites pass successfully.*
-
-### 3. Run Development Server
-```bash
-pnpm --filter @marsforall/web dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### 4. Production Build & Typecheck
-```bash
-pnpm --filter @marsforall/web typecheck
-pnpm --filter @marsforall/web build
-```
-
----
-
-## 7. Official Repository & Deployment
-- **GitHub Repository**: [https://github.com/muhammaddz4ki/MarsForAll](https://github.com/muhammaddz4ki/MarsForAll)
-- **Clone (HTTPS)**: `git clone https://github.com/muhammaddz4ki/MarsForAll.git`
-- **Submission Branch**: `main`
-
----
-
-## 8. License
-Distributed under the MIT License. Developed for NASA Space Apps Challenge 2026.
+### 2.4 Immersive 3D Globe, 360° Surface POV, Visor HUD & Aerial Scout
+- **3
