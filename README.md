@@ -48,4 +48,93 @@ Planetary datasets collected by NASA orbiters and rovers are extraordinarily ric
 - Evaluates candidate landing and excavation sites across **35 weighted planetary parameters**, including hydrated sulfate/phyllosilicate signatures, neutron spectrometer subsurface $\text{H}_2\text{O}$ ice stability, solar irradiance, slope stability, and regolith bearing capacity.
 
 ### 2.4 Immersive 3D Globe, 360° Surface POV, Visor HUD & Aerial Scout
-- **3
+- **360° Rover Mastcam Explorer:** Equirectangular WebGL panorama viewer at key rover stations with interactive geological hotspots and seamless zenith/nadir sky synthesis.
+- **3D Planetary Globe:** Interactive Three.js Martian globe with landing site pins and orbital camera transitions.
+- **Astronaut Helmet Visor HUD:** Distraction-free first-person EVA visor overlay featuring an azimuth compass tape, PLSS life-support gauges, environmental weather readout, and target reticle.
+- **Ingenuity Aerial Scout Simulator:** Site-aware rotorcraft reconnaissance simulator with animated radar footprint and `60°` pitched camera tracking across Gale and Jezero targets.
+
+### 2.5 Earth Analogue Matcher Lab
+- Quantitatively compares Martian geological formations against terrestrial extreme environments (**Atacama Desert**, **McMurdo Dry Valleys**, **Rio Tinto**, **Pilbara Craton**, **Icelandic Basalt Highlands**, and **Salar de Uyuni**) using mineralogical, thermal, and morphological similarity scoring.
+
+---
+
+## 3. System Architecture & Geodesic Foundations
+
+```text
+ares-martian-map/
+├── apps/
+│   └── web/                        # Next.js 14 App Router (TypeScript + Tailwind CSS)
+│       ├── messages/               # Synchronized Bilingual Dictionaries (id.json, en.json)
+│       └── src/
+│           ├── app/
+│           │   ├── [locale]/       # Localized routes (/id, /en, /id/peta, /en/peta)
+│           │   └── api/
+│           │       ├── mars-tiles/ # Mercator-to-Equirectangular NASA WMTS Tile Proxy
+│           │       ├── mission-config/ # MMGIS-compatible open mission configuration API
+│           │       └── panorama-proxy/ # Resilient Rover 360° imagery proxy
+│           ├── components/mars/    # Modular GIS, 3D Globe, 360° POV, Visor HUD & Charts
+│           └── lib/martian/        # Geodesic math, A* router, 35-param ML scorer, MMGIS utils
+└── packages/
+    └── shared/                     # Shared TypeScript interfaces & planetary constants
+```
+
+### Geodesic & Mathematical Rigor
+1. **IAU-2015 Mars Ellipsoid Datum:** All spatial calculations use Mars's equatorial radius $R_{eq} = 3,396.19\text{ km}$ ($1^\circ \approx 59.27\text{ km}$ at the equator) rather than Earth-centric constants.
+2. **Web Mercator to NASA Mars Trek Equirectangular Transform:**
+   $$\lambda_{\text{deg}} = \left(\frac{x_{\text{merc}} + 0.5}{2^z}\right) \times 360^\circ - 180^\circ, \quad \phi_{\text{deg}} = \arctan\left(\sinh\left(\pi - \frac{2\pi(y_{\text{merc}} + 0.5)}{2^z}\right)\right) \times \frac{180^\circ}{\pi}$$
+3. **EVA Slope & Hazard Cost Function:** Penalizes slopes $>15^\circ$ exponentially while routing around low-thermal-inertia sand traps and high-exposure ridges.
+
+---
+
+## 4. NASA Open Data & Heritage Acknowledgements
+
+- **NASA / JPL-Caltech Mars Trek WMTS API:** Orbital imagery and digital elevation models (`Viking MDIM 2.1`, `MOLA Colorized Elevation`, `THEMIS Day/Night IR`, `CTX`, and `HiRISE`).
+- **NASA-AMMOS MMGIS:** Architectural inspiration for spatial statistics (`area2D`, `length2D`, ZOI `min/max/avg/stddev`), elevation transect profiling, coordinate deep-linking, and `/api/mission-config` schema.
+- **NASA Planetary Data System (PDS):** Curiosity (MSL) and Perseverance (Mars 2020) rover traverse coordinates, sol waypoints, and Mastcam/Navcam surface panoramas.
+
+> *Disclaimer: MarsForAll is an independent open-source project developed for the NASA Space Apps Challenge. It is not an official NASA website or product.*
+
+---
+
+## 5. Getting Started (Local Development)
+
+### Prerequisites
+- **Node.js** `>= 18.18.0` (Node 20+ recommended)
+- **pnpm** `>= 9.0.0` (or `npm`)
+
+### Installation & Run
+
+```bash
+# 1. Clone the repository
+git clone [https://github.com/muhammaddz4ki/MarsForAll.git](https://github.com/muhammaddz4ki/MarsForAll.git)
+cd MarsForAll
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Start the development server (http://localhost:3000)
+pnpm --prefix apps/web dev
+```
+
+### Production Build & Typecheck
+
+```bash
+# Run static type verification
+npm --prefix apps/web run typecheck
+
+# Build production bundle
+npm --prefix apps/web run build
+
+# Start production server
+npm --prefix apps/web run start
+```
+
+---
+
+## 6. Deployment (Vercel)
+
+This monorepo is pre-configured for zero-config deployment on **Vercel**:
+- **Framework Preset:** `Next.js`
+- **Root Directory:** `apps/web`
+- **Build Command:** Default (`next build`)
+- **Environment Variables:** None required (all NASA WMTS endpoints and offline fallbacks work out of the box).
