@@ -10,6 +10,7 @@ interface MarswalkProfileDockProps {
   onClose?: () => void;
   isLeftDrawerOpen?: boolean;
   isSidebarExpanded?: boolean;
+  isRightPanelOpen?: boolean;
 }
 
 export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
@@ -18,6 +19,7 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
   onClose,
   isLeftDrawerOpen = false,
   isSidebarExpanded = true,
+  isRightPanelOpen = false,
 }) => {
   const t = useTranslations("marswalk");
   const svgRef = useRef<SVGSVGElement>(null);
@@ -105,7 +107,7 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
           : isLeftDrawerOpen
           ? "left-0 sm:left-[400px]"
           : "left-0 sm:left-[50px]"
-      } right-0 bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
+      } ${isRightPanelOpen ? "right-80 sm:right-96" : "right-0"} bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
     >
       {/* Top Header Row */}
       <div className="h-7 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between text-[10px]">

@@ -123,6 +123,23 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
     return points;
   }, [routeResult]);
 
+  // Proportional Y-Axis Domain Normalization (Occupies 20% - 85% of chart height)
+  const elevationDomain = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [-4600, -3800];
+    const elevs = chartData
+      .map((d: any) => d.elevationM)
+      .filter((e: number) => typeof e === "number" && !isNaN(e));
+    if (elevs.length === 0) return [-4600, -3800];
+    const minVal = Math.min(...elevs);
+    const maxVal = Math.max(...elevs);
+    const range = Math.max(20, maxVal - minVal);
+    // 20% to 85% utilization -> span = range / 0.65
+    const totalSpan = range / 0.65;
+    const bottomPad = Math.round(totalSpan * 0.20);
+    const topPad = Math.round(totalSpan * 0.15);
+    return [Math.floor(minVal - bottomPad), Math.ceil(maxVal + topPad)];
+  }, [chartData]);
+
   return (
     <div className={`flex flex-col h-full overflow-y-auto ${
       isDark ? "text-slate-200" : "text-slate-800"
@@ -551,7 +568,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <XAxis dataKey="distanceKm" unit="km" tick={{ fill: "#64748b", fontSize: 9 }} />
               <YAxis
-                domain={[-4600, -3800]}
+                domain={elevationDomain}
                 unit="m"
                 tick={{ fill: "#64748b", fontSize: 9 }}
               />
@@ -586,7 +603,7 @@ export const MarswalkPlannerPanel: React.FC<MarswalkPlannerPanelProps> = ({
                 dot={false}
                 name="slopeDeg"
               />
-              <ReferenceLine y={-4000} stroke="#334155" strokeDasharray="2 2" />
+              <ReferenceLine y={Math.round((elevationDomain[0] + elevationDomain[1]) / 2)} stroke="#334155" strokeDasharray="2 2" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

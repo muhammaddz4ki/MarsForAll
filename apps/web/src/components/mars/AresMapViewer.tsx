@@ -602,7 +602,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "mola_hrsc" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.95,
+              "raster-opacity": orbitalSource === "mola_hrsc" ? 0.85 : 0,
               "raster-contrast": 0.35,
               "raster-resampling": "linear",
               "raster-fade-duration": 0,
@@ -616,7 +616,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               visibility: orbitalSource === "themis_night" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 0.95,
+              "raster-opacity": orbitalSource === "themis_night" ? 0.85 : 0,
               "raster-contrast": 0.30,
               "raster-resampling": "linear",
               "raster-fade-duration": 0,
@@ -627,14 +627,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "raster",
             source: "mars_ctx_gale",
             layout: {
-              visibility:
-                (orbitalSource === "jpl_hirise" || !orbitalSource) &&
-                currentSite === "gale_crater"
-                  ? "visible"
-                  : "none",
+              visibility: currentSite === "gale_crater" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 1.0,
+              "raster-opacity": orbitalSource === "mola_hrsc" || orbitalSource === "themis_night" ? 0.35 : 1.0,
               "raster-contrast": 0.25,
               "raster-resampling": "linear",
               "raster-fade-duration": 0,
@@ -645,14 +641,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             type: "raster",
             source: "mars_ctx_jezero",
             layout: {
-              visibility:
-                (orbitalSource === "jpl_hirise" || !orbitalSource) &&
-                currentSite === "jezero_crater"
-                  ? "visible"
-                  : "none",
+              visibility: currentSite === "jezero_crater" ? "visible" : "none",
             },
             paint: {
-              "raster-opacity": 1.0,
+              "raster-opacity": orbitalSource === "mola_hrsc" || orbitalSource === "themis_night" ? 0.35 : 1.0,
               "raster-contrast": 0.25,
               "raster-resampling": "linear",
               "raster-fade-duration": 0,
@@ -1721,12 +1713,21 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setLayoutProperty("mars-raster-viking", "visibility", "visible");
     }
 
+    const isMola = orbitalSource === "mola_hrsc";
+    const isThemis = orbitalSource === "themis_night";
+    const isOptical = orbitalSource === "jpl_hirise" || orbitalSource === "opm_basemap" || !orbitalSource;
+
     // 2. MOLA Shaded Relief
     if (map.getLayer("mars-raster-mola")) {
       map.setLayoutProperty(
         "mars-raster-mola",
         "visibility",
-        orbitalSource === "mola_hrsc" ? "visible" : "none"
+        isMola ? "visible" : "none"
+      );
+      map.setPaintProperty(
+        "mars-raster-mola",
+        "raster-opacity",
+        isMola ? 0.85 : 0
       );
     }
 
@@ -1735,31 +1736,42 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       map.setLayoutProperty(
         "mars-raster-themis-night",
         "visibility",
-        orbitalSource === "themis_night" ? "visible" : "none"
+        isThemis ? "visible" : "none"
+      );
+      map.setPaintProperty(
+        "mars-raster-themis-night",
+        "raster-opacity",
+        isThemis ? 0.85 : 0
       );
     }
 
     // 4. Gale CTX Mosaic (6m/px)
     if (map.getLayer("mars-raster-ctx-gale")) {
+      const isVisible = currentSite === "gale_crater";
       map.setLayoutProperty(
         "mars-raster-ctx-gale",
         "visibility",
-        (orbitalSource === "jpl_hirise" || !orbitalSource) &&
-          currentSite === "gale_crater"
-          ? "visible"
-          : "none"
+        isVisible ? "visible" : "none"
+      );
+      map.setPaintProperty(
+        "mars-raster-ctx-gale",
+        "raster-opacity",
+        isOptical ? 1.0 : 0.35
       );
     }
 
     // 5. Jezero CTX Mosaic (6m/px)
     if (map.getLayer("mars-raster-ctx-jezero")) {
+      const isVisible = currentSite === "jezero_crater";
       map.setLayoutProperty(
         "mars-raster-ctx-jezero",
         "visibility",
-        (orbitalSource === "jpl_hirise" || !orbitalSource) &&
-          currentSite === "jezero_crater"
-          ? "visible"
-          : "none"
+        isVisible ? "visible" : "none"
+      );
+      map.setPaintProperty(
+        "mars-raster-ctx-jezero",
+        "raster-opacity",
+        isOptical ? 1.0 : 0.35
       );
     }
   }, [orbitalSource, tileMode, currentSite, mapLoaded]);
@@ -1992,33 +2004,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         routeBadgeMarkersRef.current.push(altMarker);
       }
 
-      // 5. Render Maneuver Milestones (Turn and Terrain Guidance Badges)
-      if (activeRoute.maneuverMilestones && activeRoute.maneuverMilestones.length > 0) {
-        activeRoute.maneuverMilestones.forEach((m) => {
-          const el = document.createElement("div");
-          el.className = "select-none pointer-events-auto cursor-pointer";
-          const bgClass =
-            m.type === "TURN"
-              ? "bg-[#0b1329] text-[#60a5fa] border-[#3b82f6]"
-              : m.type === "CAUTION"
-              ? "bg-[#2d1b06] text-[#fbbf24] border-[#f59e0b]"
-              : "bg-[#062e1e] text-[#34d399] border-[#10b981]";
-          el.innerHTML = `
-            <div class="flex flex-col items-center -translate-y-4">
-              <div class="px-2 py-0.5 ${bgClass} border text-[9px] font-mono font-bold whitespace-nowrap shadow-md tracking-wider">
-                ${m.label}
-              </div>
-              <div class="w-1.5 h-1.5 rotate-45 border-r border-b ${m.type === 'TURN' ? 'border-[#3b82f6] bg-[#0b1329]' : m.type === 'CAUTION' ? 'border-[#f59e0b] bg-[#2d1b06]' : 'border-[#10b981] bg-[#062e1e]'} -mt-1"></div>
-            </div>
-          `;
-          const marker = new maplibregl.Marker({ element: el })
-            .setLngLat(m.coordinates)
-            .addTo(map);
-          routeMilestoneMarkersRef.current.push(marker);
-        });
-      }
-
-      // 6. Render 3D Holographic Start & Target Beacon Markers
+      // 5. Render 3D Holographic Start & Target Beacon Markers
       if (routeStartMarkerRef.current) {
         routeStartMarkerRef.current.remove();
         routeStartMarkerRef.current = null;
@@ -2674,14 +2660,16 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* 2. 1-Click Map Style Switcher (Bottom-Left ala Google Maps) */}
       <div
-        className={`absolute bottom-16 z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${
+        className={`absolute z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${
+          isProfileDockOpen ? "bottom-[250px]" : "bottom-16"
+        } ${
           isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
         }`}
       >
         <button
           onClick={() => onChangeOrbitalSource?.("jpl_hirise")}
           className={`px-3 py-1.5 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
-            orbitalSource === "jpl_hirise" || !orbitalSource
+            orbitalSource === "jpl_hirise" || orbitalSource === "opm_basemap" || !orbitalSource
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
           }`}
@@ -2714,7 +2702,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       </div>
 
       {/* 3. Google Maps Vertical Navigation Controls (Bottom-Right) */}
-      <div className="absolute bottom-16 right-4 z-20 flex flex-col bg-[#07090e] border border-slate-700 shadow-2xl select-none font-mono">
+      <div className={`absolute ${isProfileDockOpen ? "bottom-[250px]" : "bottom-16"} right-4 z-20 flex flex-col bg-[#07090e] border border-slate-700 shadow-2xl select-none font-mono transition-all duration-200`}>
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-[#111827] border-b border-slate-800 text-sm font-bold transition-colors"
@@ -2761,7 +2749,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       </div>
 
       {/* 4. Sol Timeline Scrubber (ATM MMGIS Sol Slider) */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 shadow-2xl select-none font-mono text-[10px]">
+      <div className={`absolute ${isProfileDockOpen ? "hidden sm:flex bottom-[250px]" : "bottom-5"} left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 shadow-2xl select-none font-mono text-[10px] transition-all duration-200`}>
         <button
           onClick={() => setIsTimelinePlaying(!isTimelinePlaying)}
           className={`px-2 py-1 font-bold text-[9px] border transition-colors ${

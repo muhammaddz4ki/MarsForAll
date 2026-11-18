@@ -1511,6 +1511,7 @@ export const AresMartianApp: React.FC = () => {
           theme={theme}
           tileMode={tileMode}
           orbitalSource={orbitalSource}
+          onChangeOrbitalSource={setOrbitalSource}
           onWmtsStatusChange={setWmtsStatus}
           activeMmgisTool={activeMmgisTool}
           onSelectMmgisTool={setActiveMmgisTool}
@@ -1536,7 +1537,7 @@ export const AresMartianApp: React.FC = () => {
             setActiveTool("analogue");
           }}
           onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
-          isProfileDockOpen={isProfileDockOpen}
+          isProfileDockOpen={(activeRoute !== null && isProfileDockOpen) || elevationProfile !== null}
           onOpen360Manager={() => setIs360ManagerOpen(true)}
           custom360Waypoints={custom360List}
           hoveredRoutePoint={hoveredRoutePoint}
@@ -1577,6 +1578,7 @@ export const AresMartianApp: React.FC = () => {
             onClose={() => setIsProfileDockOpen(false)}
             isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
             isSidebarExpanded={isSidebarExpanded}
+            isRightPanelOpen={isAerialDockOpen || activeTool === "inspector"}
           />
         )}
 
@@ -1606,6 +1608,7 @@ export const AresMartianApp: React.FC = () => {
             onClose={() => setElevationProfile(null)}
             theme={theme}
             siteName={currentSite === "jezero_crater" ? "Jezero Crater" : "Gale Crater"}
+            isRightPanelOpen={isAerialDockOpen || activeTool === "inspector"}
           />
         )}
 
