@@ -100,13 +100,11 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
   return (
     <div
       className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${
-        isSidebarExpanded
-          ? isLeftDrawerOpen
-            ? "left-0 sm:left-[670px]"
-            : "left-0 sm:left-[320px]"
-          : isLeftDrawerOpen
-          ? "left-0 sm:left-[400px]"
-          : "left-0 sm:left-[50px]"
+        isLeftDrawerOpen
+          ? "left-0 sm:left-96"
+          : isSidebarExpanded
+          ? "left-0 sm:left-80"
+          : "left-0 sm:left-12"
       } ${isRightPanelOpen ? "right-80 sm:right-96" : "right-0"} bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
     >
       {/* Top Header Row */}

@@ -2365,12 +2365,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
     <div className={`relative w-full h-full overflow-hidden ${isDark ? "bg-[#07090e]" : "bg-slate-100"}`}>
       {/* Active Tool Floating Banner (Appears ONLY when Measure / Viewshed / ZOI is active) */}
       {activeMmgisTool !== "none" && (
-        <div
-          className={`absolute top-3 z-20 flex items-center gap-2 font-mono text-[10px] transition-all duration-200 select-none ${isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-[64px]"
-            }`}
-        >
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#07090e] border border-cyan-400 text-cyan-300 font-bold shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 font-mono text-[10px] select-none">
+          <div className="flex items-center gap-2 px-3 py-1 bg-[#07090e]/95 border border-cyan-400 text-cyan-300 font-bold shadow-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
             <span>
               {activeMmgisTool === "measure" && (
                 <>
@@ -2381,9 +2378,15 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               {activeMmgisTool === "viewshed" && tMmgis("activeViewshedPill")}
               {activeMmgisTool === "zoi" && tMmgis("activeZoiPill")}
             </span>
+            <span className="text-slate-600">|</span>
+            <span className="text-[9px] text-slate-300 font-normal">
+              {activeMmgisTool === "measure" && tMmgis("measureInstruction")}
+              {activeMmgisTool === "viewshed" && tMmgis("viewshedInstruction")}
+              {activeMmgisTool === "zoi" && tMmgis("zoiActive")}
+            </span>
             <button
               onClick={() => onSelectMmgisTool?.("none")}
-              className="ml-2 px-1.5 py-0.5 bg-red-950/80 border border-red-500 text-red-300 hover:bg-red-900 transition-colors"
+              className="ml-2 px-1.5 py-0.5 bg-red-950/80 border border-red-500 text-red-300 hover:bg-red-900 transition-colors text-[9px]"
               title="Deactivate Tool"
             >
               {tMmgis("doneBtn")}
@@ -2395,7 +2398,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* Floating Scientific Map Legend (Ref Image 1: Bioscape / MMGIS Legend Window) */}
       {showFloatingLegend && (
         <div
-          className={`absolute top-12 right-4 z-20 w-64 border font-mono select-none shadow-xl ${isDark
+          className={`absolute ${identifiedFeature ? "top-[280px]" : "top-12"} right-4 z-20 w-64 border font-mono select-none shadow-xl ${isDark
             ? "bg-[#0b0f17] border-slate-700 text-slate-200"
             : "bg-white border-slate-300 text-slate-800"
             }`}
@@ -2497,10 +2500,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       )}
 
       {/* 1. Google Maps Style Clean Search Bar & 1-Click Shortcuts (Top-Left) */}
-      <div className="absolute top-3 left-4 z-30 flex flex-col gap-1.5 select-none">
-        <div className="relative flex items-center w-72 sm:w-96 bg-[#07090e] border border-slate-700 shadow-xl">
-          <div className="pl-3 pr-2 text-slate-400">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="absolute top-3 left-4 z-30 flex flex-col gap-1 select-none">
+        <div className="relative flex items-center w-72 sm:w-80 bg-[#07090e] border border-slate-700 shadow-xl">
+          <div className="pl-2.5 pr-1.5 text-slate-400">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
@@ -2511,7 +2514,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             placeholder={t("searchPlaceholder")}
-            className="w-full py-1.5 bg-transparent text-slate-200 font-mono text-[11px] placeholder:text-slate-500 focus:outline-none"
+            className="w-full py-1 bg-transparent text-slate-200 font-mono text-[10px] placeholder:text-slate-500 focus:outline-none"
           />
           {searchQuery && (
             <button
@@ -2527,7 +2530,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </div>
 
         {/* 1-Click Location Shortcut Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-xl pb-1 scrollbar-none">
+        <div className="flex items-center gap-1 overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-md pb-0.5 scrollbar-none">
           {SEARCH_SHORTCUTS.map((item) => (
             <button
               key={item.name}
@@ -2558,7 +2561,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 });
                 setIsSearchFocused(false);
               }}
-              className="shrink-0 px-2.5 py-1 bg-[#0b0f17]/95 hover:bg-[#111827] border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 font-mono text-[9px] font-bold tracking-wider transition-colors shadow-md"
+              className="shrink-0 px-2 py-0.5 bg-[#0b0f17]/95 hover:bg-[#111827] border border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-cyan-300 font-mono text-[8.5px] font-bold tracking-wider transition-colors shadow-md"
             >
               {item.name}
             </button>
@@ -2600,7 +2603,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
         {/* Autocomplete Dropdown */}
         {isSearchFocused && searchQuery.trim().length > 0 && (
-          <div className="w-72 sm:w-96 max-h-56 overflow-y-auto bg-[#07090e] border border-slate-700 shadow-2xl divide-y divide-slate-800 font-mono text-[10px]">
+          <div className="w-72 sm:w-80 max-h-56 overflow-y-auto bg-[#07090e] border border-slate-700 shadow-2xl divide-y divide-slate-800 font-mono text-[10px]">
             {SEARCH_SHORTCUTS.filter((sc) =>
               sc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
               sc.desc.toLowerCase().includes(searchQuery.toLowerCase())
@@ -2648,14 +2651,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       {/* 2. 1-Click Map Style Switcher (Bottom-Left ala Google Maps) */}
       <div
         className={`absolute z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${
-          isProfileDockOpen ? "bottom-[250px]" : "bottom-16"
-        } ${
-          isLeftDrawerOpen ? "left-4 sm:left-[416px]" : "left-4 sm:left-14"
-        }`}
+          isProfileDockOpen ? "bottom-[205px]" : "bottom-14"
+        } left-4`}
       >
         <button
           onClick={() => onChangeOrbitalSource?.("jpl_hirise")}
-          className={`px-3 py-1.5 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
             orbitalSource === "jpl_hirise" || orbitalSource === "opm_basemap" || !orbitalSource
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
@@ -2666,7 +2667,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </button>
         <button
           onClick={() => onChangeOrbitalSource?.("mola_hrsc")}
-          className={`px-3 py-1.5 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
             orbitalSource === "mola_hrsc"
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
@@ -2677,7 +2678,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </button>
         <button
           onClick={() => onChangeOrbitalSource?.("themis_night")}
-          className={`px-3 py-1.5 font-mono text-[9px] font-bold transition-colors ${
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold transition-colors ${
             orbitalSource === "themis_night"
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
@@ -2689,7 +2690,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       </div>
 
       {/* 3. Google Maps Vertical Navigation Controls (Bottom-Right) */}
-      <div className={`absolute ${isProfileDockOpen ? "bottom-[250px]" : "bottom-16"} right-4 z-20 flex flex-col bg-[#07090e] border border-slate-700 shadow-2xl select-none font-mono transition-all duration-200`}>
+      <div className={`absolute ${isProfileDockOpen ? "bottom-[205px]" : "bottom-14"} right-4 z-20 flex flex-col bg-[#07090e] border border-slate-700 shadow-2xl select-none font-mono transition-all duration-200`}>
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-[#111827] border-b border-slate-800 text-sm font-bold transition-colors"
@@ -2735,18 +2736,18 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </button>
       </div>
 
-      {/* 5. Google Maps Style Friendly Place Card */}
+      {/* 5. Precision Tactical Waypoint & Landmark Inspector (Docked Top-Right Perimeter) */}
       {identifiedFeature && (
-        <div className="absolute top-36 sm:top-40 left-4 z-40 w-80 sm:w-96 max-w-[calc(100vw-3rem)] border border-slate-700 bg-[#07090e] text-slate-200 font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)]">
+        <div className="absolute top-3 right-4 z-30 w-72 sm:w-80 max-w-[calc(100vw-2rem)] border border-slate-700 bg-[#07090e]/95 backdrop-blur-md text-slate-200 font-mono select-none shadow-[0_12px_40px_rgba(0,0,0,0.95)]">
           {/* Card Header */}
-          <div className="h-9 px-3 bg-[#0b0f17] flex items-center justify-between border-b border-slate-700 text-[10px] font-bold">
+          <div className="h-7 px-2.5 bg-[#0b0f17] flex items-center justify-between border-b border-slate-700 text-[10px] font-bold">
             <span className="flex items-center gap-1.5 text-cyan-400 truncate">
-              <span className="w-2 h-2 bg-cyan-400 shrink-0" />
-              <span className="truncate">{identifiedFeature.category}</span>
+              <span className="w-1.5 h-1.5 bg-cyan-400 shrink-0" />
+              <span className="truncate uppercase tracking-wider">{identifiedFeature.category}</span>
             </span>
             <button
               onClick={() => setIdentifiedFeature(null)}
-              className="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold"
+              className="text-slate-400 hover:text-white px-1.5 py-0.5 text-xs font-bold leading-none"
               title="Tutup Kartu"
             >
               ✕
@@ -2754,12 +2755,12 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           </div>
 
           {/* Card Body */}
-          <div className="p-3.5 space-y-3 bg-[#07090e]">
+          <div className="p-2.5 space-y-2 bg-[#07090e]">
             <div>
-              <div className="text-amber-400 font-bold text-sm leading-tight">
+              <div className="text-amber-400 font-bold text-xs leading-tight">
                 {identifiedFeature.name}
               </div>
-              <p className="mt-1.5 text-slate-300 text-[11px] leading-relaxed font-sans">
+              <p className="mt-1 text-slate-300 text-[10px] leading-relaxed font-sans line-clamp-3">
                 {identifiedFeature.laymanDescription ||
                   getFeatureLaymanDescription(
                     identifiedFeature.name,
@@ -2770,13 +2771,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             </div>
 
             {/* Safety & Physical Attributes */}
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="p-2 bg-[#0b0f17] border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+            <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+              <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[7.5px] text-slate-400 uppercase font-bold block">
                   KESELAMATAN JALAN
                 </span>
                 <span
-                  className={`inline-block mt-1 px-1.5 py-0.5 font-bold text-[9px] border ${
+                  className={`inline-block mt-0.5 px-1 py-0.2 font-bold text-[8.5px] border ${
                     identifiedFeature.slopeDeg < 15
                       ? "bg-emerald-950 text-emerald-300 border-emerald-500"
                       : identifiedFeature.slopeDeg < 25
@@ -2793,11 +2794,11 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 </span>
               </div>
 
-              <div className="p-2 bg-[#0b0f17] border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+              <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[7.5px] text-slate-400 uppercase font-bold block">
                   ELEVASI MOLA
                 </span>
-                <span className="text-white font-mono font-bold text-xs tabular-nums block mt-1">
+                <span className="text-white font-mono font-bold text-[11px] tabular-nums block mt-0.5">
                   {identifiedFeature.elevationM > 0
                     ? `+${identifiedFeature.elevationM}`
                     : identifiedFeature.elevationM}{" "}
@@ -2805,20 +2806,20 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 </span>
               </div>
 
-              <div className="p-2 bg-[#0b0f17] border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+              <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[7.5px] text-slate-400 uppercase font-bold block">
                   SUHU PERMUKAAN
                 </span>
-                <span className="text-cyan-300 font-mono font-bold text-[10px] tabular-nums block mt-1">
+                <span className="text-cyan-300 font-mono font-bold text-[9px] tabular-nums block mt-0.5">
                   {identifiedFeature.temperatureRange || "-75°C s.d. -15°C"}
                 </span>
               </div>
 
-              <div className="p-2 bg-[#0b0f17] border border-slate-800">
-                <span className="text-[8px] text-slate-400 uppercase font-bold block">
+              <div className="p-1.5 bg-[#0b0f17] border border-slate-800">
+                <span className="text-[7.5px] text-slate-400 uppercase font-bold block">
                   KONDISI BATUAN
                 </span>
-                <span className="text-slate-200 font-mono font-bold text-[9px] truncate block mt-1">
+                <span className="text-slate-200 font-mono font-bold text-[8.5px] truncate block mt-0.5">
                   {identifiedFeature.surfaceFirmness ||
                     (identifiedFeature.elevationM > -4100
                       ? "BEDROCK FIRM"
@@ -2828,14 +2829,14 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             </div>
 
             {copyFeedback && (
-              <div className="px-2 py-1 bg-emerald-950 border border-emerald-500 text-emerald-300 font-mono text-[9px] font-bold text-center">
+              <div className="px-2 py-0.5 bg-emerald-950 border border-emerald-500 text-emerald-300 font-mono text-[8px] font-bold text-center">
                 {t("linkCopied")}
               </div>
             )}
 
             {/* 4 Action Buttons */}
-            <div className="space-y-1.5 pt-1 border-t border-slate-800">
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className="space-y-1 pt-1 border-t border-slate-800">
+              <div className="grid grid-cols-2 gap-1">
                 {/* 1. LIHAT FOTO 360° */}
                 {identifiedFeature.associatedWaypoint &&
                 (identifiedFeature.associatedWaypoint.has360Pov ||
@@ -2847,7 +2848,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                         onOpenPovModal?.(identifiedFeature.associatedWaypoint);
                       }
                     }}
-                    className="py-1.5 px-2 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[9px] transition-colors flex items-center justify-center gap-1"
+                    className="py-1 px-1.5 bg-[#083344] hover:bg-[#0e7490] text-[#a5f3fc] border border-[#06b6d4] font-bold text-[8.5px] transition-colors flex items-center justify-center gap-1"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z" />
@@ -2857,7 +2858,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                 ) : (
                   <button
                     disabled
-                    className="py-1.5 px-2 bg-[#111827] text-slate-500 border border-slate-800 font-bold text-[9px] cursor-not-allowed opacity-60 text-center"
+                    className="py-1 px-1.5 bg-[#111827] text-slate-500 border border-slate-800 font-bold text-[8.5px] cursor-not-allowed opacity-60 text-center"
                   >
                     {t("btnNo360")}
                   </button>
@@ -2882,13 +2883,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
                     onPlanRouteToWaypoint?.(targetWp);
                   }}
-                  className="py-1.5 px-2 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[9px] transition-colors text-center"
+                  className="py-1 px-1.5 bg-[#064e3b] hover:bg-[#047857] text-[#34d399] border border-[#10b981] font-bold text-[8.5px] transition-colors text-center"
                 >
                   {t("btnRoute")}
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-1">
                 {/* 3. CEK AIR & MINERAL */}
                 <button
                   onClick={() => {
@@ -2902,7 +2903,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                     } as unknown as MountSharpWaypoint);
                     onAnalyzeProspector?.(targetWp);
                   }}
-                  className="py-1.5 px-2 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[9px] transition-colors text-center"
+                  className="py-1 px-1.5 bg-[#1e1b4b] hover:bg-[#312e81] text-[#c7d2fe] border border-[#6366f1] font-bold text-[8.5px] transition-colors text-center"
                 >
                   {t("btnCheckMineral")}
                 </button>
@@ -2924,7 +2925,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                       });
                     }
                   }}
-                  className="py-1.5 px-2 bg-[#111827] hover:bg-[#1e293b] text-slate-200 hover:text-white border border-slate-700 font-bold text-[9px] transition-colors text-center"
+                  className="py-1 px-1.5 bg-[#111827] hover:bg-[#1e293b] text-slate-200 hover:text-white border border-slate-700 font-bold text-[8.5px] transition-colors text-center"
                 >
                   {t("btnCopyLink")}
                 </button>
@@ -2934,24 +2935,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </div>
       )}
 
-      {/* Interactive Tool Banner Helper with Dynamic Offset */}
-      {activeMmgisTool !== "none" && (
-        <div className={`absolute top-12 z-20 px-2 py-1 bg-[#0b0f17] border border-cyan-500 text-cyan-300 font-mono text-[9px] font-bold flex items-center gap-2 select-none transition-all duration-200 ${isLeftDrawerOpen ? "left-4 sm:left-[406px]" : "left-4 sm:left-[56px]"
-          }`}>
-          <span className="w-1.5 h-1.5 bg-cyan-400 animate-pulse" />
-          <span>
-            {activeMmgisTool === "measure" && tMmgis("measureInstruction")}
-            {activeMmgisTool === "viewshed" && tMmgis("viewshedInstruction")}
-            {activeMmgisTool === "zoi" && tMmgis("zoiActive")}
-          </span>
-          <button
-            onClick={() => onSelectMmgisTool?.("none")}
-            className="ml-2 px-1 text-slate-400 hover:text-white border border-slate-700"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Main Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />

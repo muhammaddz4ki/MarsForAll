@@ -332,6 +332,7 @@ export const AresMartianApp: React.FC = () => {
       });
       setActiveRoute(route);
       setSelectedWaypoint(boxworkWp);
+      setIdentifiedFeature(null);
       setIsProfileDockOpen(true);
       setShowQuickStartBanner(false);
       setExportNotification(
@@ -1578,7 +1579,7 @@ export const AresMartianApp: React.FC = () => {
             onClose={() => setIsProfileDockOpen(false)}
             isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
             isSidebarExpanded={isSidebarExpanded}
-            isRightPanelOpen={isAerialDockOpen || activeTool === "inspector"}
+            isRightPanelOpen={isAerialDockOpen}
           />
         )}
 
@@ -1608,7 +1609,9 @@ export const AresMartianApp: React.FC = () => {
             onClose={() => setElevationProfile(null)}
             theme={theme}
             siteName={currentSite === "jezero_crater" ? "Jezero Crater" : "Gale Crater"}
-            isRightPanelOpen={isAerialDockOpen || activeTool === "inspector"}
+            isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
+            isSidebarExpanded={isSidebarExpanded}
+            isRightPanelOpen={isAerialDockOpen}
           />
         )}
 

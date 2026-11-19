@@ -19,6 +19,8 @@ interface MmgisProfileDrawerProps {
   onClose: () => void;
   theme?: "dark" | "light";
   siteName?: string;
+  isLeftDrawerOpen?: boolean;
+  isSidebarExpanded?: boolean;
   isRightPanelOpen?: boolean;
 }
 
@@ -28,6 +30,8 @@ export const MmgisProfileDrawer: React.FC<MmgisProfileDrawerProps> = ({
   onClose,
   theme = "dark",
   siteName = "Gale Crater",
+  isLeftDrawerOpen = false,
+  isSidebarExpanded = false,
   isRightPanelOpen = false,
 }) => {
   const t = useTranslations("mmgis");
@@ -68,13 +72,19 @@ export const MmgisProfileDrawer: React.FC<MmgisProfileDrawerProps> = ({
 
   return (
     <div
-      className={`absolute bottom-0 left-0 ${
+      className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${
+        isLeftDrawerOpen
+          ? "left-0 sm:left-96"
+          : isSidebarExpanded
+          ? "left-0 sm:left-80"
+          : "left-0 sm:left-12"
+      } ${
         isRightPanelOpen ? "right-80 sm:right-96" : "right-0"
-      } z-30 border-t ${
+      } border-t ${
         isDark
           ? "bg-[#07090e] border-slate-800 text-slate-200"
           : "bg-white border-slate-300 text-slate-800"
-      } font-mono select-none shadow-none transition-all duration-200`}
+      } shadow-none`}
     >
       {/* Header & Telemetry Bar */}
       <div className={`px-3 py-2 border-b ${isDark ? "border-slate-800/80" : "border-slate-200"} flex flex-wrap items-center justify-between gap-2 text-xs`}>
