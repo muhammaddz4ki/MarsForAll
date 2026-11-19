@@ -79,7 +79,8 @@
     "spatialTools": "MEASUREMENT & RADIO TOOLS",
     "prospector": "AI RESOURCE PROSPECTOR",
     "earthAnalogues": "EARTH ANALOGUE LAB",
-    "inspector": "POINT REGOLITH INSPECTOR"
+    "inspector": "POINT REGOLITH INSPECTOR",
+    "aerial": "AERIAL RECON DRONE"
   },
   "scrubber": {
     "solClock": "SOL CLOCK",

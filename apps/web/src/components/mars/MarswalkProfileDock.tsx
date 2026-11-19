@@ -99,13 +99,12 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
 
   return (
     <div
-      className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${
-        isLeftDrawerOpen
+      className={`absolute bottom-0 z-30 transition-all duration-200 select-none font-mono ${isLeftDrawerOpen
           ? "left-0 sm:left-96"
           : isSidebarExpanded
-          ? "left-0 sm:left-80"
-          : "left-0 sm:left-12"
-      } ${isRightPanelOpen ? "right-80 sm:right-96" : "right-0"} bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
+            ? "left-0 sm:left-80"
+            : "left-0 sm:left-12"
+        } ${isRightPanelOpen ? "right-80 sm:right-96" : "right-0"} bg-[#07090e] border-t border-slate-700 shadow-[0_-10px_35px_rgba(0,0,0,0.85)]`}
     >
       {/* Top Header Row */}
       <div className="h-7 bg-[#0b0f17] border-b border-slate-800 px-3 flex items-center justify-between text-[10px]">
@@ -273,13 +272,12 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
                 <div className="flex justify-between">
                   <span className="text-slate-400">{t("slopeLabel")}:</span>
                   <span
-                    className={`font-bold tabular-nums ${
-                      activePoint.slopeCategory === "SAFE"
+                    className={`font-bold tabular-nums ${activePoint.slopeCategory === "SAFE"
                         ? "text-emerald-400"
                         : activePoint.slopeCategory === "CAUTION"
-                        ? "text-amber-400"
-                        : "text-red-400"
-                    }`}
+                          ? "text-amber-400"
+                          : "text-red-400"
+                      }`}
                   >
                     {activePoint.slopeDeg}° [{activePoint.slopeCategory}]
                   </span>
@@ -287,13 +285,12 @@ export const MarswalkProfileDock: React.FC<MarswalkProfileDockProps> = ({
                 <div className="flex justify-between">
                   <span className="text-slate-400">{t("firmnessLabel")}</span>
                   <span
-                    className={`font-bold ${
-                      activePoint.surfaceFirmness === "BEDROCK FIRM"
+                    className={`font-bold ${activePoint.surfaceFirmness === "BEDROCK FIRM"
                         ? "text-emerald-400"
                         : activePoint.surfaceFirmness === "MODERATE COMPACTION"
-                        ? "text-amber-400"
-                        : "text-red-400"
-                    }`}
+                          ? "text-amber-400"
+                          : "text-red-400"
+                      }`}
                   >
                     {activePoint.surfaceFirmness}
                   </span>

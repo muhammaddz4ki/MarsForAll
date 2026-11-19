@@ -208,49 +208,49 @@ export const SEARCH_SHORTCUTS: {
   site: MissionSiteId;
   desc: string;
 }[] = [
-  {
-    name: "Gale Crater",
-    coords: [137.4417, -4.5895],
-    zoom: 11.5,
-    site: "gale_crater",
-    desc: "Kawah tumbukan purba berdiameter 154 km tempat pendaratan robot penjelajah Curiosity.",
-  },
-  {
-    name: "Mount Sharp Boxwork",
-    coords: [137.785, -5.325],
-    zoom: 14.5,
-    site: "gale_crater",
-    desc: "Kisi-kisi mineral urat purba yang terbentuk dari sirkulasi air tanah miliaran tahun lalu.",
-  },
-  {
-    name: "Jezero Crater",
-    coords: [77.4509, 18.3789],
-    zoom: 11.5,
-    site: "jezero_crater",
-    desc: "Cekungan danau purba tempat penjelajahan Perseverance mencari tanda-tanda kehidupan mikroba kuno.",
-  },
-  {
-    name: "Cheyava Falls",
-    coords: [77.382, 18.441],
-    zoom: 14.5,
-    site: "jezero_crater",
-    desc: "Batuan sedimen berbercak 'leopard spots' dengan tanda reaksi kimia fosfat dan besi.",
-  },
-  {
-    name: "Olympus Mons",
-    coords: [-133.8, 18.65],
-    zoom: 6.0,
-    site: "gale_crater",
-    desc: "Gunung berapi perisai raksasa tertinggi di Tata Surya menjulang 21 km ke angkasa Mars.",
-  },
-  {
-    name: "Valles Marineris",
-    coords: [-75.0, -14.0],
-    zoom: 5.5,
-    site: "gale_crater",
-    desc: "Sistem ngarai terbesar di Mars sepanjang 4.000 km membelah seperempat lingkar planet.",
-  },
-];
+    {
+      name: "Gale Crater",
+      coords: [137.4417, -4.5895],
+      zoom: 11.5,
+      site: "gale_crater",
+      desc: "Kawah tumbukan purba berdiameter 154 km tempat pendaratan robot penjelajah Curiosity.",
+    },
+    {
+      name: "Mount Sharp Boxwork",
+      coords: [137.785, -5.325],
+      zoom: 14.5,
+      site: "gale_crater",
+      desc: "Kisi-kisi mineral urat purba yang terbentuk dari sirkulasi air tanah miliaran tahun lalu.",
+    },
+    {
+      name: "Jezero Crater",
+      coords: [77.4509, 18.3789],
+      zoom: 11.5,
+      site: "jezero_crater",
+      desc: "Cekungan danau purba tempat penjelajahan Perseverance mencari tanda-tanda kehidupan mikroba kuno.",
+    },
+    {
+      name: "Cheyava Falls",
+      coords: [77.382, 18.441],
+      zoom: 14.5,
+      site: "jezero_crater",
+      desc: "Batuan sedimen berbercak 'leopard spots' dengan tanda reaksi kimia fosfat dan besi.",
+    },
+    {
+      name: "Olympus Mons",
+      coords: [-133.8, 18.65],
+      zoom: 6.0,
+      site: "gale_crater",
+      desc: "Gunung berapi perisai raksasa tertinggi di Tata Surya menjulang 21 km ke angkasa Mars.",
+    },
+    {
+      name: "Valles Marineris",
+      coords: [-75.0, -14.0],
+      zoom: 5.5,
+      site: "gale_crater",
+      desc: "Sistem ngarai terbesar di Mars sepanjang 4.000 km membelah seperempat lingkar planet.",
+    },
+  ];
 
 export function getFeatureLaymanDescription(name: string, _category: string, slopeDeg: number): string {
   if (name.includes("Boxwork")) {
@@ -746,7 +746,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
             "#dc2626",
             "#475569",
           ],
-          "line-width":  1.5,
+          "line-width": 1.5,
           "line-dasharray": [3, 2],
         },
       });
@@ -832,7 +832,7 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         source: "curiosity_landing_ellipse_source",
         paint: {
           "line-color": "#38bdf8",
-          "line-width":  1.5,
+          "line-width": 1.5,
           "line-dasharray": [4, 4],
         },
       });
@@ -1391,41 +1391,41 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       const feat: IdentifiedFeatureInfo = matchedWp
         ? {
-            name: matchedWp.name,
-            category: matchedWp.category.toUpperCase().replace("_", " "),
-            stratigraphicAge:
-              matchedWp.stratigraphicAge ||
-              (currentSite === "jezero_crater"
-                ? "Noachian / Early Hesperian"
-                : "Hesperian / Amazonian"),
-            elevationM: matchedWp.elevationM,
-            slopeDeg: approxSlope,
-            mineralogy: matchedWp.dominantHydratedMineral || "Phyllosilicates / Clay-Sulfate",
-            coordinates: matchedWp.coordinates,
-            associatedWaypoint: matchedWp,
-            surfaceFirmness: matchedWp.surfaceFirmness,
-            sandTrapRisk: matchedWp.sandTrapRisk,
-            crustalMagneticFieldNt: matchedWp.crustalMagneticFieldNt,
-            surfaceRadiationMSvSol: matchedWp.surfaceRadiationMSvSol,
-          }
+          name: matchedWp.name,
+          category: matchedWp.category.toUpperCase().replace("_", " "),
+          stratigraphicAge:
+            matchedWp.stratigraphicAge ||
+            (currentSite === "jezero_crater"
+              ? "Noachian / Early Hesperian"
+              : "Hesperian / Amazonian"),
+          elevationM: matchedWp.elevationM,
+          slopeDeg: approxSlope,
+          mineralogy: matchedWp.dominantHydratedMineral || "Phyllosilicates / Clay-Sulfate",
+          coordinates: matchedWp.coordinates,
+          associatedWaypoint: matchedWp,
+          surfaceFirmness: matchedWp.surfaceFirmness,
+          sandTrapRisk: matchedWp.sandTrapRisk,
+          crustalMagneticFieldNt: matchedWp.crustalMagneticFieldNt,
+          surfaceRadiationMSvSol: matchedWp.surfaceRadiationMSvSol,
+        }
         : {
-            name: unitName,
-            category: "MARTIAN REGOLITH / BEDROCK",
-            stratigraphicAge:
-              currentSite === "jezero_crater" ? "Noachian (~3.8 Ga)" : "Hesperian (~3.3 Ga)",
-            elevationM: approxElev,
-            slopeDeg: approxSlope,
-            mineralogy:
-              currentSite === "jezero_crater"
-                ? "Olivine-Carbonate & Smectite Clays"
-                : "Hematite, Sulfates & Amorphous Silica",
-            coordinates: [lon, lat],
-            associatedWaypoint: siteWaypoints[0],
-            surfaceFirmness: approxElev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
-            sandTrapRisk: approxElev > -4100 ? "LOW" : "HIGH",
-            crustalMagneticFieldNt: 38,
-            surfaceRadiationMSvSol: 0.65,
-          };
+          name: unitName,
+          category: "MARTIAN REGOLITH / BEDROCK",
+          stratigraphicAge:
+            currentSite === "jezero_crater" ? "Noachian (~3.8 Ga)" : "Hesperian (~3.3 Ga)",
+          elevationM: approxElev,
+          slopeDeg: approxSlope,
+          mineralogy:
+            currentSite === "jezero_crater"
+              ? "Olivine-Carbonate & Smectite Clays"
+              : "Hematite, Sulfates & Amorphous Silica",
+          coordinates: [lon, lat],
+          associatedWaypoint: siteWaypoints[0],
+          surfaceFirmness: approxElev > -4100 ? "BEDROCK FIRM" : "SOFT SAND TRAP RISK",
+          sandTrapRisk: approxElev > -4100 ? "LOW" : "HIGH",
+          crustalMagneticFieldNt: 38,
+          surfaceRadiationMSvSol: 0.65,
+        };
 
       setIdentifiedFeature(feat);
       onFeatureIdentified?.(feat);
@@ -2157,9 +2157,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       if (has360) {
         el.innerHTML = `
           <div class="relative flex flex-col items-center group" title="${wp.name} (360° POV)">
-            <div class="flex items-center justify-center gap-1 px-1.5 h-6 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${
-              isSelected ? "border-cyan-300 ring-2 ring-cyan-400" : "border-[#06b6d4]"
-            } font-mono font-bold text-[9px] shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-transform group-hover:scale-115">
+            <div class="flex items-center justify-center gap-1 px-1.5 h-6 rounded-full bg-[#083344] text-[#38bdf8] border-2 ${isSelected ? "border-cyan-300 ring-2 ring-cyan-400" : "border-[#06b6d4]"
+          } font-mono font-bold text-[9px] shadow-[0_0_8px_rgba(6,182,212,0.6)] transition-transform group-hover:scale-115">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
               </svg>
@@ -2171,11 +2170,10 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       } else {
         el.innerHTML = `
           <div class="relative flex flex-col items-center group" title="${wp.name}">
-            <div class="flex items-center justify-center w-5 h-5 rounded-full ${
-              isSelected
-                ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-2 ring-amber-500"
-                : "bg-[#111827] text-slate-300 border border-slate-600"
-            } font-mono font-bold text-[8px] shadow-sm transition-transform group-hover:scale-115">
+            <div class="flex items-center justify-center w-5 h-5 rounded-full ${isSelected
+            ? "bg-amber-400 text-slate-950 border-2 border-amber-200 ring-2 ring-amber-500"
+            : "bg-[#111827] text-slate-300 border border-slate-600"
+          } font-mono font-bold text-[8px] shadow-sm transition-transform group-hover:scale-115">
               <span>${wpNumber}</span>
             </div>
             <div class="w-0.5 h-1 ${isSelected ? "bg-amber-400" : "bg-slate-600"} -mt-0.5"></div>
@@ -2232,13 +2230,13 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
     const landmarks = currentSite === "gale_crater"
       ? [
-          { name: "MOUNT SHARP SUMMIT", sub: "AEOLIS MONS // -3,912M", coords: [137.8414, -5.4453] as [number, number] },
-          { name: "GEDIZ VALLIS CANYON", sub: "DEBRIS FLOW CHANNEL", coords: [137.7120, -5.2150] as [number, number] },
-        ]
+        { name: "MOUNT SHARP SUMMIT", sub: "AEOLIS MONS // -3,912M", coords: [137.8414, -5.4453] as [number, number] },
+        { name: "GEDIZ VALLIS CANYON", sub: "DEBRIS FLOW CHANNEL", coords: [137.7120, -5.2150] as [number, number] },
+      ]
       : [
-          { name: "JEZERO DELTA SCARP", sub: "ANCIENT RIVER DELTA FRONT", coords: [77.4042, 18.4410] as [number, number] },
-          { name: "BELVA IMPACT CRATER", sub: "SUB-BASIN EXCAVATION", coords: [77.3620, 18.3840] as [number, number] },
-        ];
+        { name: "JEZERO DELTA SCARP", sub: "ANCIENT RIVER DELTA FRONT", coords: [77.4042, 18.4410] as [number, number] },
+        { name: "BELVA IMPACT CRATER", sub: "SUB-BASIN EXCAVATION", coords: [77.3620, 18.3840] as [number, number] },
+      ];
 
     landmarks.forEach((lm) => {
       const el = document.createElement("div");
@@ -2650,39 +2648,35 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
 
       {/* 2. 1-Click Map Style Switcher (Bottom-Left ala Google Maps) */}
       <div
-        className={`absolute z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${
-          isProfileDockOpen ? "bottom-[205px]" : "bottom-14"
-        } left-4`}
+        className={`absolute z-20 flex items-center bg-[#07090e] border border-slate-700 shadow-xl transition-all duration-200 select-none ${isProfileDockOpen ? "bottom-[205px]" : "bottom-14"
+          } left-4`}
       >
         <button
           onClick={() => onChangeOrbitalSource?.("jpl_hirise")}
-          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
-            orbitalSource === "jpl_hirise" || orbitalSource === "opm_basemap" || !orbitalSource
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${orbitalSource === "jpl_hirise" || orbitalSource === "opm_basemap" || !orbitalSource
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
-          }`}
+            }`}
           title="Citra Satelit Resolusi Tinggi NASA Mars Trek"
         >
           {t("styleSatellite")}
         </button>
         <button
           onClick={() => onChangeOrbitalSource?.("mola_hrsc")}
-          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${
-            orbitalSource === "mola_hrsc"
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold border-r border-slate-700 transition-colors ${orbitalSource === "mola_hrsc"
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
-          }`}
+            }`}
           title="Topografi Elevasi MOLA Global Mars"
         >
           {t("styleElevation")}
         </button>
         <button
           onClick={() => onChangeOrbitalSource?.("themis_night")}
-          className={`px-2.5 py-1 font-mono text-[9px] font-bold transition-colors ${
-            orbitalSource === "themis_night"
+          className={`px-2.5 py-1 font-mono text-[9px] font-bold transition-colors ${orbitalSource === "themis_night"
               ? "bg-[#083344] text-[#a5f3fc] border-cyan-500"
               : "text-slate-400 hover:text-slate-200 hover:bg-[#111827]"
-          }`}
+            }`}
           title="Inframerah Termal Malam Mars Odyssey THEMIS"
         >
           {t("styleThermal")}
@@ -2714,9 +2708,8 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
         </button>
         <button
           onClick={() => onTogglePitch?.()}
-          className={`w-8 h-8 flex items-center justify-center border-b border-slate-800 text-[10px] font-bold transition-colors ${
-            pitch3D ? "bg-amber-950/80 text-amber-300" : "text-slate-300 hover:text-white hover:bg-[#111827]"
-          }`}
+          className={`w-8 h-8 flex items-center justify-center border-b border-slate-800 text-[10px] font-bold transition-colors ${pitch3D ? "bg-amber-950/80 text-amber-300" : "text-slate-300 hover:text-white hover:bg-[#111827]"
+            }`}
           title={t("toggle3d")}
         >
           3D
@@ -2777,19 +2770,18 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
                   KESELAMATAN JALAN
                 </span>
                 <span
-                  className={`inline-block mt-0.5 px-1 py-0.2 font-bold text-[8.5px] border ${
-                    identifiedFeature.slopeDeg < 15
+                  className={`inline-block mt-0.5 px-1 py-0.2 font-bold text-[8.5px] border ${identifiedFeature.slopeDeg < 15
                       ? "bg-emerald-950 text-emerald-300 border-emerald-500"
                       : identifiedFeature.slopeDeg < 25
-                      ? "bg-amber-950 text-amber-300 border-amber-500"
-                      : "bg-red-950 text-red-300 border-red-500"
-                  }`}
+                        ? "bg-amber-950 text-amber-300 border-amber-500"
+                        : "bg-red-950 text-red-300 border-red-500"
+                    }`}
                 >
                   {identifiedFeature.slopeDeg < 15
                     ? t("statusSafe")
                     : identifiedFeature.slopeDeg < 25
-                    ? t("statusCaution")
-                    : t("statusHazard")}{" "}
+                      ? t("statusCaution")
+                      : t("statusHazard")}{" "}
                   ({identifiedFeature.slopeDeg.toFixed(1)}°)
                 </span>
               </div>
@@ -2839,9 +2831,9 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
               <div className="grid grid-cols-2 gap-1">
                 {/* 1. LIHAT FOTO 360° */}
                 {identifiedFeature.associatedWaypoint &&
-                (identifiedFeature.associatedWaypoint.has360Pov ||
-                  (identifiedFeature.associatedWaypoint as any).customPanoramaUrl ||
-                  custom360Waypoints.some((c) => c.id === identifiedFeature.associatedWaypoint?.id)) ? (
+                  (identifiedFeature.associatedWaypoint.has360Pov ||
+                    (identifiedFeature.associatedWaypoint as any).customPanoramaUrl ||
+                    custom360Waypoints.some((c) => c.id === identifiedFeature.associatedWaypoint?.id)) ? (
                   <button
                     onClick={() => {
                       if (identifiedFeature.associatedWaypoint) {

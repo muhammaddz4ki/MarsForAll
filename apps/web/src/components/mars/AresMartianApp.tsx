@@ -101,7 +101,7 @@ const MmgisToolsPanel = dynamic(() => import("./MmgisToolsPanel"), {
 });
 
 export type ViewMode = "mission_control" | "visor_hud" | "planet_globe";
-export type ActiveDrawerTool = "layers" | "marswalk" | "tools" | "prospector" | "analogue" | "inspector" | null;
+export type ActiveDrawerTool = "layers" | "marswalk" | "tools" | "prospector" | "analogue" | "inspector" | "aerial" | null;
 
 export const AresMartianApp: React.FC = () => {
   const router = useRouter();
@@ -194,7 +194,6 @@ export const AresMartianApp: React.FC = () => {
   const [exportNotification, setExportNotification] = useState<string | null>(null);
 
   // Mars Aerial Scout Drone States
-  const [isAerialDockOpen, setIsAerialDockOpen] = useState<boolean>(false);
   const [aerialFlightTarget, setAerialFlightTarget] = useState<AerialScoutTarget | null>(null);
   const [isAerialFlying, setIsAerialFlying] = useState<boolean>(false);
   const [aerialFlightTelemetry, setAerialFlightTelemetry] = useState<any>(null);
@@ -225,14 +224,14 @@ export const AresMartianApp: React.FC = () => {
         setIsPovOpen(true);
       }
       const toolParam = params.get("tool");
-      if (toolParam && ["layers", "marswalk", "tools", "inspector", "prospector", "analogue"].includes(toolParam)) {
+      if (toolParam && ["layers", "marswalk", "tools", "inspector", "prospector", "analogue", "aerial"].includes(toolParam)) {
         setActiveTool(toolParam as any);
       }
       if (params.get("view") === "visor") {
         setViewMode("visor_hud");
       }
       if (params.get("drone") === "true") {
-        setIsAerialDockOpen(true);
+        setActiveTool("aerial");
       }
     }
     const savedTheme = localStorage.getItem("ares_theme") as "dark" | "light" | null;
@@ -717,31 +716,27 @@ export const AresMartianApp: React.FC = () => {
       <div className="relative flex-1 w-full h-full overflow-hidden flex">
         {/* MMGIS SINGLE ACTIVE LEFT DRAWER (Strictly 1 drawer, max w-80 sm:w-96) */}
         <nav
-          className={`${viewMode === "visor_hud" ? "hidden" : "flex"} ${
-            activeTool !== null
+          className={`${viewMode === "visor_hud" ? "hidden" : "flex"} ${activeTool !== null
               ? "w-80 sm:w-96"
               : isSidebarExpanded
-              ? "w-72 sm:w-80"
-              : "w-12"
-          } h-full ${
-            isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
-          } border-r flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
+                ? "w-72 sm:w-80"
+                : "w-12"
+            } h-full ${isDark ? "bg-[#07090e] border-slate-800" : "bg-slate-100 border-slate-300"
+            } border-r flex-col z-30 shrink-0 select-none font-mono transition-all duration-200`}
         >
           {activeTool !== null && viewMode === "mission_control" ? (
             <>
               {/* Single Active Drawer Header with Return to Menu Button */}
               <div
-                className={`h-9 px-2.5 border-b ${
-                  isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
-                } flex items-center justify-between shrink-0 font-mono text-xs`}
+                className={`h-9 px-2.5 border-b ${isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
+                  } flex items-center justify-between shrink-0 font-mono text-xs`}
               >
                 <button
                   onClick={() => setActiveTool(null)}
-                  className={`flex items-center gap-1.5 px-2 py-0.5 border text-slate-200 text-[10px] font-mono font-bold transition-colors ${
-                    isDark
+                  className={`flex items-center gap-1.5 px-2 py-0.5 border text-slate-200 text-[10px] font-mono font-bold transition-colors ${isDark
                       ? "border-slate-700 bg-[#161e2e] hover:bg-[#1f2937]"
                       : "border-slate-400 bg-white hover:bg-slate-100 text-slate-700"
-                  }`}
+                    }`}
                   title="Kembali ke Menu Kontrol Misi"
                 >
                   ← {currentLocale === "id" ? "KEMBALI KE MENU" : "BACK TO MENU"}
@@ -755,14 +750,14 @@ export const AresMartianApp: React.FC = () => {
                     {activeTool === "inspector" && tDocks("inspector")}
                     {activeTool === "prospector" && tDocks("prospector")}
                     {activeTool === "analogue" && tDocks("earthAnalogues")}
+                    {activeTool === "aerial" && tDocks("aerial")}
                   </span>
                 </div>
                 <button
                   onClick={() => setActiveTool(null)}
                   title={tNav("collapse")}
-                  className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${
-                    isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
-                  } font-mono text-[10px] font-bold`}
+                  className={`px-1.5 py-0.5 border text-slate-400 hover:text-white ${isDark ? "border-slate-800 hover:bg-[#161e2e]" : "border-slate-300 hover:bg-slate-200"
+                    } font-mono text-[10px] font-bold`}
                 >
                   ✕
                 </button>
@@ -838,6 +833,17 @@ export const AresMartianApp: React.FC = () => {
                     theme={theme}
                   />
                 )}
+                {activeTool === "aerial" && (
+                  <MarsAerialScoutDock
+                    currentSite={currentSite}
+                    onLaunchFlight={handleLaunchAerialFlight}
+                    onClose={() => setActiveTool(null)}
+                    isFlying={isAerialFlying}
+                    flightTelemetry={aerialFlightTelemetry}
+                    theme={theme}
+                    embedded={true}
+                  />
+                )}
                 {activeTool === "inspector" && (
                   <PointInspectorPanel
                     feature={identifiedFeature}
@@ -860,638 +866,632 @@ export const AresMartianApp: React.FC = () => {
           ) : (
             <>
               {/* SIDEBAR HEADER / TOGGLE BAR */}
-          <div
-            className={`h-9 px-2.5 border-b ${isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
-              } flex items-center justify-between shrink-0`}
-          >
-            {isSidebarExpanded ? (
-              <>
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="w-2 h-2 bg-emerald-400 shrink-0" />
-                  <span className="text-[10px] font-bold tracking-wider text-slate-200 uppercase truncate">
-                    {tSidebar("missionControl")}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setIsSidebarExpanded(false)}
-                  className="px-1.5 py-0.5 border text-slate-400 hover:text-white border-slate-700 hover:bg-[#161e2e] text-[9px] font-bold transition-colors"
-                  title={tSidebar("collapse")}
-                >
-                  [ ◄ CIUTKAN ]
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsSidebarExpanded(true)}
-                className="w-full h-full flex items-center justify-center text-slate-400 hover:text-white text-[11px] font-bold transition-colors"
-                title={tSidebar("expand")}
+              <div
+                className={`h-9 px-2.5 border-b ${isDark ? "border-slate-800 bg-[#0b0f17]" : "border-slate-300 bg-slate-200"
+                  } flex items-center justify-between shrink-0`}
               >
-                [ ► ]
-              </button>
-            )}
-          </div>
-
-          {/* SCROLLABLE SIDEBAR MENU ITEMS */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {/* 1. DOCKED MARSWALK NAVIGATION HUD (WHEN ROUTE IS ACTIVE AND NOT IN MARSWALK TOOL) */}
-            {activeRoute && activeTool !== "marswalk" && viewMode === "mission_control" && (
-              isSidebarExpanded ? (
-                <MarsNavigationHud
-                  route={activeRoute}
-                  docked={true}
-                  onOpenPovModal={handleOpenPovModal}
-                  onOpenMarswalkPlanner={() => setActiveTool("marswalk")}
-                  onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
-                  isProfileDockOpen={isProfileDockOpen}
-                  onSwitchToVisorHud={() => setViewMode("visor_hud")}
-                  onReCenterCorridor={() => setReCenterTrigger((c) => c + 1)}
-                  onCloseRoute={() => setActiveRoute(null)}
-                  onFlyToCoord={(coord) => setNavFlyToCoord(coord)}
-                />
-              ) : (
-                <button
-                  onClick={() => setIsSidebarExpanded(true)}
-                  className="w-8 h-8 mx-auto my-1 flex items-center justify-center border border-emerald-500 bg-[#064e3b] text-emerald-300 relative"
-                  title={`Active Marswalk Route (${activeRoute.totalDistanceKm} km) - Click to expand sidebar`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                </button>
-              )
-            )}
-
-            {/* GROUP 1: NAVIGASI & MISI LAPANGAN */}
-            <div className="space-y-1">
-              {isSidebarExpanded && (
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
-                  {tSidebar("groupNavigation")}
-                </div>
-              )}
-
-              {/* Item 1: Rute Marswalk A* */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("marswalk")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "marswalk" && viewMode === "mission_control"
-                      ? "bg-emerald-950/60 border-emerald-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "marswalk" && viewMode === "mission_control"
-                      ? "bg-emerald-600 text-slate-950 border-emerald-400"
-                      : "bg-[#07090e] border-slate-800 text-emerald-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="6" cy="19" r="3" />
-                      <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("marswalkTitle")}
+                {isSidebarExpanded ? (
+                  <>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="w-2 h-2 bg-emerald-400 shrink-0" />
+                      <span className="text-[10px] font-bold tracking-wider text-slate-200 uppercase truncate">
+                        {tSidebar("missionControl")}
                       </span>
-                      <span className={`text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 ${activeRoute
-                          ? "bg-[#064e3b] border-emerald-500 text-emerald-300"
-                          : "bg-[#111827] border-emerald-800 text-emerald-400"
+                    </div>
+                    <button
+                      onClick={() => setIsSidebarExpanded(false)}
+                      className="px-1.5 py-0.5 border text-slate-400 hover:text-white border-slate-700 hover:bg-[#161e2e] text-[9px] font-bold transition-colors"
+                      title={tSidebar("collapse")}
+                    >
+                      [ ◄ CIUTKAN ]
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsSidebarExpanded(true)}
+                    className="w-full h-full flex items-center justify-center text-slate-400 hover:text-white text-[11px] font-bold transition-colors"
+                    title={tSidebar("expand")}
+                  >
+                    [ ► ]
+                  </button>
+                )}
+              </div>
+
+              {/* SCROLLABLE SIDEBAR MENU ITEMS */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {/* 1. DOCKED MARSWALK NAVIGATION HUD (WHEN ROUTE IS ACTIVE AND NOT IN MARSWALK TOOL) */}
+                {activeRoute && activeTool !== "marswalk" && viewMode === "mission_control" && (
+                  isSidebarExpanded ? (
+                    <MarsNavigationHud
+                      route={activeRoute}
+                      docked={true}
+                      onOpenPovModal={handleOpenPovModal}
+                      onOpenMarswalkPlanner={() => setActiveTool("marswalk")}
+                      onToggleProfileDock={() => setIsProfileDockOpen((prev) => !prev)}
+                      isProfileDockOpen={isProfileDockOpen}
+                      onSwitchToVisorHud={() => setViewMode("visor_hud")}
+                      onReCenterCorridor={() => setReCenterTrigger((c) => c + 1)}
+                      onCloseRoute={() => setActiveRoute(null)}
+                      onFlyToCoord={(coord) => setNavFlyToCoord(coord)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setIsSidebarExpanded(true)}
+                      className="w-8 h-8 mx-auto my-1 flex items-center justify-center border border-emerald-500 bg-[#064e3b] text-emerald-300 relative"
+                      title={`Active Marswalk Route (${activeRoute.totalDistanceKm} km) - Click to expand sidebar`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    </button>
+                  )
+                )}
+
+                {/* GROUP 1: NAVIGASI & MISI LAPANGAN */}
+                <div className="space-y-1">
+                  {isSidebarExpanded && (
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
+                      {tSidebar("groupNavigation")}
+                    </div>
+                  )}
+
+                  {/* Item 1: Rute Marswalk A* */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("marswalk")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "marswalk" && viewMode === "mission_control"
+                        ? "bg-emerald-950/60 border-emerald-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "marswalk" && viewMode === "mission_control"
+                        ? "bg-emerald-600 text-slate-950 border-emerald-400"
+                        : "bg-[#07090e] border-slate-800 text-emerald-400"
                         }`}>
-                        {activeRoute ? tSidebar("badgeActive") : tSidebar("badgeCoreAi")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("marswalkDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("marswalk")}
-                  title={`${tSidebar("marswalkTitle")} - ${tSidebar("marswalkDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors relative ${activeTool === "marswalk" && viewMode === "mission_control"
-                      ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
-                      : isDark
-                        ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-emerald-800/60"
-                        : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-emerald-300"
-                    }`}
-                >
-                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="6" cy="19" r="3" />
-                    <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
-                  </svg>
-                </button>
-              )}
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="6" cy="19" r="3" />
+                          <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("marswalkTitle")}
+                          </span>
+                          <span className={`text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 ${activeRoute
+                            ? "bg-[#064e3b] border-emerald-500 text-emerald-300"
+                            : "bg-[#111827] border-emerald-800 text-emerald-400"
+                            }`}>
+                            {activeRoute ? tSidebar("badgeActive") : tSidebar("badgeCoreAi")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("marswalkDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("marswalk")}
+                      title={`${tSidebar("marswalkTitle")} - ${tSidebar("marswalkDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors relative ${activeTool === "marswalk" && viewMode === "mission_control"
+                        ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
+                        : isDark
+                          ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-emerald-800/60"
+                          : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-emerald-300"
+                        }`}
+                    >
+                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="6" cy="19" r="3" />
+                        <path d="M9 19h8.5a4.5 4.5 0 0 0 0-9H7a4 4 0 0 1 0-8h11" />
+                      </svg>
+                    </button>
+                  )}
 
-              {/* Item 2: Drone Pengintai Udara */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => {
-                    setShowFloatingLegend(false);
-                    setIsAerialDockOpen((prev) => !prev);
-                  }}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${isAerialDockOpen
-                      ? "bg-cyan-950/60 border-cyan-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${isAerialDockOpen
-                      ? "bg-cyan-600 text-slate-950 border-cyan-400"
-                      : "bg-[#07090e] border-slate-800 text-cyan-400"
-                    }`}>
-                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                      <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("aerialTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
-                        {tSidebar("badgeDrone")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("aerialDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setShowFloatingLegend(false);
-                    setIsAerialDockOpen((prev) => !prev);
-                  }}
-                  title={`${tSidebar("aerialTitle")} - ${tSidebar("aerialDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${isAerialDockOpen
-                      ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                      : isDark
-                        ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-slate-800"
-                        : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-slate-300"
-                    }`}
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* GROUP 2: SAINS & GEOFISIKA NASA */}
-            <div className="space-y-1 pt-1 border-t border-slate-800/80">
-              {isSidebarExpanded && (
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
-                  {tSidebar("groupScience")}
+                  {/* Item 2: Drone Pengintai Udara */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("aerial")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "aerial"
+                        ? "bg-cyan-950/60 border-cyan-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "aerial"
+                        ? "bg-cyan-600 text-slate-950 border-cyan-400"
+                        : "bg-[#07090e] border-slate-800 text-cyan-400"
+                        }`}>
+                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                          <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("aerialTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
+                            {tSidebar("badgeDrone")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("aerialDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("aerial")}
+                      title={`${tSidebar("aerialTitle")} - ${tSidebar("aerialDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "aerial"
+                        ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                        : isDark
+                          ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-slate-800"
+                          : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-slate-300"
+                        }`}
+                    >
+                      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                        <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Item 3: 5 Lapisan Ilmiah NASA */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("layers")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "layers" && viewMode === "mission_control"
-                      ? "bg-amber-950/60 border-amber-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "layers" && viewMode === "mission_control"
-                      ? "bg-amber-600 text-slate-950 border-amber-400"
-                      : "bg-[#07090e] border-slate-800 text-amber-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                      <polyline points="2 17 12 22 22 17" />
-                      <polyline points="2 12 12 17 22 12" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("layersTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
-                        {tSidebar("badge5Layers")}
-                      </span>
+                {/* GROUP 2: SAINS & GEOFISIKA NASA */}
+                <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                  {isSidebarExpanded && (
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
+                      {tSidebar("groupScience")}
                     </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("layersDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("layers")}
-                  title={`${tSidebar("layersTitle")} - ${tSidebar("layersDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "layers" && viewMode === "mission_control"
-                      ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
-                      : isDark
-                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                    <polyline points="2 17 12 22 22 17" />
-                    <polyline points="2 12 12 17 22 12" />
-                  </svg>
-                </button>
-              )}
+                  )}
 
-              {/* Item 4: Point Inspector Regolith */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("inspector")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "inspector" && viewMode === "mission_control"
-                      ? "bg-cyan-950/60 border-cyan-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "inspector" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 border-cyan-400"
-                      : "bg-[#07090e] border-slate-800 text-cyan-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="9" />
-                      <line x1="12" y1="3" x2="12" y2="7" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                      <line x1="3" y1="12" x2="7" y2="12" />
-                      <line x1="17" y1="12" x2="21" y2="12" />
-                      <circle cx="12" cy="12" r="2" fill="currentColor" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("inspectorTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
-                        {tSidebar("badgeInspector")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("inspectorDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("inspector")}
-                  title={`${tSidebar("inspectorTitle")} - ${tSidebar("inspectorDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "inspector" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                      : isDark
-                        ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-transparent"
-                        : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="9" />
-                    <line x1="12" y1="3" x2="12" y2="7" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                    <line x1="3" y1="12" x2="7" y2="12" />
-                    <line x1="17" y1="12" x2="21" y2="12" />
-                    <circle cx="12" cy="12" r="2" fill="currentColor" />
-                  </svg>
-                </button>
-              )}
+                  {/* Item 3: 5 Lapisan Ilmiah NASA */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("layers")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "layers" && viewMode === "mission_control"
+                        ? "bg-amber-950/60 border-amber-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "layers" && viewMode === "mission_control"
+                        ? "bg-amber-600 text-slate-950 border-amber-400"
+                        : "bg-[#07090e] border-slate-800 text-amber-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                          <polyline points="2 17 12 22 22 17" />
+                          <polyline points="2 12 12 17 22 12" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("layersTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
+                            {tSidebar("badge5Layers")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("layersDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("layers")}
+                      title={`${tSidebar("layersTitle")} - ${tSidebar("layersDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "layers" && viewMode === "mission_control"
+                        ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                        <polyline points="2 17 12 22 22 17" />
+                        <polyline points="2 12 12 17 22 12" />
+                      </svg>
+                    </button>
+                  )}
 
-              {/* Item 5: Alat Analisis Spasial MMGIS */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("tools")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "tools" && viewMode === "mission_control"
-                      ? "bg-cyan-950/60 border-cyan-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "tools" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 border-cyan-400"
-                      : "bg-[#07090e] border-slate-800 text-cyan-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
-                      <path d="m12.4 8.6 2.8 2.8" />
-                      <path d="M2 2h4v4H2z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("toolsTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
-                        {tSidebar("badgeMmgis")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("toolsDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("tools")}
-                  title={`${tSidebar("toolsTitle")} - ${tSidebar("toolsDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "tools" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                      : isDark
-                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
-                    <path d="m12.4 8.6 2.8 2.8" />
-                    <path d="M2 2h4v4H2z" />
-                  </svg>
-                </button>
-              )}
-            </div>
+                  {/* Item 4: Point Inspector Regolith */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("inspector")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "inspector" && viewMode === "mission_control"
+                        ? "bg-cyan-950/60 border-cyan-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "inspector" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 border-cyan-400"
+                        : "bg-[#07090e] border-slate-800 text-cyan-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="9" />
+                          <line x1="12" y1="3" x2="12" y2="7" />
+                          <line x1="12" y1="17" x2="12" y2="21" />
+                          <line x1="3" y1="12" x2="7" y2="12" />
+                          <line x1="17" y1="12" x2="21" y2="12" />
+                          <circle cx="12" cy="12" r="2" fill="currentColor" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("inspectorTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
+                            {tSidebar("badgeInspector")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("inspectorDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("inspector")}
+                      title={`${tSidebar("inspectorTitle")} - ${tSidebar("inspectorDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "inspector" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                        : isDark
+                          ? "text-cyan-400 hover:text-cyan-200 hover:bg-[#161e2e] border-transparent"
+                          : "text-cyan-700 hover:text-cyan-900 hover:bg-slate-200 border-transparent"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="9" />
+                        <line x1="12" y1="3" x2="12" y2="7" />
+                        <line x1="12" y1="17" x2="12" y2="21" />
+                        <line x1="3" y1="12" x2="7" y2="12" />
+                        <line x1="17" y1="12" x2="21" y2="12" />
+                        <circle cx="12" cy="12" r="2" fill="currentColor" />
+                      </svg>
+                    </button>
+                  )}
 
-            {/* GROUP 3: SUMBER DAYA & VALIDASI BUMI */}
-            <div className="space-y-1 pt-1 border-t border-slate-800/80">
-              {isSidebarExpanded && (
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
-                  {tSidebar("groupResources")}
+                  {/* Item 5: Alat Analisis Spasial MMGIS */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("tools")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "tools" && viewMode === "mission_control"
+                        ? "bg-cyan-950/60 border-cyan-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "tools" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 border-cyan-400"
+                        : "bg-[#07090e] border-slate-800 text-cyan-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
+                          <path d="m12.4 8.6 2.8 2.8" />
+                          <path d="M2 2h4v4H2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("toolsTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
+                            {tSidebar("badgeMmgis")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("toolsDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("tools")}
+                      title={`${tSidebar("toolsTitle")} - ${tSidebar("toolsDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "tools" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="m14.7 6.3 5 5-9.4 9.4H5.3v-5z" />
+                        <path d="m12.4 8.6 2.8 2.8" />
+                        <path d="M2 2h4v4H2z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Item 6: Prospektor AI Sumber Daya */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("prospector")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "prospector" && viewMode === "mission_control"
-                      ? "bg-amber-950/60 border-amber-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "prospector" && viewMode === "mission_control"
-                      ? "bg-amber-600 text-slate-950 border-amber-400"
-                      : "bg-[#07090e] border-slate-800 text-amber-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("prospectorTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
-                        {tSidebar("badgeMl")}
-                      </span>
+                {/* GROUP 3: SUMBER DAYA & VALIDASI BUMI */}
+                <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                  {isSidebarExpanded && (
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
+                      {tSidebar("groupResources")}
                     </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("prospectorDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("prospector")}
-                  title={`${tSidebar("prospectorTitle")} - ${tSidebar("prospectorDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "prospector" && viewMode === "mission_control"
-                      ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
-                      : isDark
-                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                </button>
-              )}
+                  )}
 
-              {/* Item 7: Pencocok Analogi Bumi */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleToggleTool("analogue")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "analogue" && viewMode === "mission_control"
-                      ? "bg-cyan-950/60 border-cyan-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "analogue" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 border-cyan-400"
-                      : "bg-[#07090e] border-slate-800 text-cyan-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("analogueTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
-                        {tSidebar("badgeMcda")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("analogueDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleToggleTool("analogue")}
-                  title={`${tSidebar("analogueTitle")} - ${tSidebar("analogueDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "analogue" && viewMode === "mission_control"
-                      ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
-                      : isDark
-                        ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
-                  </svg>
-                </button>
-              )}
-            </div>
+                  {/* Item 6: Prospektor AI Sumber Daya */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("prospector")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "prospector" && viewMode === "mission_control"
+                        ? "bg-amber-950/60 border-amber-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "prospector" && viewMode === "mission_control"
+                        ? "bg-amber-600 text-slate-950 border-amber-400"
+                        : "bg-[#07090e] border-slate-800 text-amber-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("prospectorTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
+                            {tSidebar("badgeMl")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("prospectorDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("prospector")}
+                      title={`${tSidebar("prospectorTitle")} - ${tSidebar("prospectorDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "prospector" && viewMode === "mission_control"
+                        ? "bg-amber-600 text-slate-950 font-bold border-amber-400"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    </button>
+                  )}
 
-            {/* GROUP 4: SIMULASI EKSPLORASI */}
-            <div className="space-y-1 pt-1 border-t border-slate-800/80">
-              {isSidebarExpanded && (
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
-                  {tSidebar("groupSimulation")}
+                  {/* Item 7: Pencocok Analogi Bumi */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleToggleTool("analogue")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${activeTool === "analogue" && viewMode === "mission_control"
+                        ? "bg-cyan-950/60 border-cyan-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${activeTool === "analogue" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 border-cyan-400"
+                        : "bg-[#07090e] border-slate-800 text-cyan-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("analogueTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-cyan-800 text-cyan-400">
+                            {tSidebar("badgeMcda")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("analogueDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleToggleTool("analogue")}
+                      title={`${tSidebar("analogueTitle")} - ${tSidebar("analogueDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${activeTool === "analogue" && viewMode === "mission_control"
+                        ? "bg-cyan-600 text-slate-950 font-bold border-cyan-400"
+                        : isDark
+                          ? "text-slate-400 hover:text-slate-200 hover:bg-[#161e2e] border-transparent"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200 border-transparent"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Item 8: Panorama Permukaan 360° */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => handleOpenPovModal(selectedWaypoint)}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${isDark
-                      ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                      : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className="mt-0.5 p-1 border shrink-0 bg-[#07090e] border-slate-800 text-amber-400">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                      <circle cx="12" cy="13" r="3" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("pov360Title")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
-                        {tSidebar("badgePov")}
-                      </span>
+                {/* GROUP 4: SIMULASI EKSPLORASI */}
+                <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                  {isSidebarExpanded && (
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider px-1 pb-1">
+                      {tSidebar("groupSimulation")}
                     </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("pov360Desc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleOpenPovModal(selectedWaypoint)}
-                  title={`${tSidebar("pov360Title")} - ${tSidebar("pov360Desc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${isDark
-                      ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
-                      : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                    <circle cx="12" cy="13" r="3" />
-                  </svg>
-                </button>
-              )}
+                  )}
 
-              {/* Item 9: Astronaut Visor HUD */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => setViewMode("visor_hud")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "visor_hud"
-                      ? "bg-purple-950/60 border-purple-400 text-white"
-                      : isDark
+                  {/* Item 8: Panorama Permukaan 360° */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => handleOpenPovModal(selectedWaypoint)}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${isDark
                         ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
                         : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "visor_hud"
-                      ? "bg-purple-600 text-slate-950 border-purple-400"
-                      : "bg-[#07090e] border-slate-800 text-purple-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("visorHudTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-purple-800 text-purple-400">
-                        {tSidebar("badgeVisor")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("visorHudDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setViewMode("visor_hud")}
-                  title={`${tSidebar("visorHudTitle")} - ${tSidebar("visorHudDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "visor_hud"
-                      ? "bg-purple-600 text-slate-950 font-bold border-purple-400"
-                      : isDark
-                        ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-slate-800"
-                        : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-slate-300"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </button>
-              )}
+                        }`}
+                    >
+                      <div className="mt-0.5 p-1 border shrink-0 bg-[#07090e] border-slate-800 text-amber-400">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                          <circle cx="12" cy="13" r="3" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("pov360Title")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-amber-800 text-amber-400">
+                            {tSidebar("badgePov")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("pov360Desc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenPovModal(selectedWaypoint)}
+                      title={`${tSidebar("pov360Title")} - ${tSidebar("pov360Desc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${isDark
+                        ? "text-amber-400 hover:text-amber-300 hover:bg-[#161e2e] border-slate-800"
+                        : "text-amber-700 hover:text-amber-900 hover:bg-slate-200 border-slate-300"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                        <circle cx="12" cy="13" r="3" />
+                      </svg>
+                    </button>
+                  )}
 
-              {/* Item 10: Bola Planet Mars 3D */}
-              {isSidebarExpanded ? (
-                <button
-                  onClick={() => setViewMode("planet_globe")}
-                  className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "planet_globe"
-                      ? "bg-emerald-950/60 border-emerald-400 text-white"
-                      : isDark
-                        ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
-                        : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
-                    }`}
-                >
-                  <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "planet_globe"
-                      ? "bg-emerald-600 text-slate-950 border-emerald-400"
-                      : "bg-[#07090e] border-slate-800 text-emerald-400"
-                    }`}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <ellipse cx="12" cy="12" rx="10" ry="4" />
-                      <line x1="12" y1="2" x2="12" y2="22" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <span className="font-bold text-xs truncate text-slate-200">
-                        {tSidebar("planetGlobeTitle")}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-emerald-800 text-emerald-400">
-                        {tSidebar("badgeGlobe")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-tight">
-                      {tSidebar("planetGlobeDesc")}
-                    </p>
-                  </div>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setViewMode("planet_globe")}
-                  title={`${tSidebar("planetGlobeTitle")} - ${tSidebar("planetGlobeDesc")}`}
-                  className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "planet_globe"
-                      ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
-                      : isDark
-                        ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-slate-800"
-                        : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-slate-300"
-                    }`}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <ellipse cx="12" cy="12" rx="10" ry="4" />
-                    <line x1="12" y1="2" x2="12" y2="22" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
+                  {/* Item 9: Astronaut Visor HUD */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => setViewMode("visor_hud")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "visor_hud"
+                        ? "bg-purple-950/60 border-purple-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "visor_hud"
+                        ? "bg-purple-600 text-slate-950 border-purple-400"
+                        : "bg-[#07090e] border-slate-800 text-purple-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("visorHudTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-purple-800 text-purple-400">
+                            {tSidebar("badgeVisor")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("visorHudDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setViewMode("visor_hud")}
+                      title={`${tSidebar("visorHudTitle")} - ${tSidebar("visorHudDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "visor_hud"
+                        ? "bg-purple-600 text-slate-950 font-bold border-purple-400"
+                        : isDark
+                          ? "text-purple-400 hover:text-purple-300 hover:bg-[#161e2e] border-slate-800"
+                          : "text-purple-700 hover:text-purple-900 hover:bg-slate-200 border-slate-300"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M2 12h20M12 2a10 10 0 0 1 10 10v4a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4v-4a10 10 0 0 1 10-10z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Item 10: Bola Planet Mars 3D */}
+                  {isSidebarExpanded ? (
+                    <button
+                      onClick={() => setViewMode("planet_globe")}
+                      className={`w-full text-left p-2 border transition-colors flex items-start gap-2.5 font-mono ${viewMode === "planet_globe"
+                        ? "bg-emerald-950/60 border-emerald-400 text-white"
+                        : isDark
+                          ? "bg-[#0b0f17] border-slate-800 hover:bg-[#111827] hover:border-slate-700 text-slate-300"
+                          : "bg-white border-slate-300 hover:bg-slate-100 text-slate-800"
+                        }`}
+                    >
+                      <div className={`mt-0.5 p-1 border shrink-0 ${viewMode === "planet_globe"
+                        ? "bg-emerald-600 text-slate-950 border-emerald-400"
+                        : "bg-[#07090e] border-slate-800 text-emerald-400"
+                        }`}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <ellipse cx="12" cy="12" rx="10" ry="4" />
+                          <line x1="12" y1="2" x2="12" y2="22" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-bold text-xs truncate text-slate-200">
+                            {tSidebar("planetGlobeTitle")}
+                          </span>
+                          <span className="text-[8px] px-1 py-0.2 border uppercase font-bold shrink-0 bg-[#111827] border-emerald-800 text-emerald-400">
+                            {tSidebar("badgeGlobe")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-tight">
+                          {tSidebar("planetGlobeDesc")}
+                        </p>
+                      </div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setViewMode("planet_globe")}
+                      title={`${tSidebar("planetGlobeTitle")} - ${tSidebar("planetGlobeDesc")}`}
+                      className={`w-8 h-8 mx-auto my-0.5 flex items-center justify-center border transition-colors ${viewMode === "planet_globe"
+                        ? "bg-emerald-600 text-slate-950 font-bold border-emerald-400"
+                        : isDark
+                          ? "text-emerald-400 hover:text-emerald-300 hover:bg-[#161e2e] border-slate-800"
+                          : "text-emerald-700 hover:text-emerald-900 hover:bg-slate-200 border-slate-300"
+                        }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <ellipse cx="12" cy="12" rx="10" ry="4" />
+                        <line x1="12" y1="2" x2="12" y2="22" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </nav>
@@ -1526,8 +1526,8 @@ export const AresMartianApp: React.FC = () => {
           isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
           onFeatureIdentified={setIdentifiedFeature}
           isInspectorActive={activeTool === "inspector"}
-          isAerialDockOpen={isAerialDockOpen}
-          showQuickStartBanner={showQuickStartBanner && !activeRoute && activeTool === null && !isAerialDockOpen && !elevationProfile && viewMode === "mission_control"}
+          isAerialDockOpen={activeTool === "aerial"}
+          showQuickStartBanner={showQuickStartBanner && !activeRoute && activeTool === null && !elevationProfile && viewMode === "mission_control"}
           onCloseQuickStartBanner={() => setShowQuickStartBanner(false)}
           onLaunchSampleRoute={handleLaunchSampleRoute}
           onOpenPovModal={handleOpenPovModal}
@@ -1559,17 +1559,6 @@ export const AresMartianApp: React.FC = () => {
 
 
 
-        {/* Mars Aerial Scout Drone Flight Dock (Input Koordinat & Terbang Pesawat) */}
-        {isAerialDockOpen && viewMode === "mission_control" && (
-          <MarsAerialScoutDock
-            currentSite={currentSite}
-            onLaunchFlight={handleLaunchAerialFlight}
-            onClose={() => setIsAerialDockOpen(false)}
-            isFlying={isAerialFlying}
-            flightTelemetry={aerialFlightTelemetry}
-            theme={theme}
-          />
-        )}
 
         {/* High-Density 5-Meter Marswalk Transect Profile Dock (NASA MMGIS Ref 4) */}
         {activeRoute && isProfileDockOpen && viewMode === "mission_control" && (
@@ -1579,7 +1568,7 @@ export const AresMartianApp: React.FC = () => {
             onClose={() => setIsProfileDockOpen(false)}
             isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
             isSidebarExpanded={isSidebarExpanded}
-            isRightPanelOpen={isAerialDockOpen}
+            isRightPanelOpen={false}
           />
         )}
 
@@ -1611,7 +1600,7 @@ export const AresMartianApp: React.FC = () => {
             siteName={currentSite === "jezero_crater" ? "Jezero Crater" : "Gale Crater"}
             isLeftDrawerOpen={activeTool !== null && viewMode === "mission_control"}
             isSidebarExpanded={isSidebarExpanded}
-            isRightPanelOpen={isAerialDockOpen}
+            isRightPanelOpen={false}
           />
         )}
 

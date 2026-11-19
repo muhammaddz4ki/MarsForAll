@@ -79,7 +79,8 @@
     "spatialTools": "PENGUKUR JARAK & SINYAL",
     "prospector": "DETEKSI SUMBER DAYA AI",
     "earthAnalogues": "UJI KEMIRIPAN LAB BUMI",
-    "inspector": "INSPEKSI TITIK TANAH"
+    "inspector": "INSPEKSI TITIK TANAH",
+    "aerial": "DRONE PENGINTAI UDARA"
   },
   "scrubber": {
     "solClock": "JAM SOL",
