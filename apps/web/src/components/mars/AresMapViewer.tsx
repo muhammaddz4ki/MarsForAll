@@ -421,7 +421,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
   const [identifiedFeature, setIdentifiedFeature] = useState<IdentifiedFeatureInfo | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
-  const [isTimelinePlaying, setIsTimelinePlaying] = useState<boolean>(false);
   const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
 
   // Live Cursor Telemetry & Scale Bar States
@@ -1180,18 +1179,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
       mapRef.current = null;
     };
   }, []);
-
-  // Timeline Autoplay Playback Loop (ATM MMGIS Sol scrubber)
-  useEffect(() => {
-    if (!isTimelinePlaying) return;
-    const maxSol = currentSite === "jezero_crater" ? 1220 : 4180;
-    const step = currentSite === "jezero_crater" ? 15 : 40;
-    const interval = setInterval(() => {
-      const nextSol = currentSol >= maxSol ? 0 : Math.min(maxSol, currentSol + step);
-      onSelectSol?.(nextSol);
-    }, 280);
-    return () => clearInterval(interval);
-  }, [isTimelinePlaying, currentSol, currentSite, onSelectSol]);
 
   // Fly to coordinate when triggered (e.g. from Navigation Turn-by-Turn Maneuvers)
   useEffect(() => {
@@ -2745,55 +2732,6 @@ export const AresMapViewer: React.FC<AresMapViewerProps> = ({
           title={t("focusRover")}
         >
           ROVER
-        </button>
-      </div>
-
-      {/* 4. Sol Timeline Scrubber (ATM MMGIS Sol Slider) */}
-      <div className={`absolute ${isProfileDockOpen ? "hidden sm:flex bottom-[250px]" : "bottom-5"} left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 px-3 py-1.5 bg-[#07090e]/95 border border-slate-700 shadow-2xl select-none font-mono text-[10px] transition-all duration-200`}>
-        <button
-          onClick={() => setIsTimelinePlaying(!isTimelinePlaying)}
-          className={`px-2 py-1 font-bold text-[9px] border transition-colors ${
-            isTimelinePlaying
-              ? "bg-amber-950 text-amber-300 border-amber-500"
-              : "bg-[#111827] text-slate-200 border-slate-600 hover:text-white"
-          }`}
-          title={isTimelinePlaying ? t("pauseTimeline") : t("playTimeline")}
-        >
-          {isTimelinePlaying ? "❚❚" : "▶"}
-        </button>
-
-        <div className="flex items-center gap-1 font-bold">
-          <span className="text-slate-400">{t("solTimeline")}:</span>
-          <span className="text-yellow-400 tabular-nums font-bold">
-            SOL {effectiveSol}
-          </span>
-          <span className="text-slate-500 text-[8px]">
-            / {currentSite === "jezero_crater" ? "1220" : "4180"}
-          </span>
-        </div>
-
-        <input
-          type="range"
-          min={0}
-          max={currentSite === "jezero_crater" ? 1220 : 4180}
-          value={effectiveSol}
-          onChange={(e) => onSelectSol?.(Number(e.target.value))}
-          className="w-32 sm:w-48 h-1.5 bg-slate-800 rounded-none appearance-none cursor-pointer accent-yellow-400"
-        />
-
-        <button
-          onClick={() => onSelectSol?.(Math.max(0, currentSol - (currentSite === "jezero_crater" ? 20 : 50)))}
-          className="px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 hover:text-white text-[8px]"
-          title="Mundur Sol"
-        >
-          -
-        </button>
-        <button
-          onClick={() => onSelectSol?.(Math.min(currentSite === "jezero_crater" ? 1220 : 4180, currentSol + (currentSite === "jezero_crater" ? 20 : 50)))}
-          className="px-1.5 py-0.5 bg-[#111827] border border-slate-700 text-slate-300 hover:text-white text-[8px]"
-          title="Maju Sol"
-        >
-          +
         </button>
       </div>
 
